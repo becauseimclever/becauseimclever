@@ -1,8 +1,11 @@
 .main {
-    height: calc(100vh - 48px); /* Adjust based on header height */
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
 }
 
 .body-content {
+    height: 100%;
     padding: 1rem;
     overflow-y: auto;
 }
