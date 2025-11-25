@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "companyName": "BecauseImClever",
+      "copyrightText": "Copyright (c) BecauseImClever. All rights reserved."
+    }
+  },
+  "rules": {
+    "SA1633": {
+      "action": "None"
+    }
+  }
+}
