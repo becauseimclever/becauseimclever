@@ -1,8 +1,20 @@
 ﻿@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+
+<FluentDesignTheme Mode="DesignThemeModes.Dark" />
 
 <FluentLayout>
     <FluentHeader>
-        Because I'm Clever
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" Width="100%">
+            <FluentLabel Typo="Typography.H4">Because I'm Clever</FluentLabel>
+            <FluentSpacer />
+            <FluentSelect Items="@themes"
+                          OptionText="@(i => i.Name)"
+                          OptionValue="@(i => i.Value)"
+                          @bind-SelectedOption="@selectedTheme"
+                          @bind-SelectedOption:after="OnThemeChanged"
+                          Style="min-width: 150px;" />
+        </FluentStack>
     </FluentHeader>
     <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
         <NavMenu />
@@ -28,3 +40,28 @@
 <FluentTooltipProvider />
 <FluentMessageBarProvider />
 <FluentMenuProvider />
+
+@code {
+    private List<ThemeOption> themes = new()
+    {
+        new ThemeOption("VS Code Dark", "vscode"),
+        new ThemeOption("Retro Terminal", "terminal")
+    };
+
+    private ThemeOption selectedTheme = new("VS Code Dark", "vscode");
+
+    protected override void OnInitialized()
+    {
+        selectedTheme = themes.First();
+    }
+
+    private async Task OnThemeChanged()
+    {
+        if (selectedTheme != null)
+        {
+            await JSRuntime.InvokeVoidAsync("document.body.setAttribute", "data-theme", selectedTheme.Value);
+        }
+    }
+
+    public record ThemeOption(string Name, string Value);
+}

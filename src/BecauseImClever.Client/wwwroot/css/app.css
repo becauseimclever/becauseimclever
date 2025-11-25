@@ -101,8 +101,94 @@ a, .btn-link {
         content: var(--blazor-load-percentage-text, "Loading");
     }
 
+/* Theme Variables */
+:root {
+    /* Default (VS Code) */
+    --app-bg: #1e1e1e;
+    --app-sidebar: #252526;
+    --app-fg: #d4d4d4;
+    --app-accent: #007acc;
+    --app-border: #454545;
+    --app-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    --app-code-font: 'Cascadia Code', 'Consolas', monospace;
+    --app-header-bg: #3c3c3c;
+    --app-header-fg: #cccccc;
+    --app-card-bg: #252526;
+    --app-link-color: #3794ff;
+    --app-keyword-color: #569cd6;
+    --app-code-bg: #2d2d2d;
+    --app-code-fg: #ce9178;
+}
+
+[data-theme="terminal"] {
+    --app-bg: #000000;
+    --app-sidebar: #0a0f0a;
+    --app-fg: #00ff41;
+    --app-accent: #008f11;
+    --app-border: #003b00;
+    --app-font-family: 'Courier New', Courier, monospace;
+    --app-code-font: 'Courier New', Courier, monospace;
+    --app-header-bg: #001100;
+    --app-header-fg: #00ff41;
+    --app-card-bg: #001100;
+    --app-link-color: #00ff41;
+    --app-keyword-color: #00ff41;
+    --app-code-bg: #002200;
+    --app-code-fg: #00ff41;
+}
+
+body {
+    background-color: var(--app-bg) !important;
+    color: var(--app-fg) !important;
+    font-family: var(--app-font-family);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+fluent-header {
+    background-color: var(--app-header-bg) !important;
+    color: var(--app-header-fg) !important;
+    border-bottom: 1px solid var(--app-border);
+}
+
+fluent-nav-menu {
+    background-color: var(--app-sidebar) !important;
+    border-right: 1px solid var(--app-border);
+}
+
+fluent-card {
+    background-color: var(--app-card-bg) !important;
+    color: var(--app-fg) !important;
+    border: 1px solid var(--app-border) !important;
+    box-shadow: none !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--app-keyword-color);
+}
+
+a {
+    color: var(--app-link-color);
+}
+
 code {
-    color: #c02d76;
+    font-family: var(--app-code-font);
+    background-color: var(--app-code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    color: var(--app-code-fg);
+}
+
+pre {
+    background-color: var(--app-bg);
+    padding: 1rem;
+    border: 1px solid var(--app-border);
+    overflow-x: auto;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    color: var(--app-fg);
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
