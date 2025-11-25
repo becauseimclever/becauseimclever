@@ -3,31 +3,38 @@
 @using BecauseImClever.Domain.Entities
 @inject IBlogService BlogService
 
-@if (post == null)
-{
-    @if (notFound)
-    {
-        <PageTitle>Post Not Found</PageTitle>
-        <h1>Post Not Found</h1>
-        <p>Sorry, the post you are looking for does not exist.</p>
-    }
-    else
-    {
-        <FluentProgressRing />
-    }
-}
-else
-{
-    <PageTitle>@post.Title</PageTitle>
-    <FluentCard>
-        <h1>@post.Title</h1>
-        <p><em>@post.PublishedDate.ToString("MMMM dd, yyyy")</em></p>
-        <hr />
-        <div>
-            @((MarkupString)post.Content)
-        </div>
-    </FluentCard>
-}
+<main class="main-content">
+    <div class="content-area">
+        @if (post == null)
+        {
+            @if (notFound)
+            {
+                <PageTitle>Post Not Found</PageTitle>
+                <div class="card">
+                    <h1>Post Not Found</h1>
+                    <p>Sorry, the post you are looking for does not exist.</p>
+                </div>
+            }
+            else
+            {
+                <p>Loading...</p>
+            }
+        }
+        else
+        {
+            <PageTitle>@post.Title</PageTitle>
+            <article class="card">
+                <h1>@post.Title</h1>
+                <div class="card-meta">@post.PublishedDate.ToString("MMMM dd, yyyy")</div>
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0;" />
+                <div>
+                    @((MarkupString)post.Content)
+                </div>
+            </article>
+        }
+    </div>
+    <Sidebar />
+</main>
 
 @code {
     [Parameter]

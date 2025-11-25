@@ -16,8 +16,13 @@ namespace BecauseImClever.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<BlogPost>> Get()
+        public async Task<IEnumerable<BlogPost>> Get([FromQuery] int page = 0, [FromQuery] int pageSize = 0)
         {
+            if (page > 0 && pageSize > 0)
+            {
+                return await this.blogService.GetPostsAsync(page, pageSize);
+            }
+
             return await this.blogService.GetPostsAsync();
         }
 

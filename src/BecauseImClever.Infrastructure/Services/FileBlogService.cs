@@ -39,6 +39,12 @@ namespace BecauseImClever.Infrastructure.Services
             return posts.OrderByDescending(p => p.PublishedDate);
         }
 
+        public async Task<IEnumerable<BlogPost>> GetPostsAsync(int page, int pageSize)
+        {
+            var allPosts = await this.GetPostsAsync();
+            return allPosts.Skip((page - 1) * pageSize).Take(pageSize);
+        }
+
         public async Task<BlogPost?> GetPostBySlugAsync(string slug)
         {
             var filePath = Path.Combine(this.postsPath, $"{slug}.md");

@@ -1,0 +1,45 @@
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IAnnouncementService AnnouncementService
+
+<aside class="sidebar">
+    <!-- About Widget -->
+    <div class="sidebar-widget">
+        <h3>About Me</h3>
+        <p style="font-size: 0.9rem;">
+            Hi, I'm the author. I specialize in backend systems and cloud architecture. This site documents my learning journey.
+        </p>
+    </div>
+
+    <!-- Announcements Widget -->
+    <div class="sidebar-widget">
+        <h3>Announcements</h3>
+        @if (announcements == null)
+        {
+            <p>Loading announcements...</p>
+        }
+        else
+        {
+            @foreach (var announcement in announcements)
+            {
+                <div class="announcement-item">
+                    <span class="announcement-date">@announcement.Date.ToString("MMM dd")</span>
+                    <p style="margin:0; font-size: 0.9rem;">@announcement.Message</p>
+                    @if (!string.IsNullOrEmpty(announcement.Link))
+                    {
+                        <a href="@announcement.Link" style="font-size: 0.8rem;">Read more</a>
+                    }
+                </div>
+            }
+        }
+    </div>
+</aside>
+
+@code {
+    private IEnumerable<Announcement>? announcements;
+
+    protected override async Task OnInitializedAsync()
+    {
+        announcements = await AnnouncementService.GetLatestAnnouncementsAsync();
+    }
+}

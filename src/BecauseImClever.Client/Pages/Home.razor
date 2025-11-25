@@ -2,22 +2,26 @@
 @using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Domain.Entities
 @inject IBlogService BlogService
-@inject IAnnouncementService AnnouncementService
 
 <PageTitle>Home</PageTitle>
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentCard>
-        <h1>Welcome to Because I'm Clever</h1>
-        <p>A blog about .NET, software architecture, and other clever things.</p>
-    </FluentCard>
+<!-- Hero Section -->
+<section class="hero">
+    <h1>Building Systems & Breaking Code</h1>
+    <p>I'm a .NET Developer passionate about Clean Architecture, DDD, and modern web technologies. Welcome to my digital garden.</p>
+    <a href="about" class="cta-button">About Me</a>
+</section>
 
-    <FluentGrid Spacing="3" Justify="JustifyContent.FlexStart">
-        <FluentGridItem xs="12" sm="8">
-            <h2>Recent Posts</h2>
+<!-- Main Content -->
+<main class="main-content">
+    
+    <!-- Blog Feed -->
+    <div class="content-area">
+        <h2 style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-color); padding-left: 1rem;">Latest Posts</h2>
+        <div class="blog-grid">
             @if (posts == null)
             {
-                <FluentProgressRing />
+                <p>Loading posts...</p>
             }
             else if (!posts.Any())
             {
@@ -25,50 +29,33 @@
             }
             else
             {
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                    @foreach (var post in posts)
-                    {
-                        <FluentCard>
-                            <h3><FluentAnchor Href="@($"/posts/{post.Slug}")">@post.Title</FluentAnchor></h3>
-                            <p>@post.PublishedDate.ToString("MMMM dd, yyyy")</p>
-                            <p>@post.Summary</p>
-                        </FluentCard>
-                    }
-                </FluentStack>
+                @foreach (var post in posts)
+                {
+                    <article class="card">
+                        <div class="card-meta">@post.PublishedDate.ToString("MMM dd, yyyy") &bull; Category</div>
+                        <h3><a href="@($"/posts/{post.Slug}")">@post.Title</a></h3>
+                        <p>@post.Summary</p>
+                        <div class="tags">
+                            <!-- Placeholder tags for now, assuming post might have tags later -->
+                            <span class="tag">.NET</span>
+                            <span class="tag">C#</span>
+                        </div>
+                    </article>
+                }
             }
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="4">
-            <h2>Announcements</h2>
-            @if (announcements == null)
-            {
-                <FluentProgressRing />
-            }
-            else
-            {
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                    @foreach (var announcement in announcements)
-                    {
-                        <FluentCard>
-                            <p><strong>@announcement.Date.ToString("MM/dd")</strong>: @announcement.Message</p>
-                            @if (!string.IsNullOrEmpty(announcement.Link))
-                            {
-                                <FluentAnchor Href="@announcement.Link">Read more</FluentAnchor>
-                            }
-                        </FluentCard>
-                    }
-                </FluentStack>
-            }
-        </FluentGridItem>
-    </FluentGrid>
-</FluentStack>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <Sidebar />
+
+</main>
 
 @code {
     private IEnumerable<BlogPost>? posts;
-    private IEnumerable<Announcement>? announcements;
 
     protected override async Task OnInitializedAsync()
     {
         posts = await BlogService.GetPostsAsync();
-        announcements = await AnnouncementService.GetLatestAnnouncementsAsync();
     }
 }

@@ -18,6 +18,11 @@ namespace BecauseImClever.Client.Services
             return await this.http.GetFromJsonAsync<IEnumerable<BlogPost>>("api/posts") ?? Enumerable.Empty<BlogPost>();
         }
 
+        public async Task<IEnumerable<BlogPost>> GetPostsAsync(int page, int pageSize)
+        {
+            return await this.http.GetFromJsonAsync<IEnumerable<BlogPost>>($"api/posts?page={page}&pageSize={pageSize}") ?? Enumerable.Empty<BlogPost>();
+        }
+
         public async Task<BlogPost?> GetPostBySlugAsync(string slug)
         {
             try

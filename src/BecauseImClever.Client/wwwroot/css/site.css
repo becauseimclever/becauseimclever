@@ -1,0 +1,235 @@
+/* --- CSS Variables & Theming --- */
+:root {
+    /* Default to VS Code Dark */
+    --bg-color: #1e1e1e;
+    --bg-secondary: #252526; /* Sidebar/Activity Bar color */
+    --text-color: #d4d4d4;
+    --text-muted: #a0a0a0;
+    --accent-color: #007acc;
+    --border-color: #3e3e42;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "Consolas", "Courier New", monospace;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --radius: 4px;
+    --header-height: 60px;
+}
+
+[data-theme="retro"] {
+    --bg-color: #0d1117;
+    --bg-secondary: #161b22;
+    --text-color: #00ff41;
+    --text-muted: #008f11; /* Dimmer green */
+    --accent-color: #00ff41; /* Bright green for active elements */
+    --border-color: #008f11;
+    --font-body: "Courier New", Courier, monospace;
+    --font-mono: "Courier New", Courier, monospace;
+    --card-shadow: none; /* Flat look for terminal */
+    --radius: 0px; /* Sharp edges */
+}
+
+/* --- Global Reset & Base Styles --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+a { color: var(--accent-color); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4 { margin-bottom: 0.5em; line-height: 1.2; }
+p { margin-bottom: 1em; }
+
+/* --- Layout Grid --- */
+.layout-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto; /* Header, Hero, Content, Footer */
+    min-height: 100vh;
+}
+
+/* --- Header --- */
+header {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 2rem;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-family: var(--font-mono);
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: var(--accent-color);
+}
+
+nav ul {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+}
+
+nav a {
+    color: var(--text-color);
+    font-weight: 500;
+}
+nav a:hover { color: var(--accent-color); }
+
+/* --- Theme Switcher --- */
+.theme-switch {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    border-radius: var(--radius);
+}
+.theme-switch:hover {
+    background-color: var(--border-color);
+}
+
+/* --- Hero Section --- */
+.hero {
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+}
+
+.hero h1 { font-size: 2.5rem; }
+.hero p { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 2rem auto; }
+
+.cta-button {
+    display: inline-block;
+    background-color: var(--accent-color);
+    color: #fff; /* Always white for contrast on blue, or handled by theme override */
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: bold;
+    text-decoration: none;
+}
+[data-theme="retro"] .cta-button {
+    background-color: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+}
+[data-theme="retro"] .cta-button:hover {
+    background-color: var(--accent-color);
+    color: #000;
+}
+
+/* --- Main Content Area (Grid) --- */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 300px; /* Content | Sidebar */
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    width: 100%;
+}
+
+/* --- Blog Grid --- */
+.blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow);
+    border-color: var(--accent-color);
+}
+
+.card-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-family: var(--font-mono);
+}
+
+.card h3 { margin-bottom: 0.5rem; }
+.card p { font-size: 0.95rem; flex-grow: 1; }
+
+.tags { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.tag {
+    font-size: 0.75rem;
+    background-color: var(--bg-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.sidebar-widget {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.sidebar-widget h3 {
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+    font-family: var(--font-mono);
+}
+
+.announcement-item {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.announcement-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.announcement-date { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem; }
+
+/* --- Footer --- */
+footer {
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr; /* Stack sidebar below content */
+    }
+    .hero h1 { font-size: 2rem; }
+    nav ul { display: none; /* Simplified for demo */ }
+}

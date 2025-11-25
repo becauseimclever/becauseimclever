@@ -1,0 +1,102 @@
+@page "/posts"
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IBlogService BlogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Blog</PageTitle>
+
+<main class="main-content">
+    <div class="content-area">
+        <h2 style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-color); padding-left: 1rem;">All Posts</h2>
+        
+        <div class="blog-grid">
+            @foreach (var post in posts)
+            {
+                <article class="card">
+                    <div class="card-meta">@post.PublishedDate.ToString("MMM dd, yyyy")</div>
+                    <h3><a href="@($"/posts/{post.Slug}")">@post.Title</a></h3>
+                    <p>@post.Summary</p>
+                    <div class="tags">
+                        @foreach (var tag in post.Tags)
+                        {
+                            <span class="tag">@tag</span>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+
+        @if (hasMore)
+        {
+            <div id="observer-target" style="height: 20px; margin-top: 20px; text-align: center;">
+                @if (isLoading)
+                {
+                    <span>Loading more...</span>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">No more posts.</p>
+        }
+    </div>
+    <Sidebar />
+</main>
+
+@code {
+    private List<BlogPost> posts = new();
+    private int currentPage = 1;
+    private const int PageSize = 10;
+    private bool hasMore = true;
+    private bool isLoading = false;
+    private DotNetObjectReference<Blog>? objRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPosts();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initIntersectionObserver", objRef, "observer-target");
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        if (isLoading || !hasMore) return;
+        
+        await LoadPosts();
+        StateHasChanged();
+    }
+
+    private async Task LoadPosts()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        var newPosts = await BlogService.GetPostsAsync(currentPage, PageSize);
+        
+        if (newPosts.Any())
+        {
+            posts.AddRange(newPosts);
+            currentPage++;
+        }
+        else
+        {
+            hasMore = false;
+        }
+
+        isLoading = false;
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+}
