@@ -1,0 +1,43 @@
+@page "/projects"
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IProjectService ProjectService
+
+<PageTitle>Projects</PageTitle>
+
+<main class="main-content">
+    <div class="content-area">
+        <h2 style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-color); padding-left: 1rem;">My Projects</h2>
+        
+        @if (projects == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <div class="blog-grid">
+                @foreach (var project in projects)
+                {
+                    <div class="card">
+                        <div class="card-meta">@project.Language</div>
+                        <h3><a href="@project.HtmlUrl" target="_blank">@project.Name</a></h3>
+                        <p>@project.Description</p>
+                        <div class="tags">
+                            <span class="tag">★ @project.StargazersCount Stars</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <Sidebar />
+</main>
+
+@code {
+    private IEnumerable<Project>? projects;
+
+    protected override async Task OnInitializedAsync()
+    {
+        projects = await ProjectService.GetProjectsAsync();
+    }
+}

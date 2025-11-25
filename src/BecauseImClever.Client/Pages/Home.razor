@@ -44,6 +44,10 @@
                 }
             }
         </div>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="posts" class="cta-button" style="background-color: transparent; border: 2px solid var(--accent-color); color: var(--accent-color);">View All Posts</a>
+        </div>
     </div>
 
     <!-- Sidebar -->
@@ -56,6 +60,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        posts = await BlogService.GetPostsAsync();
+        posts = await BlogService.GetPostsAsync(1, 4);
     }
 }

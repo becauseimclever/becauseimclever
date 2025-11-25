@@ -12,6 +12,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<IBlogService>(sp =>
     new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
 
+builder.Services.AddHttpClient<IProjectService, GitHubProjectService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
