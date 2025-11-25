@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BecauseImClever.Shared\BecauseImClever.Shared.csproj" />
+    <ProjectReference Include="..\BecauseImClever.Application\BecauseImClever.Application.csproj" />
+    <ProjectReference Include="..\BecauseImClever.Domain\BecauseImClever.Domain.csproj" />
   </ItemGroup>
 
 </Project>

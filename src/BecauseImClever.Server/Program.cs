@@ -1,3 +1,5 @@
+using BecauseImClever.Application.Interfaces;
+using BecauseImClever.Infrastructure.Services;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddOpenApi();
+
+builder.Services.AddScoped<IBlogService>(sp =>
+    new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
 
 var app = builder.Build();
 

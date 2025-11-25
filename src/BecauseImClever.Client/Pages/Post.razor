@@ -1,0 +1,47 @@
+@page "/posts/{Slug}"
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IBlogService BlogService
+
+@if (post == null)
+{
+    @if (notFound)
+    {
+        <PageTitle>Post Not Found</PageTitle>
+        <h1>Post Not Found</h1>
+        <p>Sorry, the post you are looking for does not exist.</p>
+    }
+    else
+    {
+        <FluentProgressRing />
+    }
+}
+else
+{
+    <PageTitle>@post.Title</PageTitle>
+    <FluentCard>
+        <h1>@post.Title</h1>
+        <p><em>@post.PublishedDate.ToString("MMMM dd, yyyy")</em></p>
+        <hr />
+        <div>
+            @((MarkupString)post.Content)
+        </div>
+    </FluentCard>
+}
+
+@code {
+    [Parameter]
+    public string Slug { get; set; } = string.Empty;
+
+    private BlogPost? post;
+    private bool notFound = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        post = await BlogService.GetPostBySlugAsync(Slug);
+        if (post == null)
+        {
+            notFound = true;
+        }
+    }
+}
