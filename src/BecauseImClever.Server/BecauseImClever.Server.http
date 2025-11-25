@@ -1,0 +1,6 @@
+@BecauseImClever.Server_HostAddress = http://localhost:5246
+
+GET {{BecauseImClever.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
