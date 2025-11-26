@@ -12,6 +12,14 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="BecauseImClever.Client.styles.css" rel="stylesheet" />
     <script type="importmap"></script>
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        })();
+    </script>
 </head>
 
 <body>

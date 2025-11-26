@@ -13,7 +13,14 @@
                 <li><a href="about">About</a></li>
             </ul>
         </nav>
-        <button class="theme-switch" @onclick="ToggleTheme">Theme: @currentThemeName</button>
+        <select class="theme-switch" @onchange="OnThemeChanged" value="@currentTheme">
+            <option value="vscode">VS Code</option>
+            <option value="retro">Retro Terminal</option>
+            <option value="win95">Windows 95</option>
+            <option value="macos9">Mac OS 9</option>
+            <option value="macos7">Mac OS 7</option>
+            <option value="geocities">GeoCities</option>
+        </select>
     </header>
 
     @Body
@@ -26,7 +33,6 @@
 
 @code {
     private string currentTheme = "vscode";
-    private string currentThemeName = "VS Code";
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,23 +45,21 @@
         }
     }
 
-    private async Task ToggleTheme()
+    private async Task OnThemeChanged(ChangeEventArgs e)
     {
-        currentTheme = currentTheme == "retro" ? "vscode" : "retro";
+        currentTheme = e.Value?.ToString() ?? "vscode";
         await ApplyTheme(currentTheme);
     }
 
     private async Task ApplyTheme(string theme)
     {
-        if (theme == "retro")
+        if (theme == "vscode")
         {
-            currentThemeName = "Retro Terminal";
-            await JSRuntime.InvokeVoidAsync("document.documentElement.setAttribute", "data-theme", "retro");
+            await JSRuntime.InvokeVoidAsync("document.documentElement.removeAttribute", "data-theme");
         }
         else
         {
-            currentThemeName = "VS Code";
-            await JSRuntime.InvokeVoidAsync("document.documentElement.removeAttribute", "data-theme");
+            await JSRuntime.InvokeVoidAsync("document.documentElement.setAttribute", "data-theme", theme);
         }
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "theme", theme);
     }

@@ -27,6 +27,58 @@
     --radius: 0px; /* Sharp edges */
 }
 
+[data-theme="win95"] {
+    --bg-color: #008080; /* Teal desktop */
+    --bg-secondary: #c0c0c0; /* Windows gray */
+    --text-color: #000000;
+    --text-muted: #404040;
+    --accent-color: #000080; /* Navy blue */
+    --border-color: #dfdfdf; /* Light gray for 3D effect base */
+    --font-body: "MS Sans Serif", "Segoe UI", sans-serif;
+    --font-mono: "Courier New", monospace;
+    --card-shadow: 2px 2px 0 #000000; /* Hard shadow */
+    --radius: 0px;
+}
+
+[data-theme="macos9"] {
+    --bg-color: #e8e8e8; /* Platinum */
+    --bg-secondary: #d0d0d0; /* Darker gray for sidebar/widgets */
+    --text-color: #000000;
+    --text-muted: #404040;
+    --accent-color: #0000cc; /* Classic Mac Blue */
+    --border-color: #a0a0a0;
+    --font-body: "Geneva", "Lucida Grande", "Segoe UI", sans-serif;
+    --font-mono: "Monaco", "Courier New", monospace;
+    --card-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset; /* Beveled look */
+    --radius: 3px;
+}
+
+[data-theme="macos7"] {
+    --bg-color: #ffffff;
+    --bg-secondary: #ffffff;
+    --text-color: #000000;
+    --text-muted: #404040;
+    --accent-color: #000000;
+    --border-color: #000000;
+    --font-body: "Chicago", "Geneva", sans-serif;
+    --font-mono: "Monaco", "Courier New", monospace;
+    --card-shadow: 2px 2px 0 #000000;
+    --radius: 2px;
+}
+
+[data-theme="geocities"] {
+    --bg-color: #000000;
+    --bg-secondary: #111111;
+    --text-color: #ffff00; /* Yellow text */
+    --text-muted: #00ff00; /* Green text */
+    --accent-color: #ff0000; /* Red accent */
+    --border-color: #0000ff; /* Blue borders */
+    --font-body: "Comic Sans MS", "Chalkboard SE", sans-serif;
+    --font-mono: "Courier New", monospace;
+    --card-shadow: 5px 5px 0 #ff00ff;
+    --radius: 0px;
+}
+
 /* --- Global Reset & Base Styles --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -130,6 +182,62 @@ nav a:hover { color: var(--accent-color); }
     color: #000;
 }
 
+[data-theme="win95"] .cta-button {
+    background-color: #c0c0c0;
+    color: #000000;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    box-shadow: 1px 1px 0 #000000;
+}
+[data-theme="win95"] .cta-button:active {
+    border-top: 2px solid #404040;
+    border-left: 2px solid #404040;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    box-shadow: none;
+}
+
+[data-theme="macos9"] .cta-button {
+    background-color: #dddddd;
+    color: #000000;
+    border: 1px solid #808080;
+    box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    background-image: linear-gradient(to bottom, #ffffff 0%, #dddddd 100%);
+}
+[data-theme="macos9"] .cta-button:active {
+    background-image: linear-gradient(to bottom, #cccccc 0%, #eeeeee 100%);
+    box-shadow: 1px 1px 0 #808080 inset;
+}
+
+[data-theme="macos7"] .cta-button {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0 #000000;
+    border-radius: 4px;
+}
+[data-theme="macos7"] .cta-button:active {
+    background-color: #000000;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+[data-theme="geocities"] .cta-button {
+    background-color: #0000ff;
+    color: #ffffff;
+    border: 3px ridge #00ff00;
+    font-family: "Times New Roman", serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+[data-theme="geocities"] .cta-button:hover {
+    background-color: #ff0000;
+    border-color: #ffff00;
+    text-decoration: blink; /* Note: blink is deprecated but fits the theme spirit */
+}
+
 /* --- Main Content Area (Grid) --- */
 .main-content {
     display: grid;
@@ -156,6 +264,38 @@ nav a:hover { color: var(--accent-color); }
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
+}
+
+[data-theme="win95"] .card {
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="macos9"] .card {
+    border: 1px solid #808080;
+    box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    background-color: #eeeeee;
+}
+
+[data-theme="macos7"] .card {
+    border: 1px solid #000000;
+    box-shadow: 3px 3px 0 #000000;
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 4px 4px; /* Dither pattern effect */
+    background-color: #ffffff;
+}
+[data-theme="macos7"] .card > * {
+    background-color: #ffffff; /* Ensure text is readable over dither */
+    padding: 0.5rem;
+}
+
+[data-theme="geocities"] .card {
+    border: 4px groove #00ff00;
+    background-color: #000033;
+    border-radius: 0;
 }
 
 .card:hover {
@@ -198,6 +338,31 @@ nav a:hover { color: var(--accent-color); }
     padding: 1.5rem;
 }
 
+[data-theme="win95"] .sidebar-widget {
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="macos9"] .sidebar-widget {
+    border: 1px solid #808080;
+    box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    background-color: #eeeeee;
+}
+
+[data-theme="macos7"] .sidebar-widget {
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 #000000;
+    border-radius: 4px;
+}
+
+[data-theme="geocities"] .sidebar-widget {
+    border: 3px dashed #ff00ff;
+    background-color: #1a0000;
+}
+
 .sidebar-widget h3 {
     font-size: 1.1rem;
     border-bottom: 1px solid var(--border-color);
@@ -232,4 +397,55 @@ footer {
     }
     .hero h1 { font-size: 2rem; }
     nav ul { display: none; /* Simplified for demo */ }
+}
+
+/* --- GeoCities Animations --- */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes rainbow {
+    0% { color: red; border-color: red; }
+    14% { color: orange; border-color: orange; }
+    28% { color: yellow; border-color: yellow; }
+    42% { color: green; border-color: green; }
+    57% { color: blue; border-color: blue; }
+    71% { color: indigo; border-color: indigo; }
+    85% { color: violet; border-color: violet; }
+    100% { color: red; border-color: red; }
+}
+
+@keyframes wobble {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
+}
+
+[data-theme="geocities"] .logo {
+    animation: rainbow 2s infinite linear, wobble 1s infinite ease-in-out;
+}
+
+[data-theme="geocities"] h1, 
+[data-theme="geocities"] h2, 
+[data-theme="geocities"] h3 {
+    animation: blink 1s infinite step-end;
+    color: #ff00ff;
+}
+
+[data-theme="geocities"] a:hover {
+    background-color: yellow;
+    color: red;
+    text-decoration: none;
+    cursor: help;
+}
+
+[data-theme="geocities"] .card {
+    animation: rainbow 5s infinite;
+}
+
+[data-theme="geocities"] .cta-button {
+    animation: blink 0.5s infinite;
 }

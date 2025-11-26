@@ -22,14 +22,17 @@ public class GitHubProjectService : IProjectService
              this.httpClient.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("BecauseImCleverApp", "1.0"));
         }
 
-        var repos = await this.httpClient.GetFromJsonAsync<IEnumerable<GitHubRepo>>("https://api.github.com/users/becauseimclever/repos");
+        var orgReposTask = this.httpClient.GetFromJsonAsync<IEnumerable<GitHubRepo>>("https://api.github.com/users/becauseimclever/repos");
+        var userReposTask = this.httpClient.GetFromJsonAsync<IEnumerable<GitHubRepo>>("https://api.github.com/users/Fortinbra/repos");
 
-        if (repos == null)
-        {
-            return Enumerable.Empty<Project>();
-        }
+        await Task.WhenAll(orgReposTask, userReposTask);
 
-        return repos
+        var orgRepos = await orgReposTask ?? Enumerable.Empty<GitHubRepo>();
+        var userRepos = await userReposTask ?? Enumerable.Empty<GitHubRepo>();
+
+        var allRepos = orgRepos.Concat(userRepos);
+
+        return allRepos
             .OrderByDescending(r => r.StargazersCount)
             .Select(r => new Project
             {
@@ -38,6 +41,7 @@ public class GitHubProjectService : IProjectService
                 HtmlUrl = r.HtmlUrl,
                 StargazersCount = r.StargazersCount,
                 Language = r.Language ?? string.Empty,
+                Owner = r.Owner?.Login ?? string.Empty,
             });
     }
 
@@ -57,5 +61,14 @@ public class GitHubProjectService : IProjectService
 
         [JsonPropertyName("language")]
         public string? Language { get; set; }
+
+        [JsonPropertyName("owner")]
+        public GitHubRepoOwner? Owner { get; set; }
+    }
+
+    private class GitHubRepoOwner
+    {
+        [JsonPropertyName("login")]
+        public string Login { get; set; } = string.Empty;
     }
 }

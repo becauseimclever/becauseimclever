@@ -11,4 +11,6 @@ public class Project
     public int StargazersCount { get; set; }
 
     public string Language { get; set; } = string.Empty;
+
+    public string Owner { get; set; } = string.Empty;
 }

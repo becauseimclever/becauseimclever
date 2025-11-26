@@ -19,7 +19,7 @@
                 @foreach (var project in projects)
                 {
                     <div class="card">
-                        <div class="card-meta">@project.Language</div>
+                        <div class="card-meta">@project.Owner • @project.Language</div>
                         <h3><a href="@project.HtmlUrl" target="_blank">@project.Name</a></h3>
                         <p>@project.Description</p>
                         <div class="tags">
