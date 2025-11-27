@@ -39,13 +39,14 @@ public class ThemeServiceTests : BunitContext
         var themes = service.GetAvailableThemes();
 
         // Assert
-        Assert.Equal(6, themes.Count);
+        Assert.Equal(7, themes.Count);
         Assert.Contains(Theme.VsCode, themes);
         Assert.Contains(Theme.Retro, themes);
         Assert.Contains(Theme.Win95, themes);
         Assert.Contains(Theme.MacOs9, themes);
         Assert.Contains(Theme.MacOs7, themes);
         Assert.Contains(Theme.GeoCities, themes);
+        Assert.Contains(Theme.Dungeon, themes);
     }
 
     [Fact]
@@ -138,6 +139,7 @@ public class ThemeServiceTests : BunitContext
     [InlineData("macos9")]
     [InlineData("macos7")]
     [InlineData("geocities")]
+    [InlineData("dungeon")]
     public async Task SetThemeAsync_WithVariousThemes_SetsCorrectDataThemeAttribute(string key)
     {
         // Arrange

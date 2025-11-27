@@ -37,6 +37,11 @@ public sealed class Theme : IEquatable<Theme>
     public static readonly Theme GeoCities = new Theme("geocities", "GeoCities");
 
     /// <summary>
+    /// The Dungeon Crawler theme inspired by classic text-based dungeon crawlers.
+    /// </summary>
+    public static readonly Theme Dungeon = new Theme("dungeon", "Dungeon Crawler");
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Theme"/> class.
     /// </summary>
     /// <param name="key">The unique key used in CSS data attributes.</param>
@@ -69,6 +74,7 @@ public sealed class Theme : IEquatable<Theme>
         MacOs9,
         MacOs7,
         GeoCities,
+        Dungeon,
     }.AsReadOnly();
 
     /// <summary>

@@ -1,0 +1,190 @@
+@page "/clock"
+@implements IDisposable
+
+<PageTitle>Clock</PageTitle>
+
+<div class="clock-container">
+    <h1>Clock</h1>
+    
+    <svg class="clock-face" viewBox="0 0 400 400" width="400" height="400">
+        <!-- Clock face background -->
+        <circle cx="200" cy="200" r="190" class="clock-background" />
+        <circle cx="200" cy="200" r="185" class="clock-border" />
+        
+        <!-- Minute markers (60 ticks) -->
+        @for (int i = 0; i < 60; i++)
+        {
+            var angle = i * 6; // 360 / 60 = 6 degrees per minute
+            var isHourMark = i % 5 == 0;
+            var innerRadius = isHourMark ? 160 : 170;
+            var outerRadius = 180;
+            
+            var x1 = 200 + innerRadius * Math.Sin(angle * Math.PI / 180);
+            var y1 = 200 - innerRadius * Math.Cos(angle * Math.PI / 180);
+            var x2 = 200 + outerRadius * Math.Sin(angle * Math.PI / 180);
+            var y2 = 200 - outerRadius * Math.Cos(angle * Math.PI / 180);
+            
+            <line class="minute-marker @(isHourMark ? "hour-tick" : "")" 
+                  x1="@x1.ToString("F2")" y1="@y1.ToString("F2")" 
+                  x2="@x2.ToString("F2")" y2="@y2.ToString("F2")" />
+        }
+        
+        <!-- Hour numbers (24 hours) -->
+        @for (int hour = 1; hour <= 24; hour++)
+        {
+            var angle = hour * 15 - 90; // 360 / 24 = 15 degrees per hour, offset by 90 to start at top
+            var radius = 145;
+            
+            var x = 200 + radius * Math.Cos(angle * Math.PI / 180);
+            var y = 200 + radius * Math.Sin(angle * Math.PI / 180);
+            
+            @((MarkupString)$"<text class=\"hour-marker\" x=\"{x:F2}\" y=\"{y:F2}\" text-anchor=\"middle\" dominant-baseline=\"central\">{hour}</text>")
+        }
+        
+        <!-- Hour hand -->
+        <line class="hour-hand" 
+              x1="200" y1="200" 
+              x2="200" y2="120"
+              transform="@GetHourHandTransform()" />
+        
+        <!-- Minute hand -->
+        <line class="minute-hand" 
+              x1="200" y1="200" 
+              x2="200" y2="80"
+              transform="@GetMinuteHandTransform()" />
+        
+        <!-- Second hand -->
+        <line class="second-hand" 
+              x1="200" y1="220" 
+              x2="200" y2="60"
+              transform="@GetSecondHandTransform()" />
+        
+        <!-- Center dot -->
+        <circle class="center-dot" cx="200" cy="200" r="8" />
+    </svg>
+    
+    <div class="digital-time">@currentTime.ToString("HH:mm:ss")</div>
+</div>
+
+<style>
+    .clock-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        min-height: calc(100vh - var(--header-height) - 200px);
+    }
+    
+    .clock-container h1 {
+        margin-bottom: 2rem;
+        color: var(--accent-color);
+        font-family: var(--font-mono);
+    }
+    
+    .clock-face {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .clock-background {
+        fill: var(--bg-secondary);
+    }
+    
+    .clock-border {
+        fill: none;
+        stroke: var(--border-color);
+        stroke-width: 3;
+    }
+    
+    .minute-marker {
+        stroke: var(--text-muted);
+        stroke-width: 1;
+    }
+    
+    .minute-marker.hour-tick {
+        stroke: var(--text-color);
+        stroke-width: 2;
+    }
+    
+    .hour-marker {
+        fill: var(--text-color);
+        font-family: var(--font-mono);
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    .hour-hand {
+        stroke: var(--text-color);
+        stroke-width: 6;
+        stroke-linecap: round;
+    }
+    
+    .minute-hand {
+        stroke: var(--text-color);
+        stroke-width: 4;
+        stroke-linecap: round;
+    }
+    
+    .second-hand {
+        stroke: var(--accent-color);
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+    
+    .center-dot {
+        fill: var(--accent-color);
+    }
+    
+    .digital-time {
+        margin-top: 2rem;
+        font-family: var(--font-mono);
+        font-size: 2rem;
+        color: var(--text-color);
+        letter-spacing: 0.1em;
+    }
+</style>
+
+@code {
+    private DateTime currentTime = DateTime.Now;
+    private Timer? timer;
+
+    protected override void OnInitialized()
+    {
+        timer = new Timer(UpdateTime, null, 0, 1000);
+    }
+
+    private void UpdateTime(object? state)
+    {
+        currentTime = DateTime.Now;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string GetHourHandTransform()
+    {
+        // For 24-hour clock: each hour is 15 degrees (360/24)
+        // Plus fractional movement based on minutes
+        var hourAngle = (currentTime.Hour % 24) * 15 + currentTime.Minute * 0.25;
+        return $"rotate({hourAngle:F2}, 200, 200)";
+    }
+
+    private string GetMinuteHandTransform()
+    {
+        // Each minute is 6 degrees (360/60)
+        // Plus fractional movement based on seconds
+        var minuteAngle = currentTime.Minute * 6 + currentTime.Second * 0.1;
+        return $"rotate({minuteAngle:F2}, 200, 200)";
+    }
+
+    private string GetSecondHandTransform()
+    {
+        // Each second is 6 degrees (360/60)
+        var secondAngle = currentTime.Second * 6;
+        return $"rotate({secondAngle}, 200, 200)";
+    }
+
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+}

@@ -74,19 +74,31 @@ public class ThemeTests
     }
 
     [Fact]
+    public void Dungeon_HasCorrectProperties()
+    {
+        // Arrange & Act
+        var theme = Theme.Dungeon;
+
+        // Assert
+        Assert.Equal("dungeon", theme.Key);
+        Assert.Equal("Dungeon Crawler", theme.DisplayName);
+    }
+
+    [Fact]
     public void All_ContainsAllThemes()
     {
         // Arrange & Act
         var allThemes = Theme.All;
 
         // Assert
-        Assert.Equal(6, allThemes.Count);
+        Assert.Equal(7, allThemes.Count);
         Assert.Contains(Theme.VsCode, allThemes);
         Assert.Contains(Theme.Retro, allThemes);
         Assert.Contains(Theme.Win95, allThemes);
         Assert.Contains(Theme.MacOs9, allThemes);
         Assert.Contains(Theme.MacOs7, allThemes);
         Assert.Contains(Theme.GeoCities, allThemes);
+        Assert.Contains(Theme.Dungeon, allThemes);
     }
 
     [Fact]
@@ -290,6 +302,7 @@ public class ThemeTests
     [InlineData("macos9")]
     [InlineData("macos7")]
     [InlineData("geocities")]
+    [InlineData("dungeon")]
     public void FromKey_WithAllValidKeys_ReturnsCorrectTheme(string key)
     {
         // Arrange & Act

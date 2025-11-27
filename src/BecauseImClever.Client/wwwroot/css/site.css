@@ -79,6 +79,19 @@
     --radius: 0px;
 }
 
+[data-theme="dungeon"] {
+    --bg-color: #1a1a1a;           /* Dark stone/dungeon */
+    --bg-secondary: #0a0a0a;        /* Deeper darkness */
+    --text-color: #c8a864;          /* Amber/gold text */
+    --text-muted: #8b7355;          /* Muted brown */
+    --accent-color: #d4af37;        /* Gold accent */
+    --border-color: #4a4a4a;        /* Stone gray */
+    --font-body: "Courier New", "Lucida Console", monospace;
+    --font-mono: "Courier New", "Lucida Console", monospace;
+    --card-shadow: none;            /* Flat, no shadows */
+    --radius: 0px;                  /* Sharp edges */
+}
+
 /* --- Global Reset & Base Styles --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -238,6 +251,20 @@ nav a:hover { color: var(--accent-color); }
     text-decoration: blink; /* Note: blink is deprecated but fits the theme spirit */
 }
 
+[data-theme="dungeon"] .cta-button {
+    background-color: transparent;
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    font-family: var(--font-mono);
+}
+[data-theme="dungeon"] .cta-button::before {
+    content: "> ";
+}
+[data-theme="dungeon"] .cta-button:hover {
+    background-color: var(--accent-color);
+    color: #000;
+}
+
 /* --- Main Content Area (Grid) --- */
 .main-content {
     display: grid;
@@ -296,6 +323,24 @@ nav a:hover { color: var(--accent-color); }
     border: 4px groove #00ff00;
     background-color: #000033;
     border-radius: 0;
+}
+
+[data-theme="dungeon"] .card {
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    position: relative;
+}
+[data-theme="dungeon"] .card::before {
+    content: "┌" attr(data-title) "─────────────────────┐";
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+[data-theme="dungeon"] .card:hover {
+    border-color: var(--accent-color);
+    transform: none;
+    box-shadow: none;
 }
 
 .card:hover {
@@ -361,6 +406,20 @@ nav a:hover { color: var(--accent-color); }
 [data-theme="geocities"] .sidebar-widget {
     border: 3px dashed #ff00ff;
     background-color: #1a0000;
+}
+
+[data-theme="dungeon"] .sidebar-widget {
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+}
+[data-theme="dungeon"] .sidebar-widget h3 {
+    border-bottom: 1px dashed var(--text-muted);
+}
+[data-theme="dungeon"] .sidebar-widget h3::before {
+    content: "=== ";
+}
+[data-theme="dungeon"] .sidebar-widget h3::after {
+    content: " ===";
 }
 
 .sidebar-widget h3 {
@@ -448,4 +507,60 @@ footer {
 
 [data-theme="geocities"] .cta-button {
     animation: blink 0.5s infinite;
+}
+
+/* --- Dungeon Crawler Theme Specific Styles --- */
+[data-theme="dungeon"] .logo::before {
+    content: "> ";
+}
+
+[data-theme="dungeon"] nav a::before {
+    content: "> ";
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+[data-theme="dungeon"] nav a:hover::before {
+    opacity: 1;
+}
+[data-theme="dungeon"] nav a:hover {
+    text-decoration: none;
+    color: var(--accent-color);
+}
+
+[data-theme="dungeon"] .hero h1::before {
+    content: "*** ";
+}
+[data-theme="dungeon"] .hero h1::after {
+    content: " ***";
+}
+
+[data-theme="dungeon"] h2::before {
+    content: ">> ";
+    color: var(--text-muted);
+}
+
+[data-theme="dungeon"] .tag {
+    border: 1px solid var(--text-muted);
+    background-color: transparent;
+}
+[data-theme="dungeon"] .tag::before {
+    content: "[";
+}
+[data-theme="dungeon"] .tag::after {
+    content: "]";
+}
+
+[data-theme="dungeon"] footer::before {
+    content: "─────────────────────────────────────────────────────────────────────────────────";
+    display: block;
+    color: var(--border-color);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+[data-theme="dungeon"] a:hover {
+    text-decoration: none;
+    background-color: var(--accent-color);
+    color: #000;
+    padding: 0 2px;
 }
