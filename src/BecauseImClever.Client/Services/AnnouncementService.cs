@@ -11,13 +11,12 @@ namespace BecauseImClever.Client.Services
         /// <inheritdoc/>
         public Task<IEnumerable<Announcement>> GetLatestAnnouncementsAsync()
         {
-            var now = DateTimeOffset.Now;
             var announcements = new List<Announcement>
             {
-                new Announcement("Welcome to my new blog! I've just launched the site.", now, "/"),
-                new Announcement("Speaking at .NET Conf 2025! Join me for a session on Blazor.", now.AddDays(-5), "https://www.dotnetconf.net"),
-                new Announcement("Released a new open source library for logging.", now.AddDays(-12), "https://github.com"),
-                new Announcement("Updated the site theme to a dark developer mode.", now.AddDays(-20), "/"),
+                new Announcement(
+                    "🚀 BecauseImClever.com is now live! Read about how I built this site.",
+                    new DateTimeOffset(2025, 11, 27, 0, 0, 0, TimeSpan.Zero),
+                    "/posts/building-becauseimclever"),
             };
             return Task.FromResult((IEnumerable<Announcement>)announcements);
         }
