@@ -1,6 +1,6 @@
 {
-    "playwright.reuseBrowser": true,
-    "playwright.showTrace": true,
+    "playwright.reuseBrowser": false,
+    "playwright.showTrace": false,
     "playwright.env": {
         "BASE_URL": "https://localhost:7001"
     }
