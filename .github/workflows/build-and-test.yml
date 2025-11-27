@@ -66,8 +66,8 @@ jobs:
           mkdir -p ./TestResults/coverage
           counter=1
           for file in $(find ./TestResults -name "coverage.cobertura.xml" -type f); do
-            # Check if the file contains package data (has <package> elements)
-            if grep -q "<package" "$file"; then
+            # Check if the file contains package data (has <package name=...> elements, not just <packages />)
+            if grep -q '<package name=' "$file"; then
               cp "$file" "./TestResults/coverage/coverage-${counter}.xml"
               echo "Copied: $file -> coverage-${counter}.xml"
               counter=$((counter + 1))
