@@ -58,6 +58,18 @@ jobs:
             --filter "FullyQualifiedName!~E2E" \
             --logger "trx;LogFileName=test-results.trx"
 
+      - name: Find coverage files
+        id: coverage
+        run: |
+          # Find all coverage files and copy to a known location
+          mkdir -p ./TestResults/coverage
+          find ./TestResults -name "coverage.cobertura.xml" -exec cp {} ./TestResults/coverage/ \; 2>/dev/null || true
+          # List found files for debugging
+          ls -la ./TestResults/coverage/ || echo "No coverage files found"
+          # Count files for the summary action
+          count=$(find ./TestResults/coverage -name "*.xml" 2>/dev/null | wc -l)
+          echo "coverage_count=$count" >> $GITHUB_OUTPUT
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -70,13 +82,13 @@ jobs:
         if: always()
         with:
           name: coverage-reports
-          path: ./TestResults/**/coverage.cobertura.xml
+          path: ./TestResults/coverage/*.xml
 
       - name: Code Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
-        if: always()
+        if: steps.coverage.outputs.coverage_count != '0'
         with:
-          filename: ./TestResults/**/coverage.cobertura.xml
+          filename: ./TestResults/coverage/*.xml
           badge: true
           format: markdown
           output: both
