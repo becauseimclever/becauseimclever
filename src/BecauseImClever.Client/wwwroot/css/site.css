@@ -136,6 +136,19 @@ header {
     font-weight: bold;
     font-size: 1.2rem;
     color: var(--accent-color);
+    text-decoration: none;
+}
+.logo:hover {
+    text-decoration: none;
+}
+
+/* Remove focus outline from header elements when not using keyboard navigation */
+header *:focus:not(:focus-visible) {
+    outline: none;
+}
+header *:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
 }
 
 nav ul {
@@ -162,6 +175,20 @@ nav a:hover { color: var(--accent-color); }
 }
 .theme-switch:hover {
     background-color: var(--border-color);
+}
+
+[data-theme="macos7"] .theme-switch {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0 #000000;
+}
+[data-theme="macos7"] .theme-switch:hover {
+    background-color: #eeeeee;
+}
+[data-theme="macos7"] .theme-switch option {
+    background-color: #ffffff;
+    color: #000000;
 }
 
 /* --- Hero Section --- */
