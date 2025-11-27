@@ -63,11 +63,13 @@ jobs:
         run: |
           # Find all coverage files and copy to a known location with unique names
           # Only copy files that contain actual package data (skip empty coverage files)
+          # Find all coverage files and copy to a known location with unique names
+          # Only copy files that contain actual package data (skip empty coverage files)
           mkdir -p ./TestResults/coverage
           counter=1
           for file in $(find ./TestResults -name "coverage.cobertura.xml" -type f); do
-            # Check if the file contains package data (has <package> elements)
-            if grep -q "<package" "$file"; then
+            # Check if the file contains package data (has <package name=...> elements, not just <packages />)
+            if grep -q '<package name=' "$file"; then
               cp "$file" "./TestResults/coverage/coverage-${counter}.xml"
               echo "Copied: $file -> coverage-${counter}.xml"
               counter=$((counter + 1))
@@ -76,6 +78,7 @@ jobs:
             fi
           done
           # List found files for debugging
+          echo "Coverage files found:"
           echo "Coverage files found:"
           ls -la ./TestResults/coverage/ || echo "No coverage files found"
           # Count files for the summary action
