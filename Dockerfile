@@ -31,18 +31,11 @@ RUN dotnet publish src/BecauseImClever.Server/BecauseImClever.Server.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# Create non-root user for security
-RUN groupadd --gid 1000 appgroup && \
-    useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
-
 # Copy published application
 COPY --from=build /app/publish .
 
-# Set ownership to non-root user
-RUN chown -R appuser:appgroup /app
-
-# Switch to non-root user
-USER appuser
+# Use the built-in non-root user ($APP_UID is set to 1654 by default in .NET images)
+USER $APP_UID
 
 # Expose port
 EXPOSE 8580
