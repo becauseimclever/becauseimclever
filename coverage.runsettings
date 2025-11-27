@@ -5,10 +5,27 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura,opencover</Format>
+          <!-- Only include our project assemblies -->
+          <Include>
+            [BecauseImClever.*]*
+          </Include>
           <Exclude>
             [*.Tests]*
             [*]*.Migrations.*
             [*]*.Program
+            [xunit.*]*
+            [Moq]*
+            [bunit.*]*
+            [AngleSharp.*]*
+            [Microsoft.*]*
+            [System.*]*
+            [FluentAssertions]*
+            [coverlet.*]*
+            [Newtonsoft.*]*
+            [NuGet.*]*
+            [Markdig]*
+            [YamlDotNet]*
+            [Octokit]*
           </Exclude>
           <ExcludeByAttribute>
             Obsolete

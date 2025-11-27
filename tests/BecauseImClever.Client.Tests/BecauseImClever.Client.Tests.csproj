@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- Suppress CS0618 and CS0619 obsolete warnings from bUnit migration to new API -->
+    <NoWarn>$(NoWarn);CS0618;CS0619</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
