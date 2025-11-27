@@ -24,6 +24,14 @@ public class GitHubProjectServiceTests
     }
 
     [Fact]
+    public void Constructor_WithNullHttpClient_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new GitHubProjectService(null!));
+        Assert.Equal("httpClient", exception.ParamName);
+    }
+
+    [Fact]
     public async Task GetProjectsAsync_ShouldReturnProjects_WhenApiReturnsData()
     {
         // Arrange

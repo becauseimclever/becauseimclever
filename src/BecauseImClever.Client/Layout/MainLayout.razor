@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
-@inject IJSRuntime JSRuntime
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IThemeService ThemeService
 
 <div class="layout-container">
     <!-- Header -->
@@ -13,13 +15,11 @@
                 <li><a href="about">About</a></li>
             </ul>
         </nav>
-        <select class="theme-switch" @onchange="OnThemeChanged" value="@currentTheme">
-            <option value="vscode">VS Code</option>
-            <option value="retro">Retro Terminal</option>
-            <option value="win95">Windows 95</option>
-            <option value="macos9">Mac OS 9</option>
-            <option value="macos7">Mac OS 7</option>
-            <option value="geocities">GeoCities</option>
+        <select class="theme-switch" @onchange="OnThemeChanged" value="@currentTheme?.Key">
+            @foreach (var theme in availableThemes)
+            {
+                <option value="@theme.Key">@theme.DisplayName</option>
+            }
         </select>
     </header>
 
@@ -32,35 +32,20 @@
 </div>
 
 @code {
-    private string currentTheme = "vscode";
+    private Theme? currentTheme;
+    private IReadOnlyList<Theme> availableThemes = Array.Empty<Theme>();
 
     protected override async Task OnInitializedAsync()
     {
-        // Initialize theme from local storage if available
-        var savedTheme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "theme");
-        if (!string.IsNullOrEmpty(savedTheme))
-        {
-            currentTheme = savedTheme;
-            await ApplyTheme(currentTheme);
-        }
+        availableThemes = ThemeService.GetAvailableThemes();
+        currentTheme = await ThemeService.GetCurrentThemeAsync();
+        await ThemeService.SetThemeAsync(currentTheme);
     }
 
     private async Task OnThemeChanged(ChangeEventArgs e)
     {
-        currentTheme = e.Value?.ToString() ?? "vscode";
-        await ApplyTheme(currentTheme);
-    }
-
-    private async Task ApplyTheme(string theme)
-    {
-        if (theme == "vscode")
-        {
-            await JSRuntime.InvokeVoidAsync("document.documentElement.removeAttribute", "data-theme");
-        }
-        else
-        {
-            await JSRuntime.InvokeVoidAsync("document.documentElement.setAttribute", "data-theme", theme);
-        }
-        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "theme", theme);
+        var selectedKey = e.Value?.ToString();
+        currentTheme = Theme.FromKey(selectedKey);
+        await ThemeService.SetThemeAsync(currentTheme);
     }
 }

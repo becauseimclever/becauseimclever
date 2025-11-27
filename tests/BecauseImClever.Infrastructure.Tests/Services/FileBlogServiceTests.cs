@@ -38,6 +38,52 @@ public class FileBlogServiceTests : IDisposable
     }
 
     [Fact]
+    public void Constructor_WithNullPath_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new FileBlogService(null!));
+        Assert.Equal("postsPath", exception.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WithEmptyPath_ThrowsArgumentException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => new FileBlogService(string.Empty));
+        Assert.Equal("postsPath", exception.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WithWhitespacePath_ThrowsArgumentException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => new FileBlogService("   "));
+        Assert.Equal("postsPath", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task GetPostBySlugAsync_WithNullSlug_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => service.GetPostBySlugAsync(null!));
+        Assert.Equal("slug", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task GetPostBySlugAsync_WithEmptySlug_ThrowsArgumentException()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.GetPostBySlugAsync(string.Empty));
+        Assert.Equal("slug", exception.ParamName);
+    }
+
+    [Fact]
     public async Task GetPostsAsync_ShouldReturnEmptyList_WhenDirectoryDoesNotExist()
     {
         // Arrange

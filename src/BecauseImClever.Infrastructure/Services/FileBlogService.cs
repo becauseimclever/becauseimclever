@@ -8,15 +8,29 @@ namespace BecauseImClever.Infrastructure.Services
     using YamlDotNet.Serialization;
     using YamlDotNet.Serialization.NamingConventions;
 
+    /// <summary>
+    /// A blog service that reads blog posts from markdown files on the file system.
+    /// </summary>
     public class FileBlogService : IBlogService
     {
+        private const string MarkdownFileExtension = "*.md";
         private readonly string postsPath;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileBlogService"/> class.
+        /// </summary>
+        /// <param name="postsPath">The path to the directory containing blog post markdown files.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="postsPath"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="postsPath"/> is empty or whitespace.</exception>
         public FileBlogService(string postsPath)
         {
+            ArgumentNullException.ThrowIfNull(postsPath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(postsPath);
+
             this.postsPath = postsPath;
         }
 
+        /// <inheritdoc/>
         public async Task<IEnumerable<BlogPost>> GetPostsAsync()
         {
             var posts = new List<BlogPost>();
@@ -25,7 +39,7 @@ namespace BecauseImClever.Infrastructure.Services
                 return posts;
             }
 
-            var files = Directory.GetFiles(this.postsPath, "*.md");
+            var files = Directory.GetFiles(this.postsPath, MarkdownFileExtension);
             foreach (var file in files)
             {
                 var content = await File.ReadAllTextAsync(file);
@@ -39,14 +53,21 @@ namespace BecauseImClever.Infrastructure.Services
             return posts.OrderByDescending(p => p.PublishedDate);
         }
 
+        /// <inheritdoc/>
         public async Task<IEnumerable<BlogPost>> GetPostsAsync(int page, int pageSize)
         {
             var allPosts = await this.GetPostsAsync();
             return allPosts.Skip((page - 1) * pageSize).Take(pageSize);
         }
 
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="slug"/> is empty or whitespace.</exception>
         public async Task<BlogPost?> GetPostBySlugAsync(string slug)
         {
+            ArgumentNullException.ThrowIfNull(slug);
+            ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
             var filePath = Path.Combine(this.postsPath, $"{slug}.md");
             if (!File.Exists(filePath))
             {

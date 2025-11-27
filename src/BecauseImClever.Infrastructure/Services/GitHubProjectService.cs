@@ -5,15 +5,25 @@ using System.Text.Json.Serialization;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 
+/// <summary>
+/// A project service that retrieves project information from GitHub repositories.
+/// </summary>
 public class GitHubProjectService : IProjectService
 {
     private readonly HttpClient httpClient;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GitHubProjectService"/> class.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client for making API requests.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpClient"/> is null.</exception>
     public GitHubProjectService(HttpClient httpClient)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
         this.httpClient = httpClient;
     }
 
+    /// <inheritdoc/>
     public async Task<IEnumerable<Project>> GetProjectsAsync()
     {
         // GitHub API requires a User-Agent header

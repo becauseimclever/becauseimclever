@@ -3,131 +3,225 @@ namespace BecauseImClever.Domain.Tests.Entities;
 using BecauseImClever.Domain.Entities;
 
 /// <summary>
-/// Unit tests for the <see cref="Announcement"/> entity.
+/// Unit tests for the <see cref="Announcement"/> value object.
 /// </summary>
 public class AnnouncementTests
 {
+    private const string ValidMessage = "Welcome to the new website!";
+    private const string ValidLink = "https://example.com/announcement";
+    private static readonly DateTimeOffset ValidDate = new DateTimeOffset(2025, 11, 25, 12, 0, 0, TimeSpan.Zero);
+
     [Fact]
-    public void Constructor_ShouldInitializeWithDefaultValues()
+    public void Constructor_WithValidMessageAndDate_CreatesAnnouncement()
     {
         // Arrange & Act
-        var announcement = new Announcement();
+        var announcement = new Announcement(ValidMessage, ValidDate);
 
         // Assert
-        Assert.Equal(string.Empty, announcement.Message);
-        Assert.Equal(default, announcement.Date);
+        Assert.Equal(ValidMessage, announcement.Message);
+        Assert.Equal(ValidDate, announcement.Date);
         Assert.Null(announcement.Link);
     }
 
     [Fact]
-    public void Message_ShouldBeSettableAndGettable()
-    {
-        // Arrange
-        var announcement = new Announcement();
-        var expectedMessage = "Welcome to the new website!";
-
-        // Act
-        announcement.Message = expectedMessage;
-
-        // Assert
-        Assert.Equal(expectedMessage, announcement.Message);
-    }
-
-    [Fact]
-    public void Date_ShouldBeSettableAndGettable()
-    {
-        // Arrange
-        var announcement = new Announcement();
-        var expectedDate = new DateTimeOffset(2025, 11, 25, 12, 0, 0, TimeSpan.Zero);
-
-        // Act
-        announcement.Date = expectedDate;
-
-        // Assert
-        Assert.Equal(expectedDate, announcement.Date);
-    }
-
-    [Fact]
-    public void Link_ShouldBeSettableAndGettable_WhenNotNull()
-    {
-        // Arrange
-        var announcement = new Announcement();
-        var expectedLink = "https://example.com/announcement";
-
-        // Act
-        announcement.Link = expectedLink;
-
-        // Assert
-        Assert.Equal(expectedLink, announcement.Link);
-    }
-
-    [Fact]
-    public void Link_ShouldAllowNullValue()
-    {
-        // Arrange
-        var announcement = new Announcement
-        {
-            Link = "https://example.com",
-        };
-
-        // Act
-        announcement.Link = null;
-
-        // Assert
-        Assert.Null(announcement.Link);
-    }
-
-    [Fact]
-    public void Link_ShouldBeNullableProperty()
+    public void Constructor_WithValidMessageDateAndLink_CreatesAnnouncement()
     {
         // Arrange & Act
-        var announcementWithLink = new Announcement { Link = "https://example.com" };
-        var announcementWithoutLink = new Announcement { Link = null };
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
 
         // Assert
-        Assert.NotNull(announcementWithLink.Link);
-        Assert.Null(announcementWithoutLink.Link);
+        Assert.Equal(ValidMessage, announcement.Message);
+        Assert.Equal(ValidDate, announcement.Date);
+        Assert.Equal(ValidLink, announcement.Link);
     }
 
     [Fact]
-    public void AllProperties_ShouldBeSettableViaObjectInitializer_WithLink()
+    public void Constructor_WithNullMessage_ThrowsArgumentException()
     {
-        // Arrange
-        var expectedMessage = "New feature released!";
-        var expectedDate = DateTimeOffset.Now;
-        var expectedLink = "https://example.com/new-feature";
-
-        // Act
-        var announcement = new Announcement
-        {
-            Message = expectedMessage,
-            Date = expectedDate,
-            Link = expectedLink,
-        };
-
-        // Assert
-        Assert.Equal(expectedMessage, announcement.Message);
-        Assert.Equal(expectedDate, announcement.Date);
-        Assert.Equal(expectedLink, announcement.Link);
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => new Announcement(null!, ValidDate));
+        Assert.Equal("message", exception.ParamName);
     }
 
     [Fact]
-    public void AllProperties_ShouldBeSettableViaObjectInitializer_WithoutLink()
+    public void Constructor_WithEmptyMessage_ThrowsArgumentException()
     {
-        // Arrange
-        var expectedMessage = "Site maintenance scheduled";
-        var expectedDate = DateTimeOffset.Now;
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => new Announcement(string.Empty, ValidDate));
+        Assert.Equal("message", exception.ParamName);
+    }
 
-        // Act
-        var announcement = new Announcement
-        {
-            Message = expectedMessage,
-            Date = expectedDate,
-        };
+    [Fact]
+    public void Constructor_WithWhitespaceMessage_ThrowsArgumentException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => new Announcement("   ", ValidDate));
+        Assert.Equal("message", exception.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WithNullLink_CreatesAnnouncementWithNullLink()
+    {
+        // Arrange & Act
+        var announcement = new Announcement(ValidMessage, ValidDate, null);
 
         // Assert
-        Assert.Equal(expectedMessage, announcement.Message);
-        Assert.Equal(expectedDate, announcement.Date);
         Assert.Null(announcement.Link);
+    }
+
+    [Fact]
+    public void Equals_WithIdenticalAnnouncements_ReturnsTrue()
+    {
+        // Arrange
+        var announcement1 = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var announcement2 = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Act & Assert
+        Assert.True(announcement1.Equals(announcement2));
+        Assert.True(announcement1 == announcement2);
+        Assert.False(announcement1 != announcement2);
+    }
+
+    [Fact]
+    public void Equals_WithDifferentMessage_ReturnsFalse()
+    {
+        // Arrange
+        var announcement1 = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var announcement2 = new Announcement("Different message", ValidDate, ValidLink);
+
+        // Act & Assert
+        Assert.False(announcement1.Equals(announcement2));
+        Assert.False(announcement1 == announcement2);
+        Assert.True(announcement1 != announcement2);
+    }
+
+    [Fact]
+    public void Equals_WithDifferentDate_ReturnsFalse()
+    {
+        // Arrange
+        var announcement1 = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var announcement2 = new Announcement(ValidMessage, ValidDate.AddDays(1), ValidLink);
+
+        // Act & Assert
+        Assert.False(announcement1.Equals(announcement2));
+    }
+
+    [Fact]
+    public void Equals_WithDifferentLink_ReturnsFalse()
+    {
+        // Arrange
+        var announcement1 = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var announcement2 = new Announcement(ValidMessage, ValidDate, "https://other.com");
+
+        // Act & Assert
+        Assert.False(announcement1.Equals(announcement2));
+    }
+
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Act & Assert
+        Assert.False(announcement.Equals(null));
+    }
+
+    [Fact]
+    public void Equals_WithNullViaOperator_ReturnsFalse()
+    {
+        // Arrange
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Act & Assert
+        Assert.False(announcement == null);
+        Assert.True(announcement != null);
+    }
+
+    [Fact]
+    public void Equals_BothNull_ReturnsTrue()
+    {
+        // Arrange
+        Announcement? announcement1 = null;
+        Announcement? announcement2 = null;
+
+        // Act & Assert
+        Assert.True(announcement1 == announcement2);
+    }
+
+    [Fact]
+    public void Equals_WithObjectOfDifferentType_ReturnsFalse()
+    {
+        // Arrange
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var differentObject = "not an announcement";
+
+        // Act & Assert
+        Assert.False(announcement.Equals(differentObject));
+    }
+
+    [Fact]
+    public void GetHashCode_WithIdenticalAnnouncements_ReturnsSameHashCode()
+    {
+        // Arrange
+        var announcement1 = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var announcement2 = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Act & Assert
+        Assert.Equal(announcement1.GetHashCode(), announcement2.GetHashCode());
+    }
+
+    [Fact]
+    public void GetHashCode_WithDifferentAnnouncements_ReturnsDifferentHashCode()
+    {
+        // Arrange
+        var announcement1 = new Announcement(ValidMessage, ValidDate, ValidLink);
+        var announcement2 = new Announcement("Different message", ValidDate, ValidLink);
+
+        // Act & Assert
+        Assert.NotEqual(announcement1.GetHashCode(), announcement2.GetHashCode());
+    }
+
+    [Fact]
+    public void Message_IsReadOnly_CannotBeModified()
+    {
+        // Arrange & Act
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Assert - Verify properties are get-only (immutability check via type)
+        var messageProperty = typeof(Announcement).GetProperty(nameof(Announcement.Message));
+        Assert.NotNull(messageProperty);
+        Assert.False(messageProperty!.CanWrite);
+    }
+
+    [Fact]
+    public void Date_IsReadOnly_CannotBeModified()
+    {
+        // Arrange & Act
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Assert
+        var dateProperty = typeof(Announcement).GetProperty(nameof(Announcement.Date));
+        Assert.NotNull(dateProperty);
+        Assert.False(dateProperty!.CanWrite);
+    }
+
+    [Fact]
+    public void Link_IsReadOnly_CannotBeModified()
+    {
+        // Arrange & Act
+        var announcement = new Announcement(ValidMessage, ValidDate, ValidLink);
+
+        // Assert
+        var linkProperty = typeof(Announcement).GetProperty(nameof(Announcement.Link));
+        Assert.NotNull(linkProperty);
+        Assert.False(linkProperty!.CanWrite);
+    }
+
+    [Fact]
+    public void Announcement_IsSealed_CannotBeInherited()
+    {
+        // Arrange & Act & Assert
+        Assert.True(typeof(Announcement).IsSealed);
     }
 }
