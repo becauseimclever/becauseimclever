@@ -34,3 +34,11 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+/// <summary>
+/// Program class for the BecauseImClever Server.
+/// This partial class enables WebApplicationFactory to access the entry point for E2E testing.
+/// </summary>
+public partial class Program
+{
+}
