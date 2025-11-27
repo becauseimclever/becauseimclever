@@ -1,0 +1,39 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Test results
+**/TestResults/
+coverage-report/
+
+# IDE and editor files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (not needed in container)
+docs/
+*.md
+!README.md
+
+# Scripts
+scripts/
+
+# Test projects
+tests/
+
+# Misc
+*.log
+*.tmp
+*.temp
+Thumbs.db
+.DS_Store
