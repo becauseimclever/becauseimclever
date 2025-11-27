@@ -22,8 +22,15 @@ coverage-report/
 
 # Documentation (not needed in container)
 docs/
-*.md
-!README.md
+
+# Exclude sample blog posts but allow real posts
+src/BecauseImClever.Server/Posts/sample-post-*.md
+src/BecauseImClever.Server/Posts/hello-world.md
+src/BecauseImClever.Server/Posts/async-await.md
+src/BecauseImClever.Server/Posts/blazor-vs-react.md
+src/BecauseImClever.Server/Posts/clean-architecture.md
+src/BecauseImClever.Server/Posts/csharp-12-features.md
+src/BecauseImClever.Server/Posts/vscode-extensions.md
 
 # Scripts
 scripts/
