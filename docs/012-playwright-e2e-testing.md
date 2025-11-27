@@ -2,29 +2,28 @@
 
 ## Overview
 
-Set up Playwright for end-to-end testing of the BecauseImClever website. This includes configuring the existing E2E test project, installing the Playwright VS Code extension for test authoring and debugging, and integrating the Playwright MCP server for AI-assisted test generation and execution.
+Set up Playwright for end-to-end testing of the BecauseImClever website against the deployed site at https://becauseimclever.com/. Tests are run ad-hoc (not in CI/CD) to verify the production site functionality.
 
 ## Goals
 
-- Configure the existing `BecauseImClever.E2E.Tests` project with proper Playwright setup
+- Configure the `BecauseImClever.E2E.Tests` project with Playwright
 - Install and configure the Playwright VS Code extension for interactive test development
 - Set up the Playwright MCP server for GitHub Copilot integration
-- Create initial E2E tests for critical user flows
-- Establish E2E testing conventions and best practices
+- Create E2E tests for critical user flows
+- Run tests ad-hoc against the deployed production site
 
 ## Requirements
 
 ### 1. Playwright Project Configuration
 
-**Current State**: The `BecauseImClever.E2E.Tests` project already has the `Microsoft.Playwright` NuGet package (v1.56.0) but lacks proper test infrastructure.
+**Target**: Tests run against https://becauseimclever.com/
 
-**Files to Modify**:
-- `tests/BecauseImClever.E2E.Tests/BecauseImClever.E2E.Tests.csproj`
-- `tests/BecauseImClever.E2E.Tests/UnitTest1.cs` (rename/replace)
+**Files**:
+- `tests/BecauseImClever.E2E.Tests/PlaywrightTestBase.cs` - Base class with browser lifecycle
+- `tests/BecauseImClever.E2E.Tests/HomePageTests.cs` - Home page tests
+- `tests/BecauseImClever.E2E.Tests/NavigationTests.cs` - Navigation tests
 
-**Implementation**:
-
-#### 1.1 Install Playwright Browsers
+### 1.1 Install Playwright Browsers
 
 Run the Playwright CLI to install required browsers:
 
@@ -39,9 +38,17 @@ dotnet build
 pwsh bin/Debug/net10.0/playwright.ps1 install
 ```
 
-#### 1.2 Create Base Test Class
+### 1.2 Run Tests Ad-Hoc
 
-Create a reusable base class for all E2E tests with common setup:
+```powershell
+# Run all E2E tests against the deployed site
+dotnet test tests/BecauseImClever.E2E.Tests
+
+# Run specific test
+dotnet test tests/BecauseImClever.E2E.Tests --filter "HomePage_LoadsSuccessfully"
+```
+
+### 1.3 Base Test Class
 
 **File**: `tests/BecauseImClever.E2E.Tests/PlaywrightTestBase.cs`
 
@@ -57,7 +64,8 @@ public abstract class PlaywrightTestBase : IAsyncLifetime
     protected IBrowserContext Context { get; private set; } = null!;
     protected IPage Page { get; private set; } = null!;
 
-    protected virtual string BaseUrl => "https://localhost:7001";
+    // Testing against the deployed production site
+    protected virtual string BaseUrl => "https://becauseimclever.com";
 
     public async Task InitializeAsync()
     {
@@ -190,7 +198,7 @@ The Playwright VS Code extension provides:
     "playwright.reuseBrowser": true,
     "playwright.showTrace": true,
     "playwright.env": {
-        "BASE_URL": "https://localhost:7001"
+        "BASE_URL": "https://becauseimclever.com"
     }
 }
 ```
@@ -332,12 +340,12 @@ Examples:
 - [x] Create `NavigationTests`
 - [x] Install Playwright VS Code extension
 - [x] Configure MCP server
-- [x] Add E2E tests to CI/CD pipeline
 - [x] Document test execution process
 
 ## Notes
 
-- E2E tests automatically start the server using `WebServerFixture`
+- E2E tests run against the deployed site at https://becauseimclever.com/
+- Tests are run ad-hoc, not in CI/CD (to avoid issues with self-hosted server complexity)
 - Tests wait for Blazor to fully load before interacting with elements
 - The MCP server enables AI-assisted test authoring directly in the editor
 - Consider using Playwright's codegen feature for complex interactions

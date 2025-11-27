@@ -6,18 +6,10 @@ namespace BecauseImClever.E2E.Tests;
 
 /// <summary>
 /// E2E tests for the home page functionality.
+/// Run ad-hoc against https://becauseimclever.com/.
 /// </summary>
 public class HomePageTests : PlaywrightTestBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="HomePageTests"/> class.
-    /// </summary>
-    /// <param name="serverFixture">The shared web server fixture.</param>
-    public HomePageTests(WebServerFixture serverFixture)
-        : base(serverFixture)
-    {
-    }
-
     /// <summary>
     /// Verifies that the home page loads successfully and displays content.
     /// </summary>
@@ -37,21 +29,22 @@ public class HomePageTests : PlaywrightTestBase
     }
 
     /// <summary>
-    /// Verifies that the site logo navigates to the home page when clicked.
+    /// Verifies that the Home navigation link navigates to the home page when clicked.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task HomePage_ClickLogo_NavigatesToHome()
+    public async Task HomePage_ClickHomeNav_NavigatesToHome()
     {
         // Arrange
         await this.Page.GotoAsync($"{this.BaseUrl}/clock");
-        await this.Page.WaitForSelectorAsync("header .logo", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
-        await this.Page.ClickAsync("header .logo");
+        await this.Page.ClickAsync("nav >> text=Home");
 
-        // Assert
-        await this.Page.WaitForURLAsync(url => url.EndsWith("/") || url == this.BaseUrl);
+        // Assert - Wait for URL to change (Blazor client-side routing)
+        await this.Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex(@"^https://becauseimclever\.com/?$"));
+        Assert.True(this.Page.Url == this.BaseUrl || this.Page.Url == $"{this.BaseUrl}/");
     }
 
     /// <summary>

@@ -6,18 +6,10 @@ namespace BecauseImClever.E2E.Tests;
 
 /// <summary>
 /// E2E tests for site navigation functionality.
+/// Run ad-hoc against https://becauseimclever.com/.
 /// </summary>
 public class NavigationTests : PlaywrightTestBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NavigationTests"/> class.
-    /// </summary>
-    /// <param name="serverFixture">The shared web server fixture.</param>
-    public NavigationTests(WebServerFixture serverFixture)
-        : base(serverFixture)
-    {
-    }
-
     /// <summary>
     /// Verifies that clicking the Clock link navigates to the clock page.
     /// </summary>
@@ -79,7 +71,7 @@ public class NavigationTests : PlaywrightTestBase
     }
 
     /// <summary>
-    /// Verifies that the home page can be accessed from any page via logo.
+    /// Verifies that the home page can be accessed from any page via the Home nav link.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
@@ -87,12 +79,13 @@ public class NavigationTests : PlaywrightTestBase
     {
         // Arrange
         await this.Page.GotoAsync($"{this.BaseUrl}/posts");
-        await this.Page.WaitForSelectorAsync("header .logo", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
-        await this.Page.ClickAsync("header .logo");
+        await this.Page.ClickAsync("nav >> text=Home");
 
-        // Assert
-        await this.Page.WaitForURLAsync(url => url.EndsWith("/") || url == this.BaseUrl);
+        // Assert - Wait for URL to change (Blazor client-side routing)
+        await this.Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex(@"^https://becauseimclever\.com/?$"));
+        Assert.True(this.Page.Url == this.BaseUrl || this.Page.Url == $"{this.BaseUrl}/");
     }
 }
