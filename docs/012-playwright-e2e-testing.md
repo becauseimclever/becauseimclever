@@ -332,12 +332,13 @@ Examples:
 - [x] Create `NavigationTests`
 - [x] Install Playwright VS Code extension
 - [x] Configure MCP server
-- [ ] Add E2E tests to CI/CD pipeline
-- [ ] Document test execution process in README
+- [x] Add E2E tests to CI/CD pipeline
+- [x] Document test execution process
 
 ## Notes
 
-- E2E tests require the application to be running
-- Use `dotnet run` in the Server project before running E2E tests
+- E2E tests automatically start the server using `WebServerFixture`
+- Tests wait for Blazor to fully load before interacting with elements
 - The MCP server enables AI-assisted test authoring directly in the editor
 - Consider using Playwright's codegen feature for complex interactions
+- All 8 E2E tests pass successfully

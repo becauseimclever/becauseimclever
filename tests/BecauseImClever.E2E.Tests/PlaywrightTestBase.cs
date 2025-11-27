@@ -9,8 +9,19 @@ using Microsoft.Playwright;
 /// <summary>
 /// Base class for Playwright E2E tests providing browser lifecycle management.
 /// </summary>
-public abstract class PlaywrightTestBase : IAsyncLifetime
+public abstract class PlaywrightTestBase : IClassFixture<WebServerFixture>, IAsyncLifetime
 {
+    private readonly WebServerFixture serverFixture;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlaywrightTestBase"/> class.
+    /// </summary>
+    /// <param name="serverFixture">The shared web server fixture.</param>
+    protected PlaywrightTestBase(WebServerFixture serverFixture)
+    {
+        this.serverFixture = serverFixture;
+    }
+
     /// <summary>
     /// Gets the Playwright instance.
     /// </summary>
@@ -34,7 +45,7 @@ public abstract class PlaywrightTestBase : IAsyncLifetime
     /// <summary>
     /// Gets the base URL for the application under test.
     /// </summary>
-    protected virtual string BaseUrl => Environment.GetEnvironmentVariable("BASE_URL") ?? "https://localhost:7001";
+    protected string BaseUrl => this.serverFixture.BaseUrl;
 
     /// <summary>
     /// Initializes the Playwright browser and page before each test.

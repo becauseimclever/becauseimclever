@@ -10,6 +10,15 @@ namespace BecauseImClever.E2E.Tests;
 public class HomePageTests : PlaywrightTestBase
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="HomePageTests"/> class.
+    /// </summary>
+    /// <param name="serverFixture">The shared web server fixture.</param>
+    public HomePageTests(WebServerFixture serverFixture)
+        : base(serverFixture)
+    {
+    }
+
+    /// <summary>
     /// Verifies that the home page loads successfully and displays content.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
@@ -22,6 +31,9 @@ public class HomePageTests : PlaywrightTestBase
         // Assert
         Assert.NotNull(response);
         Assert.True(response.Ok, $"Expected successful response but got {response.Status}");
+
+        // Wait for Blazor to load - the navigation should be visible
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
     }
 
     /// <summary>
@@ -33,10 +45,10 @@ public class HomePageTests : PlaywrightTestBase
     {
         // Arrange
         await this.Page.GotoAsync($"{this.BaseUrl}/clock");
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("header .logo", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
-        await this.Page.ClickAsync(".site-name a");
+        await this.Page.ClickAsync("header .logo");
 
         // Assert
         await this.Page.WaitForURLAsync(url => url.EndsWith("/") || url == this.BaseUrl);
@@ -51,14 +63,15 @@ public class HomePageTests : PlaywrightTestBase
     {
         // Arrange
         await this.Page.GotoAsync(this.BaseUrl);
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("select.theme-switch", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
-        // Act
-        await this.Page.SelectOptionAsync(".theme-switch", "terminal");
+        // Act - Select the "dungeon" theme (Dungeon Crawler)
+        await this.Page.SelectOptionAsync("select.theme-switch", "dungeon");
 
-        // Assert
+        // Assert - Wait for theme to be applied
+        await this.Page.WaitForFunctionAsync("document.documentElement.getAttribute('data-theme') === 'dungeon'");
         var dataTheme = await this.Page.GetAttributeAsync("html", "data-theme");
-        Assert.Equal("terminal", dataTheme);
+        Assert.Equal("dungeon", dataTheme);
     }
 
     /// <summary>
@@ -70,10 +83,10 @@ public class HomePageTests : PlaywrightTestBase
     {
         // Arrange & Act
         await this.Page.GotoAsync(this.BaseUrl);
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
-        // Assert - Check for announcements content
-        var announcementsVisible = await this.Page.Locator(".announcements, [class*='announcement']").CountAsync();
-        Assert.True(announcementsVisible >= 0, "Announcements section should be present");
+        // Assert - Check for announcements heading
+        var announcementsHeading = await this.Page.Locator("h3:has-text('Announcements')").CountAsync();
+        Assert.True(announcementsHeading > 0, "Announcements section should be present");
     }
 }

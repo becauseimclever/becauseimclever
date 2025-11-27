@@ -10,6 +10,15 @@ namespace BecauseImClever.E2E.Tests;
 public class NavigationTests : PlaywrightTestBase
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationTests"/> class.
+    /// </summary>
+    /// <param name="serverFixture">The shared web server fixture.</param>
+    public NavigationTests(WebServerFixture serverFixture)
+        : base(serverFixture)
+    {
+    }
+
+    /// <summary>
     /// Verifies that clicking the Clock link navigates to the clock page.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
@@ -18,10 +27,10 @@ public class NavigationTests : PlaywrightTestBase
     {
         // Arrange
         await this.Page.GotoAsync(this.BaseUrl);
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
-        await this.Page.ClickAsync("text=Clock");
+        await this.Page.ClickAsync("nav >> text=Clock");
 
         // Assert
         await this.Page.WaitForURLAsync($"{this.BaseUrl}/clock");
@@ -30,18 +39,18 @@ public class NavigationTests : PlaywrightTestBase
     }
 
     /// <summary>
-    /// Verifies that clicking the Posts link navigates to the posts page.
+    /// Verifies that clicking the Blog link navigates to the posts page.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Navigation_ClickPostsLink_NavigatesToPostsPage()
+    public async Task Navigation_ClickBlogLink_NavigatesToPostsPage()
     {
         // Arrange
         await this.Page.GotoAsync(this.BaseUrl);
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
-        await this.Page.ClickAsync("text=Posts");
+        await this.Page.ClickAsync("nav >> text=Blog");
 
         // Assert
         await this.Page.WaitForURLAsync($"{this.BaseUrl}/posts");
@@ -50,20 +59,23 @@ public class NavigationTests : PlaywrightTestBase
     }
 
     /// <summary>
-    /// Verifies that clicking the GitHub link navigates to GitHub.
+    /// Verifies that clicking the About link navigates to the about page.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Navigation_ClickGitHubLink_OpensGitHubPage()
+    public async Task Navigation_ClickAboutLink_NavigatesToAboutPage()
     {
         // Arrange
         await this.Page.GotoAsync(this.BaseUrl);
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
-        // Act & Assert - Check for GitHub link exists with proper attributes
-        var githubLink = this.Page.Locator("a[href*='github.com']");
-        var count = await githubLink.CountAsync();
-        Assert.True(count > 0, "GitHub link should be present in the navigation");
+        // Act
+        await this.Page.ClickAsync("nav >> text=About");
+
+        // Assert
+        await this.Page.WaitForURLAsync($"{this.BaseUrl}/about");
+        var url = this.Page.Url;
+        Assert.Contains("/about", url);
     }
 
     /// <summary>
@@ -75,10 +87,10 @@ public class NavigationTests : PlaywrightTestBase
     {
         // Arrange
         await this.Page.GotoAsync($"{this.BaseUrl}/posts");
-        await this.Page.WaitForLoadStateAsync();
+        await this.Page.WaitForSelectorAsync("header .logo", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
-        await this.Page.ClickAsync(".site-name a");
+        await this.Page.ClickAsync("header .logo");
 
         // Assert
         await this.Page.WaitForURLAsync(url => url.EndsWith("/") || url == this.BaseUrl);
