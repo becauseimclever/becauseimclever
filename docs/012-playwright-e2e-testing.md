@@ -326,12 +326,12 @@ Examples:
 
 ## Checklist
 
-- [ ] Install Playwright browsers
-- [ ] Create `PlaywrightTestBase` class
-- [ ] Create `HomePageTests`
-- [ ] Create `NavigationTests`
-- [ ] Install Playwright VS Code extension
-- [ ] Configure MCP server
+- [x] Install Playwright browsers
+- [x] Create `PlaywrightTestBase` class
+- [x] Create `HomePageTests`
+- [x] Create `NavigationTests`
+- [x] Install Playwright VS Code extension
+- [x] Configure MCP server
 - [ ] Add E2E tests to CI/CD pipeline
 - [ ] Document test execution process in README
 
