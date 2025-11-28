@@ -14,6 +14,10 @@ builder.Services.AddScoped<IBlogService>(sp =>
 
 builder.Services.AddHttpClient<IProjectService, GitHubProjectService>();
 
+// Configure email settings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection(EmailSettings.SectionName));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

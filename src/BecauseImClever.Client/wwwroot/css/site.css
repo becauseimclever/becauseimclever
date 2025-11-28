@@ -203,6 +203,60 @@ nav a:hover { color: var(--accent-color); }
 .hero h1 { font-size: 2.5rem; }
 .hero p { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 2rem auto; }
 
+/* --- Interests Section --- */
+.interests-section {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.interests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.interest-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.interest-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow);
+    border-color: var(--accent-color);
+}
+
+.interest-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.interest-card h3 {
+    margin-bottom: 0.75rem;
+    color: var(--accent-color);
+}
+
+.interest-card p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.interest-card a {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.interest-card a:hover {
+    color: var(--text-color);
+}
+
 .cta-button {
     display: inline-block;
     background-color: var(--accent-color);
@@ -370,6 +424,55 @@ nav a:hover { color: var(--accent-color); }
     box-shadow: none;
 }
 
+/* Theme-specific Interest Cards */
+[data-theme="win95"] .interest-card {
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    box-shadow: 1px 1px 0 #000000;
+}
+[data-theme="win95"] .interest-card:hover {
+    transform: none;
+}
+
+[data-theme="macos9"] .interest-card {
+    border: 1px solid #808080;
+    box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    background-color: #eeeeee;
+}
+
+[data-theme="macos7"] .interest-card {
+    border: 1px solid #000000;
+    box-shadow: 3px 3px 0 #000000;
+    background-color: #ffffff;
+}
+
+[data-theme="geocities"] .interest-card {
+    border: 4px groove #00ff00;
+    background-color: #000033;
+    border-radius: 0;
+}
+[data-theme="geocities"] .interest-icon {
+    text-shadow: 2px 2px #ff00ff;
+}
+
+[data-theme="dungeon"] .interest-card {
+    border: 1px solid var(--border-color);
+}
+[data-theme="dungeon"] .interest-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+[data-theme="retro"] .interest-card {
+    border: 1px solid var(--accent-color);
+    background-color: transparent;
+}
+[data-theme="retro"] .interest-icon {
+    text-shadow: 0 0 10px var(--accent-color);
+}
+
 .card:hover {
     transform: translateY(-2px);
     box-shadow: var(--card-shadow);
@@ -483,6 +586,15 @@ footer {
     }
     .hero h1 { font-size: 2rem; }
     nav ul { display: none; /* Simplified for demo */ }
+    .interests-section {
+        padding: 1.5rem 1rem;
+    }
+    .interests-grid {
+        grid-template-columns: 1fr;
+    }
+    .interest-icon {
+        font-size: 2.5rem;
+    }
 }
 
 /* --- GeoCities Animations --- */
