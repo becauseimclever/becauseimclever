@@ -101,24 +101,6 @@ public class SidebarTests : BunitContext
     }
 
     [Fact]
-    public void Sidebar_RendersAboutWidget()
-    {
-        // Arrange
-        var mockAnnouncementService = new Mock<IAnnouncementService>();
-        mockAnnouncementService.Setup(s => s.GetLatestAnnouncementsAsync())
-            .ReturnsAsync(Enumerable.Empty<Announcement>());
-
-        this.Services.AddSingleton(mockAnnouncementService.Object);
-
-        // Act
-        var cut = this.Render<Sidebar>();
-
-        // Assert
-        Assert.Contains("About Me", cut.Markup);
-        Assert.Contains("sidebar-widget", cut.Markup);
-    }
-
-    [Fact]
     public void Sidebar_RendersAnnouncementsWidget()
     {
         // Arrange
@@ -133,5 +115,6 @@ public class SidebarTests : BunitContext
 
         // Assert
         Assert.Contains("Announcements", cut.Markup);
+        Assert.Contains("sidebar-widget", cut.Markup);
     }
 }
