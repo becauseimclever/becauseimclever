@@ -42,6 +42,21 @@ public sealed class Theme : IEquatable<Theme>
     public static readonly Theme Dungeon = new Theme("dungeon", "Dungeon Crawler");
 
     /// <summary>
+    /// The Windows XP Luna theme.
+    /// </summary>
+    public static readonly Theme WinXp = new Theme("winxp", "Windows XP");
+
+    /// <summary>
+    /// The Windows Vista Aero theme with glass effects.
+    /// </summary>
+    public static readonly Theme Vista = new Theme("vista", "Windows Vista");
+
+    /// <summary>
+    /// The Raspberry Pi OS PIXEL desktop theme.
+    /// </summary>
+    public static readonly Theme RaspberryPi = new Theme("raspberrypi", "Raspberry Pi");
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Theme"/> class.
     /// </summary>
     /// <param name="key">The unique key used in CSS data attributes.</param>
@@ -75,6 +90,9 @@ public sealed class Theme : IEquatable<Theme>
         MacOs7,
         GeoCities,
         Dungeon,
+        WinXp,
+        Vista,
+        RaspberryPi,
     }.AsReadOnly();
 
     /// <summary>
