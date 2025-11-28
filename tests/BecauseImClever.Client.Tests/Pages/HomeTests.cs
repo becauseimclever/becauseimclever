@@ -153,4 +153,110 @@ public class HomeTests : BunitContext
         // Assert
         Assert.Contains("Latest Posts", cut.Markup);
     }
+
+    [Fact]
+    public void Home_RendersInterestsSection()
+    {
+        // Arrange
+        var mockBlogService = new Mock<IBlogService>();
+        var mockAnnouncementService = new Mock<IAnnouncementService>();
+
+        mockBlogService.Setup(s => s.GetPostsAsync(1, 4)).ReturnsAsync(Enumerable.Empty<BlogPost>());
+        mockAnnouncementService.Setup(s => s.GetLatestAnnouncementsAsync())
+            .ReturnsAsync(Enumerable.Empty<Announcement>());
+
+        this.Services.AddSingleton(mockBlogService.Object);
+        this.Services.AddSingleton(mockAnnouncementService.Object);
+
+        // Act
+        var cut = this.Render<Home>();
+
+        // Assert
+        Assert.Contains("What I Build", cut.Markup);
+    }
+
+    [Fact]
+    public void Home_Renders3DPrintingInterest()
+    {
+        // Arrange
+        var mockBlogService = new Mock<IBlogService>();
+        var mockAnnouncementService = new Mock<IAnnouncementService>();
+
+        mockBlogService.Setup(s => s.GetPostsAsync(1, 4)).ReturnsAsync(Enumerable.Empty<BlogPost>());
+        mockAnnouncementService.Setup(s => s.GetLatestAnnouncementsAsync())
+            .ReturnsAsync(Enumerable.Empty<Announcement>());
+
+        this.Services.AddSingleton(mockBlogService.Object);
+        this.Services.AddSingleton(mockAnnouncementService.Object);
+
+        // Act
+        var cut = this.Render<Home>();
+
+        // Assert
+        Assert.Contains("3D Printing", cut.Markup);
+    }
+
+    [Fact]
+    public void Home_RendersIoTProjectsInterest()
+    {
+        // Arrange
+        var mockBlogService = new Mock<IBlogService>();
+        var mockAnnouncementService = new Mock<IAnnouncementService>();
+
+        mockBlogService.Setup(s => s.GetPostsAsync(1, 4)).ReturnsAsync(Enumerable.Empty<BlogPost>());
+        mockAnnouncementService.Setup(s => s.GetLatestAnnouncementsAsync())
+            .ReturnsAsync(Enumerable.Empty<Announcement>());
+
+        this.Services.AddSingleton(mockBlogService.Object);
+        this.Services.AddSingleton(mockAnnouncementService.Object);
+
+        // Act
+        var cut = this.Render<Home>();
+
+        // Assert
+        Assert.Contains("IoT Projects", cut.Markup);
+    }
+
+    [Fact]
+    public void Home_RendersGameControllersInterest()
+    {
+        // Arrange
+        var mockBlogService = new Mock<IBlogService>();
+        var mockAnnouncementService = new Mock<IAnnouncementService>();
+
+        mockBlogService.Setup(s => s.GetPostsAsync(1, 4)).ReturnsAsync(Enumerable.Empty<BlogPost>());
+        mockAnnouncementService.Setup(s => s.GetLatestAnnouncementsAsync())
+            .ReturnsAsync(Enumerable.Empty<Announcement>());
+
+        this.Services.AddSingleton(mockBlogService.Object);
+        this.Services.AddSingleton(mockAnnouncementService.Object);
+
+        // Act
+        var cut = this.Render<Home>();
+
+        // Assert
+        Assert.Contains("Game Controllers", cut.Markup);
+        Assert.Contains("GP2040-CE", cut.Markup);
+    }
+
+    [Fact]
+    public void Home_RendersGP2040CELink()
+    {
+        // Arrange
+        var mockBlogService = new Mock<IBlogService>();
+        var mockAnnouncementService = new Mock<IAnnouncementService>();
+
+        mockBlogService.Setup(s => s.GetPostsAsync(1, 4)).ReturnsAsync(Enumerable.Empty<BlogPost>());
+        mockAnnouncementService.Setup(s => s.GetLatestAnnouncementsAsync())
+            .ReturnsAsync(Enumerable.Empty<Announcement>());
+
+        this.Services.AddSingleton(mockBlogService.Object);
+        this.Services.AddSingleton(mockAnnouncementService.Object);
+
+        // Act
+        var cut = this.Render<Home>();
+
+        // Assert
+        Assert.Contains("href=\"https://gp2040-ce.info/\"", cut.Markup);
+    }
 }

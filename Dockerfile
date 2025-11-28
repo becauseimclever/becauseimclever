@@ -44,5 +44,15 @@ EXPOSE 8580
 ENV ASPNETCORE_URLS=http://+:8580
 ENV ASPNETCORE_ENVIRONMENT=Production
 
+# Email settings - pass these at runtime via docker run -e or docker-compose
+# ENV EmailSettings__SmtpHost=smtp.office365.com
+# ENV EmailSettings__SmtpPort=587
+# ENV EmailSettings__SmtpUsername=your-email@yourdomain.com
+# ENV EmailSettings__SmtpPassword=your-password
+# ENV EmailSettings__EnableSsl=true
+# ENV EmailSettings__FromAddress=your-email@yourdomain.com
+# ENV EmailSettings__FromName=BecauseImClever Contact Form
+# ENV EmailSettings__ToAddress=your-email@yourdomain.com
+
 # Start the application
 ENTRYPOINT ["dotnet", "BecauseImClever.Server.dll"]

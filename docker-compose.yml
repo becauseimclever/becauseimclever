@@ -1,0 +1,21 @@
+services:
+  web:
+    image: ghcr.io/becauseimclever/becauseimclever:main
+    container_name: becauseimclever
+    restart: unless-stopped
+    ports:
+      - "8580:8580"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8580
+      # Email settings from .env file
+      - EmailSettings__SmtpHost=${SMTP_HOST}
+      - EmailSettings__SmtpPort=${SMTP_PORT}
+      - EmailSettings__SmtpUsername=${SMTP_USERNAME}
+      - EmailSettings__SmtpPassword=${SMTP_PASSWORD}
+      - EmailSettings__EnableSsl=${SMTP_ENABLE_SSL}
+      - EmailSettings__FromAddress=${SMTP_FROM_ADDRESS}
+      - EmailSettings__FromName=${SMTP_FROM_NAME}
+      - EmailSettings__ToAddress=${SMTP_TO_ADDRESS}
+    env_file:
+      - .env

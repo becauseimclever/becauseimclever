@@ -1,4 +1,6 @@
 @page "/contact"
+@using BecauseImClever.Domain.Entities
+@inject HttpClient Http
 
 <PageTitle>Contact</PageTitle>
 
@@ -6,8 +8,101 @@
     <div class="content-area">
         <div class="card">
             <h1>Contact Me</h1>
-            <p>You can reach me at example@example.com.</p>
+            <p>Have a question, project idea, or just want to say hello? Fill out the form below and I'll get back to you as soon as I can.</p>
+            
+            @if (isSubmitted)
+            {
+                <div class="alert alert-success" style="background-color: var(--accent-color); color: white; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
+                    <strong>Thanks for reaching out!</strong> Your message has been sent successfully. I'll get back to you soon.
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-error" style="background-color: #dc3545; color: white; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
+                    <strong>Oops!</strong> @errorMessage
+                </div>
+            }
+
+            @if (!isSubmitted)
+            {
+                <form @onsubmit="HandleSubmit" @onsubmit:preventDefault style="margin-top: 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="name" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Name *</label>
+                        <input type="text" id="name" @bind="contactMessage.Name" required
+                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color);"
+                               placeholder="Your name" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="email" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Email *</label>
+                        <input type="email" id="email" @bind="contactMessage.Email" required
+                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color);"
+                               placeholder="your.email@example.com" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="subject" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Subject *</label>
+                        <input type="text" id="subject" @bind="contactMessage.Subject" required
+                               style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color);"
+                               placeholder="What's this about?" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label for="message" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Message *</label>
+                        <textarea id="message" @bind="contactMessage.Message" required rows="6"
+                                  style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color); resize: vertical;"
+                                  placeholder="What's on your mind?"></textarea>
+                    </div>
+
+                    <button type="submit" class="cta-button" disabled="@isSubmitting" style="width: 100%;">
+                        @if (isSubmitting)
+                        {
+                            <span>Sending...</span>
+                        }
+                        else
+                        {
+                            <span>Send Message</span>
+                        }
+                    </button>
+                </form>
+            }
         </div>
     </div>
     <Sidebar />
 </main>
+
+@code {
+    private ContactMessage contactMessage = new();
+    private bool isSubmitting = false;
+    private bool isSubmitted = false;
+    private string? errorMessage;
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/contact", contactMessage);
+
+            if (response.IsSuccessStatusCode)
+            {
+                isSubmitted = true;
+                contactMessage = new ContactMessage();
+            }
+            else
+            {
+                errorMessage = "Failed to send message. Please try again later.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "An error occurred. Please try again later.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
