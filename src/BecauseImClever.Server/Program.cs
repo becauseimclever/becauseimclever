@@ -1,5 +1,6 @@
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Infrastructure.Services;
+using Microsoft.Net.Http.Headers;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,13 +30,60 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+
+// Configure static file caching
+// Framework files use content hashing, so they can be cached indefinitely
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.Context.Request.Path.Value ?? string.Empty;
+
+        // Blazor framework files (DLLs, WASM, etc.) are fingerprinted and can be cached long-term
+        if (path.StartsWith("/_framework/", StringComparison.OrdinalIgnoreCase))
+        {
+            // Cache for 1 year since these files have content hashes in their names
+            ctx.Context.Response.Headers[HeaderNames.CacheControl] = "public, max-age=31536000, immutable";
+        }
+        else if (path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".woff", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
+        {
+            // Static assets: cache for 1 day with revalidation
+            ctx.Context.Response.Headers[HeaderNames.CacheControl] = "public, max-age=86400";
+        }
+        else if (path.EndsWith("index.html", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            // HTML files should not be cached to ensure users get the latest version
+            ctx.Context.Response.Headers[HeaderNames.CacheControl] = "no-cache, no-store, must-revalidate";
+            ctx.Context.Response.Headers[HeaderNames.Pragma] = "no-cache";
+            ctx.Context.Response.Headers[HeaderNames.Expires] = "0";
+        }
+    },
+});
 
 app.UseRouting();
 
 app.MapRazorPages();
 app.MapControllers();
-app.MapFallbackToFile("index.html");
+
+// Fallback to index.html with no-cache headers for SPA routing
+app.MapFallbackToFile("index.html", new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Ensure the fallback index.html is never cached
+        ctx.Context.Response.Headers[HeaderNames.CacheControl] = "no-cache, no-store, must-revalidate";
+        ctx.Context.Response.Headers[HeaderNames.Pragma] = "no-cache";
+        ctx.Context.Response.Headers[HeaderNames.Expires] = "0";
+    },
+});
 
 app.Run();
 
