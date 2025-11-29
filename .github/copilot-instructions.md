@@ -44,6 +44,33 @@ Format: `MAJOR.MINOR.PATCH`
 
 ---
 
+## Feature-Driven Development
+
+### Principle
+> All code changes must be tied to a documented feature for traceability and project documentation.
+
+### Rules
+1. **Feature Documentation Required**: Before implementing any new feature, bug fix, or enhancement, create a feature document in the `docs/` folder.
+2. **Naming Convention**: Feature documents should follow the pattern `XXX-feature-name.md` where `XXX` is a sequential number (e.g., `015-user-authentication.md`).
+3. **Document Content**: Each feature document should include:
+   - Feature description and goals
+   - Technical approach
+   - Affected components/layers
+   - Any relevant design decisions
+
+### Exceptions
+The following types of changes do NOT require feature documentation:
+- **Blog post content**: Adding, updating, or removing Markdown blog posts (content-only changes in `Posts/` folder).
+- **Typo fixes**: Simple text corrections in documentation or comments.
+- **Dependency updates**: Routine package version updates (unless they include breaking changes).
+
+### Workflow
+1. Create or reference a feature document before starting work.
+2. Link commits and PRs to the feature document when applicable.
+3. Update the feature document as implementation progresses if needed.
+
+---
+
 ## SOLID Principles
 
 ### S - Single Responsibility Principle (SRP)

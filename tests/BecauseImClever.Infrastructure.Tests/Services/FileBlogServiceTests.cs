@@ -1,5 +1,6 @@
 namespace BecauseImClever.Infrastructure.Tests.Services;
 
+using BecauseImClever.Domain.Entities;
 using BecauseImClever.Infrastructure.Services;
 
 /// <summary>
@@ -464,6 +465,126 @@ image: /images/posts/my-post/feature.png
         // Assert
         Assert.NotNull(post);
         Assert.Equal("/images/posts/my-post/feature.png", post.Image);
+    }
+
+    [Fact]
+    public async Task GetPostsAsync_ShouldParseStatusFromFrontMatter()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var content = @"---
+title: Draft Post
+summary: A draft post
+date: 2025-11-29
+tags: []
+status: draft
+---
+# Content";
+        var filePath = Path.Combine(this.testPostsPath, "draft-post.md");
+        await File.WriteAllTextAsync(filePath, content);
+
+        // Act
+        var posts = await service.GetPostsAsync();
+
+        // Assert
+        Assert.Single(posts);
+        Assert.Equal(PostStatus.Draft, posts.First().Status);
+    }
+
+    [Fact]
+    public async Task GetPostsAsync_ShouldDefaultToPublished_WhenStatusNotSpecified()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        await this.CreateTestPostFileAsync("no-status-post", "No Status Post", "Summary", "2025-11-29");
+
+        // Act
+        var posts = await service.GetPostsAsync();
+
+        // Assert
+        Assert.Single(posts);
+        Assert.Equal(PostStatus.Published, posts.First().Status);
+    }
+
+    [Fact]
+    public async Task GetPostBySlugAsync_ShouldParseStatusFromFrontMatter()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var content = @"---
+title: Debug Post
+summary: A debug post
+date: 2025-11-29
+tags: []
+status: debug
+---
+# Content";
+        var filePath = Path.Combine(this.testPostsPath, "debug-post.md");
+        await File.WriteAllTextAsync(filePath, content);
+
+        // Act
+        var post = await service.GetPostBySlugAsync("debug-post");
+
+        // Assert
+        Assert.NotNull(post);
+        Assert.Equal(PostStatus.Debug, post.Status);
+    }
+
+    [Theory]
+    [InlineData("draft", PostStatus.Draft)]
+    [InlineData("published", PostStatus.Published)]
+    [InlineData("debug", PostStatus.Debug)]
+    [InlineData("Draft", PostStatus.Draft)]
+    [InlineData("PUBLISHED", PostStatus.Published)]
+    [InlineData("DEBUG", PostStatus.Debug)]
+    public async Task GetPostBySlugAsync_ShouldParseStatusCaseInsensitive(string statusValue, PostStatus expectedStatus)
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var content = $@"---
+title: Test Post
+summary: A test post
+date: 2025-11-29
+tags: []
+status: {statusValue}
+---
+# Content";
+        var filePath = Path.Combine(this.testPostsPath, "test-post.md");
+        await File.WriteAllTextAsync(filePath, content);
+
+        // Act
+        var post = await service.GetPostBySlugAsync("test-post");
+
+        // Assert
+        Assert.NotNull(post);
+        Assert.Equal(expectedStatus, post.Status);
+
+        // Cleanup for next iteration
+        File.Delete(filePath);
+    }
+
+    [Fact]
+    public async Task GetPostBySlugAsync_ShouldDefaultToPublished_WhenStatusInvalid()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var content = @"---
+title: Invalid Status Post
+summary: A post with invalid status
+date: 2025-11-29
+tags: []
+status: invalid_status
+---
+# Content";
+        var filePath = Path.Combine(this.testPostsPath, "invalid-status-post.md");
+        await File.WriteAllTextAsync(filePath, content);
+
+        // Act
+        var post = await service.GetPostBySlugAsync("invalid-status-post");
+
+        // Assert
+        Assert.NotNull(post);
+        Assert.Equal(PostStatus.Published, post.Status);
     }
 
     private async Task CreateTestPostFileAsync(string slug, string title, string summary, string date)

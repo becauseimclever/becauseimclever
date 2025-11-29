@@ -3,6 +3,7 @@ title: Mastering Async/Await
 summary: Common pitfalls and best practices for asynchronous programming in C#.
 date: 2025-11-01
 tags: [csharp, async, performance]
+status: debug
 ---
 
 # Mastering Async/Await

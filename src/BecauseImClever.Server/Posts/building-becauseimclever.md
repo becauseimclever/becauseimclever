@@ -3,6 +3,7 @@ title: Building BecauseImClever.com - A 4-Day Journey
 summary: How I built my personal website from scratch using .NET 10, Blazor, and AI-assisted development.
 date: 2025-11-27
 tags: [blazor, dotnet, architecture, devops, ai]
+status: published
 ---
 
 # Building BecauseImClever.com: A 4-Day Journey

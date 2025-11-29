@@ -3,6 +3,7 @@ title: How to Add Images to Blog Posts
 summary: A quick guide to embedding images in your markdown blog posts on BecauseImClever.com.
 date: 2025-11-29
 tags: [tutorial, blogging, images]
+status: draft
 ---
 
 # How to Add Images to Blog Posts

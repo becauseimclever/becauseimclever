@@ -21,6 +21,7 @@ public class BlogPostTests
         Assert.NotNull(blogPost.Tags);
         Assert.Empty(blogPost.Tags);
         Assert.Equal(string.Empty, blogPost.Slug);
+        Assert.Equal(PostStatus.Published, blogPost.Status);
     }
 
     [Fact]
@@ -180,5 +181,29 @@ public class BlogPostTests
 
         // Assert
         Assert.Null(blogPost.Image);
+    }
+
+    [Fact]
+    public void Status_ShouldBeSettableAndGettable()
+    {
+        // Arrange
+        var blogPost = new BlogPost();
+        var expectedStatus = PostStatus.Draft;
+
+        // Act
+        blogPost.Status = expectedStatus;
+
+        // Assert
+        Assert.Equal(expectedStatus, blogPost.Status);
+    }
+
+    [Fact]
+    public void Status_ShouldDefaultToPublished()
+    {
+        // Arrange & Act
+        var blogPost = new BlogPost();
+
+        // Assert
+        Assert.Equal(PostStatus.Published, blogPost.Status);
     }
 }

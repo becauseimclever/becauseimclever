@@ -78,6 +78,22 @@ namespace BecauseImClever.Infrastructure.Services
             return this.ParsePost(content, slug);
         }
 
+        private static PostStatus ParseStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return PostStatus.Published;
+            }
+
+            return status.ToLowerInvariant() switch
+            {
+                "draft" => PostStatus.Draft,
+                "published" => PostStatus.Published,
+                "debug" => PostStatus.Debug,
+                _ => PostStatus.Published,
+            };
+        }
+
         private BlogPost? ParsePost(string content, string slug)
         {
             var pipeline = new MarkdownPipelineBuilder()
@@ -114,6 +130,7 @@ namespace BecauseImClever.Infrastructure.Services
                     Tags = metadata.Tags,
                     Slug = slug,
                     Image = metadata.Image,
+                    Status = ParseStatus(metadata.Status),
                 };
             }
             catch
@@ -133,6 +150,8 @@ namespace BecauseImClever.Infrastructure.Services
             public List<string> Tags { get; set; } = new();
 
             public string? Image { get; set; }
+
+            public string? Status { get; set; }
         }
     }
 }

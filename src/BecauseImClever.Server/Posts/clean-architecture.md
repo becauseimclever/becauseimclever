@@ -3,6 +3,7 @@ title: The Case for Clean Architecture
 summary: Why separating concerns is crucial for long-term project health.
 date: 2025-11-15
 tags: [architecture, design-patterns, clean-code]
+status: debug
 ---
 
 # The Case for Clean Architecture

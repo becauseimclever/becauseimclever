@@ -3,6 +3,7 @@ title: Exploring C# 12 Features
 summary: A deep dive into the new features introduced in C# 12.
 date: 2025-11-20
 tags: [csharp, dotnet, programming]
+status: debug
 ---
 
 # Exploring C# 12 Features

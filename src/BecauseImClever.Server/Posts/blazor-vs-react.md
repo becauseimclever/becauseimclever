@@ -3,6 +3,7 @@ title: Blazor vs React - A .NET Developer's Perspective
 summary: Comparing the two popular frontend frameworks.
 date: 2025-11-10
 tags: [blazor, react, frontend]
+status: debug
 ---
 
 # Blazor vs React

@@ -3,6 +3,7 @@ title: Top 5 VS Code Extensions for .NET Developers
 summary: Boost your productivity with these essential extensions.
 date: 2025-11-05
 tags: [vscode, tools, productivity]
+status: debug
 ---
 
 # Top 5 VS Code Extensions
