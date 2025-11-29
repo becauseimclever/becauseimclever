@@ -113,6 +113,7 @@ namespace BecauseImClever.Infrastructure.Services
                     PublishedDate = metadata.Date,
                     Tags = metadata.Tags,
                     Slug = slug,
+                    Image = metadata.Image,
                 };
             }
             catch
@@ -130,6 +131,8 @@ namespace BecauseImClever.Infrastructure.Services
             public DateTimeOffset Date { get; set; }
 
             public List<string> Tags { get; set; } = new();
+
+            public string? Image { get; set; }
         }
     }
 }

@@ -399,6 +399,73 @@ This is a **bold** paragraph.
         Assert.Single(posts);
     }
 
+    [Fact]
+    public async Task GetPostsAsync_ShouldParseImageFromFrontMatter()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var content = @"---
+title: Post With Image
+summary: A post with a hero image
+date: 2025-11-29
+tags: [images]
+image: /images/posts/post-with-image/hero.jpg
+---
+# Post With Image
+
+This post has a hero image.";
+        var filePath = Path.Combine(this.testPostsPath, "post-with-image.md");
+        await File.WriteAllTextAsync(filePath, content);
+
+        // Act
+        var posts = await service.GetPostsAsync();
+
+        // Assert
+        Assert.Single(posts);
+        var post = posts.First();
+        Assert.Equal("/images/posts/post-with-image/hero.jpg", post.Image);
+    }
+
+    [Fact]
+    public async Task GetPostsAsync_ShouldReturnNullImage_WhenNotInFrontMatter()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        await this.CreateTestPostFileAsync("no-image-post", "No Image Post", "Summary", "2025-11-29");
+
+        // Act
+        var posts = await service.GetPostsAsync();
+
+        // Assert
+        Assert.Single(posts);
+        var post = posts.First();
+        Assert.Null(post.Image);
+    }
+
+    [Fact]
+    public async Task GetPostBySlugAsync_ShouldParseImageFromFrontMatter()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var content = @"---
+title: Post With Image
+summary: A post with a hero image
+date: 2025-11-29
+tags: []
+image: /images/posts/my-post/feature.png
+---
+# Content";
+        var filePath = Path.Combine(this.testPostsPath, "my-post.md");
+        await File.WriteAllTextAsync(filePath, content);
+
+        // Act
+        var post = await service.GetPostBySlugAsync("my-post");
+
+        // Assert
+        Assert.NotNull(post);
+        Assert.Equal("/images/posts/my-post/feature.png", post.Image);
+    }
+
     private async Task CreateTestPostFileAsync(string slug, string title, string summary, string date)
     {
         var content = $@"---

@@ -52,8 +52,57 @@ To run all tests (Unit, Component, and E2E):
 dotnet test
 ```
 
+## Blog Posts
+
+Blog posts are written in Markdown and stored in `src/BecauseImClever.Server/Posts/`.
+
+### Creating a New Post
+
+1. Create a new `.md` file in the Posts folder (filename becomes the URL slug)
+2. Add YAML front matter with required metadata:
+
+```yaml
+---
+title: My Post Title
+summary: A brief description of the post
+date: 2025-11-29
+tags: [tag1, tag2]
+---
+
+# Your content here...
+```
+
+### Adding Images to Posts
+
+Images are stored in `src/BecauseImClever.Server/wwwroot/images/posts/{post-slug}/`.
+
+**Step 1**: Create a folder matching your post's slug:
+```powershell
+New-Item -ItemType Directory -Path "src/BecauseImClever.Server/wwwroot/images/posts/my-post-slug"
+```
+
+**Step 2**: Add your optimized images to the folder.
+
+**Step 3**: Reference images in your Markdown using absolute paths:
+```markdown
+![Alt text describing the image](/images/posts/my-post-slug/screenshot.png)
+```
+
+**Image Guidelines**:
+| Format | Use Case |
+|--------|----------|
+| PNG | Screenshots, images with text |
+| JPEG | Photos, complex images |
+| SVG | Diagrams, icons |
+| GIF | Animations |
+
+- Keep images under 500KB (optimize before adding)
+- Use lowercase, hyphenated filenames: `feature-screenshot.png`
+- Always provide descriptive alt text for accessibility
+
 ## Documentation
 
 Feature specifications and architectural decisions are documented in the `docs/` folder.
 
 - [Feature 001: Root Website Setup](docs/001-root-website-setup.md)
+- [Feature 014: Blog Post Images](docs/014-blog-post-images.md)

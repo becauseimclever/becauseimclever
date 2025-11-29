@@ -24,6 +24,10 @@
         {
             <PageTitle>@post.Title</PageTitle>
             <article class="card">
+                @if (!string.IsNullOrEmpty(post.Image))
+                {
+                    <img src="@post.Image" alt="@post.Title" class="post-hero-image" />
+                }
                 <h1>@post.Title</h1>
                 <div class="card-meta">@post.PublishedDate.ToString("MMMM dd, yyyy")</div>
                 <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0;" />
