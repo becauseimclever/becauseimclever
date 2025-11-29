@@ -3,6 +3,7 @@ title: Sample Post 36
 summary: This is a summary for sample post number 36. It is generated for testing purposes.
 date: 2025-10-20
 tags: [test, sample, generated]
+status: debug
 ---
 
 # Sample Post 36

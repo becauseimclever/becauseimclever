@@ -3,6 +3,7 @@ title: Sample Post 55
 summary: This is a summary for sample post number 55. It is generated for testing purposes.
 date: 2025-10-01
 tags: [test, sample, generated]
+status: debug
 ---
 
 # Sample Post 55

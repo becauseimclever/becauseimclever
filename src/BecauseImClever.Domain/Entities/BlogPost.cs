@@ -39,4 +39,9 @@ public class BlogPost
     /// Gets or sets the URL path to the hero/featured image for the blog post.
     /// </summary>
     public string? Image { get; set; }
+
+    /// <summary>
+    /// Gets or sets the publication status of the blog post.
+    /// </summary>
+    public PostStatus Status { get; set; } = PostStatus.Published;
 }

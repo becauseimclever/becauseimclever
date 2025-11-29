@@ -3,6 +3,7 @@ title: Sample Post 8
 summary: This is a summary for sample post number 8. It is generated for testing purposes.
 date: 2025-11-17
 tags: [test, sample, generated]
+status: debug
 ---
 
 # Sample Post 8
