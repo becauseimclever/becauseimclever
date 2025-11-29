@@ -85,13 +85,46 @@ public class ThemeTests
     }
 
     [Fact]
+    public void WinXp_HasCorrectProperties()
+    {
+        // Arrange & Act
+        var theme = Theme.WinXp;
+
+        // Assert
+        Assert.Equal("winxp", theme.Key);
+        Assert.Equal("Windows XP", theme.DisplayName);
+    }
+
+    [Fact]
+    public void Vista_HasCorrectProperties()
+    {
+        // Arrange & Act
+        var theme = Theme.Vista;
+
+        // Assert
+        Assert.Equal("vista", theme.Key);
+        Assert.Equal("Windows Vista", theme.DisplayName);
+    }
+
+    [Fact]
+    public void RaspberryPi_HasCorrectProperties()
+    {
+        // Arrange & Act
+        var theme = Theme.RaspberryPi;
+
+        // Assert
+        Assert.Equal("raspberrypi", theme.Key);
+        Assert.Equal("Raspberry Pi", theme.DisplayName);
+    }
+
+    [Fact]
     public void All_ContainsAllThemes()
     {
         // Arrange & Act
         var allThemes = Theme.All;
 
         // Assert
-        Assert.Equal(7, allThemes.Count);
+        Assert.Equal(10, allThemes.Count);
         Assert.Contains(Theme.VsCode, allThemes);
         Assert.Contains(Theme.Retro, allThemes);
         Assert.Contains(Theme.Win95, allThemes);
@@ -99,6 +132,9 @@ public class ThemeTests
         Assert.Contains(Theme.MacOs7, allThemes);
         Assert.Contains(Theme.GeoCities, allThemes);
         Assert.Contains(Theme.Dungeon, allThemes);
+        Assert.Contains(Theme.WinXp, allThemes);
+        Assert.Contains(Theme.Vista, allThemes);
+        Assert.Contains(Theme.RaspberryPi, allThemes);
     }
 
     [Fact]
@@ -303,6 +339,9 @@ public class ThemeTests
     [InlineData("macos7")]
     [InlineData("geocities")]
     [InlineData("dungeon")]
+    [InlineData("winxp")]
+    [InlineData("vista")]
+    [InlineData("raspberrypi")]
     public void FromKey_WithAllValidKeys_ReturnsCorrectTheme(string key)
     {
         // Arrange & Act

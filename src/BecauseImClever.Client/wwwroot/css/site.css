@@ -92,6 +92,58 @@
     --radius: 0px;                  /* Sharp edges */
 }
 
+[data-theme="winxp"] {
+    --bg-color: #ece9d8;              /* Classic XP window background */
+    --bg-secondary: #d4d0c8;          /* Secondary/dialog background */
+    --text-color: #000000;            /* Black text */
+    --text-muted: #555555;            /* Muted gray text */
+    --accent-color: #0a246a;          /* Title bar blue */
+    --accent-light: #0054e3;          /* Lighter blue for highlights */
+    --accent-gradient-start: #0054e3; /* Button gradient start */
+    --accent-gradient-end: #000080;   /* Button gradient end */
+    --xp-green: #5eac00;              /* Start button green */
+    --xp-green-light: #81c81d;        /* Lighter green */
+    --border-color: #0054e3;          /* Blue borders */
+    --border-light: #ffffff;          /* 3D effect light edge */
+    --border-dark: #003c74;           /* 3D effect dark edge */
+    --font-body: "Tahoma", "Segoe UI", sans-serif;
+    --font-mono: "Lucida Console", monospace;
+    --card-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    --radius: 6px;                    /* XP's rounded corners */
+    --xp-title-gradient: linear-gradient(180deg, #0054e3 0%, #2490f1 10%, #0054e3 90%, #003c74 100%);
+}
+
+[data-theme="vista"] {
+    --bg-color: #1b3a5c;                   /* Deep blue background */
+    --bg-secondary: rgba(30, 60, 90, 0.85); /* Translucent blue panel */
+    --text-color: #ffffff;                  /* White text */
+    --text-muted: #b0c4de;                  /* Light steel blue */
+    --accent-color: #4a90d9;                /* Aero blue */
+    --accent-light: #7ab8f5;                /* Lighter accent */
+    --border-color: rgba(255, 255, 255, 0.3); /* Glass border */
+    --font-body: "Segoe UI", "Trebuchet MS", sans-serif;
+    --font-mono: "Consolas", "Lucida Console", monospace;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --radius: 8px;
+    --glass-bg: rgba(100, 149, 237, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-blur: blur(10px);
+}
+
+[data-theme="raspberrypi"] {
+    --bg-color: #3c3c3c;           /* Dark gray desktop */
+    --bg-secondary: #2d2d2d;        /* Darker panel/taskbar */
+    --text-color: #ffffff;          /* White text */
+    --text-muted: #b0b0b0;          /* Muted gray */
+    --accent-color: #c51a4a;        /* Raspberry red */
+    --accent-light: #e23a6a;        /* Lighter raspberry */
+    --border-color: #555555;        /* Gray borders */
+    --font-body: "Roboto", "Noto Sans", "Segoe UI", sans-serif;
+    --font-mono: "Source Code Pro", "DejaVu Sans Mono", monospace;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --radius: 4px;                  /* Subtle rounded corners */
+}
+
 /* --- Global Reset & Base Styles --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -346,6 +398,58 @@ nav a:hover { color: var(--accent-color); }
     color: #000;
 }
 
+[data-theme="winxp"] .cta-button {
+    background: linear-gradient(180deg, var(--xp-green-light) 0%, var(--xp-green) 100%);
+    color: #ffffff;
+    border: 1px solid #3d7300;
+    border-radius: 4px 4px 4px 4px;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+    font-family: "Tahoma", sans-serif;
+    font-weight: bold;
+    font-style: italic;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+[data-theme="winxp"] .cta-button:hover {
+    background: linear-gradient(180deg, #9ae04c 0%, #5eac00 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+[data-theme="winxp"] .cta-button:active {
+    background: linear-gradient(180deg, var(--xp-green) 0%, var(--xp-green-light) 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="vista"] .cta-button {
+    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.05) 100%);
+    color: #ffffff;
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 10px rgba(74, 144, 217, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+[data-theme="vista"] .cta-button:hover {
+    background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.05) 100%);
+    box-shadow: 0 0 15px rgba(74, 144, 217, 0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+[data-theme="vista"] .cta-button:active {
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(255,255,255,0.1) 100%);
+}
+
+[data-theme="raspberrypi"] .cta-button {
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+[data-theme="raspberrypi"] .cta-button:hover {
+    background-color: var(--accent-light);
+}
+[data-theme="raspberrypi"] .cta-button:active {
+    background-color: #8b1235;
+}
+
 /* --- Main Content Area (Grid) --- */
 .main-content {
     display: grid;
@@ -473,6 +577,65 @@ article.card figcaption {
     border-color: var(--accent-color);
     transform: none;
     box-shadow: none;
+}
+
+[data-theme="winxp"] .card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    /* Add a top border to simulate title bar area */
+    border-top: 25px solid var(--accent-color);
+    position: relative;
+}
+[data-theme="winxp"] .card:hover {
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="winxp"] header {
+    background: linear-gradient(180deg, #245edb 0%, #003c74 100%);
+    border-bottom: 2px solid #001e3a;
+    box-shadow: 0 2px 2px rgba(0,0,0,0.3);
+}
+[data-theme="winxp"] .logo {
+    color: #ffffff;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+    font-style: italic;
+}
+[data-theme="winxp"] nav a {
+    color: #ffffff;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+[data-theme="winxp"] nav a:hover {
+    color: #ece9d8;
+}
+[data-theme="winxp"] .theme-switch {
+    background-color: #245edb;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+}
+
+[data-theme="vista"] .card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+[data-theme="vista"] .card:hover {
+    box-shadow: 0 0 20px rgba(74, 144, 217, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="raspberrypi"] .card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+[data-theme="raspberrypi"] .card:hover {
+    border-color: var(--accent-color);
 }
 
 /* Theme-specific Interest Cards */
