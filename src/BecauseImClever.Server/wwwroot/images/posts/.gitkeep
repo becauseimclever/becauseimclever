@@ -1,0 +1,3 @@
+# This file ensures the images/posts directory is tracked by Git.
+# Add post images in subfolders named after the post slug.
+# Example: images/posts/my-post-slug/screenshot.png

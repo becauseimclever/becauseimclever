@@ -34,4 +34,9 @@ public class BlogPost
     /// Gets or sets the URL-friendly slug identifier for the blog post.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the URL path to the hero/featured image for the blog post.
+    /// </summary>
+    public string? Image { get; set; }
 }

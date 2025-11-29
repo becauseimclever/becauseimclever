@@ -134,6 +134,7 @@ public class BlogPostTests
         var expectedDate = DateTimeOffset.Now;
         var expectedTags = new List<string> { "tag1", "tag2" };
         var expectedSlug = "test-post";
+        var expectedImage = "/images/posts/test-post/hero.jpg";
 
         // Act
         var blogPost = new BlogPost
@@ -144,6 +145,7 @@ public class BlogPostTests
             PublishedDate = expectedDate,
             Tags = expectedTags,
             Slug = expectedSlug,
+            Image = expectedImage,
         };
 
         // Assert
@@ -153,5 +155,30 @@ public class BlogPostTests
         Assert.Equal(expectedDate, blogPost.PublishedDate);
         Assert.Equal(expectedTags, blogPost.Tags);
         Assert.Equal(expectedSlug, blogPost.Slug);
+        Assert.Equal(expectedImage, blogPost.Image);
+    }
+
+    [Fact]
+    public void Image_ShouldBeSettableAndGettable()
+    {
+        // Arrange
+        var blogPost = new BlogPost();
+        var expectedImage = "/images/posts/my-post/hero.jpg";
+
+        // Act
+        blogPost.Image = expectedImage;
+
+        // Assert
+        Assert.Equal(expectedImage, blogPost.Image);
+    }
+
+    [Fact]
+    public void Image_ShouldDefaultToNull()
+    {
+        // Arrange & Act
+        var blogPost = new BlogPost();
+
+        // Assert
+        Assert.Null(blogPost.Image);
     }
 }
