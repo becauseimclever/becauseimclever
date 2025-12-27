@@ -300,4 +300,4 @@ public void MethodName_StateUnderTest_ExpectedBehavior()
 
 ## Dependency Management
 - **NuGet**: Always use the latest version of NuGet packages.
-- **Operation**: Always use the package manager (CLI or UI) to add or remove packages.
+- **Operation**: Always use the CLI (`dotnet add package`, `dotnet remove package`) to add or remove packages. Never edit `.csproj` files directly for package management.
