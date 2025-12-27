@@ -32,7 +32,7 @@ This feature migrates blog post storage from file-based markdown files to a Post
 
 - **Feature 015**: Blog Post Status (for status enum) - ✅ Complete
 - **Feature 016**: Authentik Authentication (for admin access) - ✅ Complete
-- PostgreSQL database instance (Docker for dev, managed for prod)
+- Existing PostgreSQL instance on network (shared instance)
 
 ---
 
@@ -208,36 +208,42 @@ public class BlogDbContext : DbContext
 }
 ```
 
-#### 1.3 Add Docker Compose for PostgreSQL
+#### 1.3 Configure Connection String
 
-Update `docker-compose.yml`:
-```yaml
-services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: becauseimclever
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
-      POSTGRES_DB: becauseimclever
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+The application will connect to an existing shared PostgreSQL instance on the network (PiDB).
 
-volumes:
-  postgres_data:
+**appsettings.json (Production):**
+```json
+{
+  "ConnectionStrings": {
+    "BlogDb": "Host=PiDB;Port=5432;Database=BecauseImClever;Username=BecauseImClever"
+  }
+}
 ```
-
-#### 1.4 Configure Connection String
 
 **appsettings.Development.json:**
 ```json
 {
   "ConnectionStrings": {
-    "BlogDb": "Host=localhost;Port=5432;Database=becauseimclever;Username=becauseimclever;Password=devpassword"
+    "BlogDb": "Host=PiDB;Port=5432;Database=BecauseImCleverDev;Username=BecauseImCleverDev"
   }
 }
 ```
+
+**User Secrets (for passwords):**
+```bash
+# Development
+dotnet user-secrets set "ConnectionStrings:BlogDb" "Host=PiDB;Port=5432;Database=BecauseImCleverDev;Username=BecauseImCleverDev;Password=<your-dev-password>"
+
+# Or set just the password portion via environment variable
+```
+
+**Environment Variables (Production):**
+```bash
+ConnectionStrings__BlogDb="Host=PiDB;Port=5432;Database=BecauseImClever;Username=BecauseImClever;Password=<your-prod-password>"
+```
+
+> **Note:** The databases (BecauseImCleverDev, BecauseImClever) must be created on PiDB before running migrations. The users already exist.
 
 ### Phase 2: Repository Implementation
 
@@ -360,7 +366,6 @@ builder.Services.AddScoped<IAdminPostService, AdminPostService>();
 | `src/BecauseImClever.Domain/Entities/BlogPost.cs` | Add database properties |
 | `src/BecauseImClever.Infrastructure/BecauseImClever.Infrastructure.csproj` | Add EF packages |
 | `src/BecauseImClever.Server/Program.cs` | Configure DbContext |
-| `docker-compose.yml` | Add PostgreSQL service |
 | `src/BecauseImClever.Server/appsettings.json` | Add connection string |
 
 ---
