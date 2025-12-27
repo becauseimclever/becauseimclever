@@ -1,20 +1,55 @@
 # 017: GitHub Integration for Post Management
 
-## Overview
+## Status: DEFERRED
 
-This feature establishes programmatic integration with GitHub to enable the application to create branches, push files, and create pull requests. This is the foundation for the upload system, ensuring all blog post changes are version-controlled and tracked in the repository.
+> **Note:** This feature has been deferred in favor of PostgreSQL database storage (Feature 021). 
+> GitHub integration may be revisited in the future for backup/export functionality or version control integration.
 
 ---
 
-## Current State
+## Original Overview
+
+This feature was planned to establish programmatic integration with GitHub to enable the application to create branches, push files, and create pull requests. This would have been the foundation for the upload system, ensuring all blog post changes are version-controlled and tracked in the repository.
+
+---
+
+## Why Deferred
+
+With the decision to use PostgreSQL for blog post storage (Feature 021), the core need for GitHub integration has changed:
+
+| Original Need | PostgreSQL Solution |
+|---------------|---------------------|
+| Store blog posts | Database storage with instant updates |
+| Track changes | Activity log table + updated_at timestamps |
+| Create drafts | Status field with `draft` value |
+| Review before publish | Status workflow (draft → published) |
+| Version control | Future: Post revision history table |
+
+---
+
+## Potential Future Use Cases
+
+If GitHub integration is needed later, it could support:
+
+1. **Backup/Export**: Periodically export posts to repository as markdown files
+2. **Import**: Allow importing existing markdown repos into the database
+3. **CI/CD Triggers**: Notify deployment pipeline of changes
+4. **Collaboration**: Allow PRs for content suggestions (converted to database)
+
+---
+
+## Original Technical Design (Preserved for Reference)
+
+<details>
+<summary>Click to expand original specification</summary>
+
+### Current State (Original)
 
 - Blog posts are manually committed to the repository
 - No programmatic GitHub integration exists
 - Deployment triggers on push to main branch
 
----
-
-## Goals
+### Goals (Original)
 
 - Create a GitHub service for repository operations
 - Enable branch creation for new/updated posts
@@ -22,16 +57,10 @@ This feature establishes programmatic integration with GitHub to enable the appl
 - Create pull requests for review
 - Maintain full version control of all content
 
----
-
-## Prerequisites
+### Prerequisites (Original)
 
 - GitHub repository access configured (App or PAT)
 - Repository secrets/configuration for authentication
-
----
-
-## Technical Design
 
 ### Architecture
 
@@ -379,14 +408,14 @@ public class GitHubOptions
 
 ---
 
-## Dependencies
+## Dependencies (Original)
 
 - **Depends on**: None (standalone infrastructure feature)
 - **Required by**: Feature 019 (Upload System)
 
 ---
 
-## Future Enhancements
+## Future Enhancements (Original)
 
 - GitHub App authentication
 - Webhook integration for PR events
@@ -402,3 +431,11 @@ public class GitHubOptions
 - [GitHub REST API Documentation](https://docs.github.com/en/rest)
 - [Creating a GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app)
 - [Fine-grained Personal Access Tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+
+</details>
+
+---
+
+## See Also
+
+- **Feature 021**: [PostgreSQL Blog Storage](021-postgresql-blog-storage.md) - The replacement approach for post storage

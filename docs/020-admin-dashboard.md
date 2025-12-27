@@ -28,7 +28,7 @@ This feature creates a unified admin experience with a dashboard showing post st
 
 - **Feature 015**: Blog Post Status (core implementation)
 - **Feature 016**: Authentik Authentication
-- **Feature 017**: GitHub Integration
+- **Feature 021**: PostgreSQL Blog Storage
 - **Feature 018**: Admin Post Status Management UI
 - **Feature 019**: Post Upload System
 
@@ -157,12 +157,28 @@ public record RecentActivity(
 
 #### 4.1 Activity Storage
 
-For MVP, derive activity from:
-- Git commit history (via GitHub API)
-- File modification dates
-- Post status in front matter
+Activity is stored directly in the `post_activity` table (Feature 021):
 
-Future enhancement: Dedicated activity log storage
+```csharp
+public async Task<IEnumerable<RecentActivity>> GetRecentActivityAsync(int count = 10)
+{
+    return await _context.PostActivities
+        .OrderByDescending(a => a.PerformedAt)
+        .Take(count)
+        .Select(a => new RecentActivity(
+            a.Action,
+            a.PostTitle,
+            a.PostSlug,
+            a.PerformedAt))
+        .ToListAsync();
+}
+```
+
+Activity is automatically logged when:
+- Posts are created (upload)
+- Post status is changed
+- Posts are updated
+- Posts are deleted
 
 ---
 
@@ -370,7 +386,7 @@ Future enhancement: Dedicated activity log storage
 
 ## Dependencies
 
-- **Depends on**: Features 015, 016, 017, 018, 019
+- **Depends on**: Features 015, 016, 021, 018, 019
 - **Required by**: None (terminal feature in this series)
 
 ---

@@ -2,15 +2,15 @@
 
 ## Overview
 
-This feature enables administrators to upload blog posts as ZIP files containing markdown, images, and other assets. Uploaded posts are automatically pushed to a new GitHub branch and set to Draft status, allowing for review before publishing.
+This feature enables administrators to upload blog posts as ZIP files containing markdown, images, and other assets. Uploaded posts are automatically saved to the PostgreSQL database with Draft status, allowing for review before publishing.
 
 ---
 
 ## Current State
 
-- Blog posts are manually added via Git commits
+- Blog posts are stored in PostgreSQL database (Feature 021)
 - No upload interface exists
-- Images must be manually placed in the correct directories
+- Images must be manually added
 
 ---
 
@@ -19,7 +19,7 @@ This feature enables administrators to upload blog posts as ZIP files containing
 - Create secure upload endpoint for ZIP files (admin-only)
 - Process ZIP contents (markdown, images, assets)
 - Validate upload structure and content
-- Push uploaded files to GitHub via Feature 017
+- Save posts directly to PostgreSQL database
 - Auto-set uploaded posts to Draft status
 - Provide upload UI in admin section
 
@@ -29,9 +29,7 @@ This feature enables administrators to upload blog posts as ZIP files containing
 
 - **Feature 015**: Blog Post Status (core status implementation)
 - **Feature 016**: Authentik Authentication (for admin access)
-- **Feature 017**: GitHub Integration (for pushing files)
-
-**Note:** Feature 018 (Admin Status UI) is not required - uploads automatically set status to Draft in the front matter.
+- **Feature 021**: PostgreSQL Blog Storage (for saving posts)
 
 ---
 
@@ -41,8 +39,8 @@ This feature enables administrators to upload blog posts as ZIP files containing
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Admin UI    │────▶│  Upload API  │────▶│  ZIP Process │────▶│   GitHub     │
-│  (Blazor)    │     │  (Server)    │     │  Service     │     │   Service    │
+│  Admin UI    │────▶│  Upload API  │────▶│  ZIP Process │────▶│  PostgreSQL  │
+│  (Blazor)    │     │  (Server)    │     │  Service     │     │  Database    │
 └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
        │                    │                    │                    │
        │   1. Select ZIP    │                    │                    │
@@ -50,11 +48,11 @@ This feature enables administrators to upload blog posts as ZIP files containing
        │                    │  2. Extract &     │                    │
        │                    │     Validate      │                    │
        │                    │──────────────────▶│                    │
-       │                    │                    │  3. Create Branch │
+       │                    │                    │  3. Save Post     │
        │                    │                    │──────────────────▶│
-       │                    │                    │  4. Push Files    │
+       │                    │                    │  4. Save Images   │
        │                    │                    │──────────────────▶│
-       │                    │                    │  5. Create PR     │
+       │                    │                    │  5. Log Activity  │
        │                    │                    │──────────────────▶│
        │   6. Success       │                    │                    │
        │◀──────────────────│                    │                    │
@@ -110,15 +108,14 @@ status: draft                      # Optional (defaults to draft)
 ```csharp
 public interface IPostUploadService
 {
-    Task<UploadResult> ProcessUploadAsync(Stream zipStream, string fileName);
+    Task<UploadResult> ProcessUploadAsync(Stream zipStream, string fileName, string uploadedBy);
     Task<ValidationResult> ValidateZipAsync(Stream zipStream);
 }
 
 public record UploadResult(
     bool Success,
     string? Slug,
-    string? BranchName,
-    string? PullRequestUrl,
+    Guid? PostId,
     IReadOnlyList<string> Errors
 );
 
@@ -137,20 +134,19 @@ public record ValidationResult(
 ```csharp
 public class PostUploadService : IPostUploadService
 {
-    private readonly IGitHubService _gitHubService;
+    private readonly BlogDbContext _context;
     private readonly ILogger<PostUploadService> _logger;
 
-    public async Task<UploadResult> ProcessUploadAsync(Stream zipStream, string fileName)
+    public async Task<UploadResult> ProcessUploadAsync(Stream zipStream, string fileName, string uploadedBy)
     {
         // 1. Extract ZIP to temporary location
         // 2. Validate contents
         // 3. Parse markdown front matter
         // 4. Generate slug from title
-        // 5. Ensure status is Draft
-        // 6. Create GitHub branch
-        // 7. Push all files to branch
-        // 8. Create pull request
-        // 9. Return result
+        // 5. Create Post entity with Draft status
+        // 6. Save images to post_images table
+        // 7. Log upload activity
+        // 8. Return result with new post ID
     }
 }
 ```
@@ -160,7 +156,8 @@ public class PostUploadService : IPostUploadService
 - Extract to temp directory
 - Find main markdown file
 - Parse and validate front matter
-- Map files to repository paths
+- Save post content to database
+- Store images as binary in post_images table
 - Clean up temp files
 
 ### Phase 3: Server Layer
@@ -191,7 +188,7 @@ public class UploadController : ControllerBase
 - Drag-and-drop support
 - Validation preview before upload
 - Progress indicator during upload
-- Success/error feedback
+- Success/error feedback with link to edit new post
 
 #### 4.2 Create Upload Components
 
@@ -243,8 +240,7 @@ public class UploadController : ControllerBase
 {
   "success": true,
   "slug": "my-new-blog-post",
-  "branchName": "post/new/my-new-blog-post",
-  "pullRequestUrl": "https://github.com/becauseimclever/becauseimclever/pull/42",
+  "postId": "550e8400-e29b-41d4-a716-446655440000",
   "errors": []
 }
 ```
@@ -254,8 +250,7 @@ public class UploadController : ControllerBase
 {
   "success": false,
   "slug": null,
-  "branchName": null,
-  "pullRequestUrl": null,
+  "postId": null,
   "errors": [
     "Missing required front matter field: title",
     "No markdown file found in ZIP"
@@ -313,27 +308,29 @@ public class UploadController : ControllerBase
 
 ## File Mapping
 
-### Repository Paths
+### Database Storage
 
-| Upload Path | Repository Path |
-|-------------|-----------------|
-| `post.md` | `src/BecauseImClever.Server/Posts/{slug}.md` |
-| `images/*` | `src/BecauseImClever.Server/wwwroot/images/posts/{slug}/*` |
-| `assets/*` | `src/BecauseImClever.Server/wwwroot/assets/posts/{slug}/*` |
+| Upload Path | Storage Location |
+|-------------|------------------|
+| `post.md` | `posts.content` column (markdown text) |
+| `images/*` | `post_images` table (binary data) |
+| `assets/*` | `post_images` table with asset flag |
 
-### Image URL Rewriting
+### Image URL Handling
 
-Markdown image references are automatically rewritten:
+Images are served via an API endpoint:
 
-**Before (in ZIP):**
+**Markdown reference:**
 ```markdown
 ![Screenshot](images/screenshot.png)
 ```
 
-**After (in repository):**
+**Rendered URL:**
 ```markdown
-![Screenshot](/images/posts/my-blog-post/screenshot.png)
+![Screenshot](/api/posts/my-blog-post/images/screenshot.png)
 ```
+
+The image API endpoint retrieves binary data from the `post_images` table.
 
 ---
 
@@ -400,10 +397,10 @@ Markdown image references are automatically rewritten:
 │                                                             │
 │ Your post "My New Blog Post" has been uploaded as a draft. │
 │                                                             │
-│ Branch: post/new/my-new-blog-post                          │
-│ Pull Request: #42                                           │
+│ Slug: my-new-blog-post                                     │
+│ Status: Draft                                               │
 │                                                             │
-│ [View Pull Request]  [Upload Another]  [Manage Posts]       │
+│ [Edit Post]  [Upload Another]  [Manage Posts]               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -416,19 +413,19 @@ Markdown image references are automatically rewritten:
 - ZIP extraction logic
 - Front matter parsing
 - File validation rules
-- Path mapping logic
-- Image URL rewriting
+- Slug generation logic
+- Image storage logic
 
 ### Integration Tests
 
-- Full upload flow with mock GitHub service
+- Full upload flow with test database
 - Validation endpoint
 - Error handling scenarios
 - File size limits
 
 ### Test Cases
 
-1. Valid ZIP with all components → Success
+1. Valid ZIP with all components → Success, post saved to DB
 2. ZIP with only markdown → Success
 3. ZIP missing markdown → Error
 4. ZIP with invalid front matter → Error with details
@@ -436,6 +433,7 @@ Markdown image references are automatically rewritten:
 6. ZIP with executable file → Error
 7. Markdown with missing title → Error
 8. Large image file → Warning but success
+9. Duplicate slug → Error or auto-increment slug
 
 ---
 
@@ -489,16 +487,16 @@ Markdown image references are automatically rewritten:
 
 ## Dependencies
 
-- **Depends on**: Feature 015 (Status Core), Feature 016 (Auth), Feature 017 (GitHub)
-- **Required by**: Feature 018 (Admin Status UI uses same post list), Feature 020 (Admin Dashboard)
+- **Depends on**: Feature 015 (Status Core), Feature 016 (Auth), Feature 021 (PostgreSQL)
+- **Required by**: Feature 020 (Admin Dashboard)
 
 ---
 
 ## Future Enhancements
 
-- Update existing posts (detect by slug)
+- Update existing posts (detect by slug, create new version)
 - Bulk upload (multiple posts in one ZIP)
 - Template ZIP download
 - Image optimization on upload
 - Preview post before final upload
-- Direct GitHub integration (no PR, merge directly)
+- Import from external URLs
