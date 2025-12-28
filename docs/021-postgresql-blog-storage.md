@@ -16,10 +16,12 @@ This feature migrates blog post storage from file-based markdown files to a Post
 - ✅ Registered services in DI with automatic fallback to file-based storage
 - ✅ Created initial database migration
 - ✅ Added .editorconfig to exclude migrations from StyleCop analysis
+- ✅ Applied migration to development database (BecauseImCleverDev on PiDB)
+- ✅ Verified database integration working (API returns empty posts array)
 
 ### Pending
-- ⏳ Apply migration to development database
-- ⏳ Migrate existing markdown posts to database
+- ⏳ Create admin management interface (Feature 018/020)
+- ⏳ Manually create production blog posts via admin UI
 - ⏳ Create Tags and PostImage entities (Phase 2)
 - ⏳ Create PostActivity entity for audit logging (Phase 2)
 
