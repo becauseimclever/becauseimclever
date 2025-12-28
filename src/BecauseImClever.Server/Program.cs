@@ -1,8 +1,10 @@
 using BecauseImClever.Application.Interfaces;
+using BecauseImClever.Infrastructure.Data;
 using BecauseImClever.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
@@ -15,8 +17,19 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddOpenApi();
 
-builder.Services.AddScoped<IBlogService>(sp =>
-    new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
+// Configure blog storage - use database if connection string exists, otherwise use file-based
+var blogConnectionString = builder.Configuration.GetConnectionString("BlogDb");
+if (!string.IsNullOrEmpty(blogConnectionString))
+{
+    builder.Services.AddDbContext<BlogDbContext>(options =>
+        options.UseNpgsql(blogConnectionString));
+    builder.Services.AddScoped<IBlogService, DatabaseBlogService>();
+}
+else
+{
+    builder.Services.AddScoped<IBlogService>(sp =>
+        new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
+}
 
 builder.Services.AddHttpClient<IProjectService, GitHubProjectService>();
 

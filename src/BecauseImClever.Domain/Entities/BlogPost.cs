@@ -6,6 +6,16 @@ namespace BecauseImClever.Domain.Entities;
 public class BlogPost
 {
     /// <summary>
+    /// Gets or sets the unique identifier for the blog post.
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the URL-friendly slug identifier for the blog post.
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the title of the blog post.
     /// </summary>
     public string Title { get; set; } = string.Empty;
@@ -26,14 +36,14 @@ public class BlogPost
     public DateTimeOffset PublishedDate { get; set; }
 
     /// <summary>
+    /// Gets or sets the publication status of the blog post.
+    /// </summary>
+    public PostStatus Status { get; set; } = PostStatus.Published;
+
+    /// <summary>
     /// Gets or sets the list of tags associated with the blog post.
     /// </summary>
     public List<string> Tags { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the URL-friendly slug identifier for the blog post.
-    /// </summary>
-    public string Slug { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the URL path to the hero/featured image for the blog post.
@@ -41,7 +51,22 @@ public class BlogPost
     public string? Image { get; set; }
 
     /// <summary>
-    /// Gets or sets the publication status of the blog post.
+    /// Gets or sets the timestamp when the blog post was created.
     /// </summary>
-    public PostStatus Status { get; set; } = PostStatus.Published;
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when the blog post was last updated.
+    /// </summary>
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who created the blog post.
+    /// </summary>
+    public string? CreatedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who last updated the blog post.
+    /// </summary>
+    public string? UpdatedBy { get; set; }
 }
