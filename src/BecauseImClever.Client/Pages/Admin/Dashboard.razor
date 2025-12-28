@@ -1,0 +1,98 @@
+@page "/admin"
+@using BecauseImClever.Application.Interfaces
+@using System.Net.Http.Json
+@layout AdminLayout
+@attribute [Authorize(Policy = "Admin")]
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Admin - Dashboard</PageTitle>
+
+<div class="admin-dashboard">
+    <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <p>Welcome to the admin panel. Here's an overview of your blog.</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading statistics...</p>
+        </div>
+    }
+    else if (errorMessage is not null)
+    {
+        <div class="alert alert-error">
+            <span>@errorMessage</span>
+            <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+        </div>
+    }
+    else if (stats is not null)
+    {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p class="stat-value">@stats.TotalPosts</p>
+                <p class="stat-label">Total Posts</p>
+            </div>
+            <div class="stat-card published">
+                <p class="stat-value">@stats.PublishedPosts</p>
+                <p class="stat-label">Published</p>
+            </div>
+            <div class="stat-card draft">
+                <p class="stat-value">@stats.DraftPosts</p>
+                <p class="stat-label">Drafts</p>
+            </div>
+            <div class="stat-card debug">
+                <p class="stat-value">@stats.DebugPosts</p>
+                <p class="stat-label">Debug</p>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="admin/posts" class="action-card">
+                    <span class="action-icon">📝</span>
+                    <span class="action-label">Manage Posts</span>
+                </a>
+                <a href="posts" class="action-card" target="_blank">
+                    <span class="action-icon">👁️</span>
+                    <span class="action-label">View Blog</span>
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private DashboardStats? stats;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatsAsync();
+    }
+
+    private async Task LoadStatsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            stats = await Http.GetFromJsonAsync<DashboardStats>("api/stats");
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Failed to load dashboard statistics: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private record DashboardStats(int TotalPosts, int PublishedPosts, int DraftPosts, int DebugPosts);
+}

@@ -24,6 +24,8 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddDbContext<BlogDbContext>(options =>
         options.UseNpgsql(blogConnectionString));
     builder.Services.AddScoped<IBlogService, DatabaseBlogService>();
+    builder.Services.AddScoped<IAdminPostService, AdminPostService>();
+    builder.Services.AddScoped<IDashboardService, DashboardService>();
 }
 else
 {
