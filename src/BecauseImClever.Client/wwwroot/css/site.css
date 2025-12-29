@@ -799,7 +799,23 @@ footer {
         grid-template-columns: 1fr; /* Stack sidebar below content */
     }
     .hero h1 { font-size: 2rem; }
-    nav ul { display: none; /* Simplified for demo */ }
+    
+    /* Fix navigation on mobile */
+    header {
+        height: auto;
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    nav ul { 
+        display: flex; 
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        padding: 0;
+    }
+
     .interests-section {
         padding: 1.5rem 1rem;
     }
