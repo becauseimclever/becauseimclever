@@ -1,12 +1,19 @@
 # 019: Post Upload System
 
-## Overview
+## Status: ❌ CANCELLED
 
-This feature enables administrators to upload blog posts as ZIP files containing markdown, images, and other assets. Uploaded posts are automatically saved to the PostgreSQL database with Draft status, allowing for review before publishing.
+> **Note:** This feature has been cancelled in favor of the inline post editor (Feature 022).
+> The inline editor provides a better user experience for creating and editing posts directly in the browser, with integrated image upload, rather than requiring ZIP file preparation offline.
 
 ---
 
-## Current State
+## Original Overview
+
+This feature was planned to enable administrators to upload blog posts as ZIP files containing markdown, images, and other assets. Uploaded posts would be automatically saved to the PostgreSQL database with Draft status, allowing for review before publishing.
+
+---
+
+## Original State
 
 - Blog posts are stored in PostgreSQL database (Feature 021)
 - No upload interface exists

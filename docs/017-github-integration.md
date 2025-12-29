@@ -1,9 +1,9 @@
 # 017: GitHub Integration for Post Management
 
-## Status: DEFERRED
+## Status: ❌ CANCELLED
 
-> **Note:** This feature has been deferred in favor of PostgreSQL database storage (Feature 021). 
-> GitHub integration may be revisited in the future for backup/export functionality or version control integration.
+> **Note:** This feature has been cancelled in favor of the inline post editor (Feature 022) with PostgreSQL database storage (Feature 021).
+> The inline editor provides a simpler, more direct content management experience without the complexity of GitHub integration.
 
 ---
 
