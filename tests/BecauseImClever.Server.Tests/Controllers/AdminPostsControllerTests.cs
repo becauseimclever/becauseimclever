@@ -222,6 +222,211 @@ public class AdminPostsControllerTests
         Assert.Equal(0, batchResult.UpdatedCount);
     }
 
+    /// <summary>
+    /// Verifies that GetPostForEdit returns post when found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostForEdit_WhenPostExists_ReturnsPost()
+    {
+        // Arrange
+        var expectedPost = new PostForEdit(
+            "test-post",
+            "Test Post",
+            "Summary",
+            "Content",
+            DateTimeOffset.UtcNow,
+            new List<string> { "tag1" },
+            PostStatus.Draft,
+            DateTime.UtcNow,
+            DateTime.UtcNow,
+            "creator@test.com",
+            "editor@test.com");
+        this.mockAdminPostService.Setup(s => s.GetPostForEditAsync("test-post")).ReturnsAsync(expectedPost);
+
+        // Act
+        var result = await this.controller.GetPostForEdit("test-post");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var post = Assert.IsType<PostForEdit>(okResult.Value);
+        Assert.Equal("test-post", post.Slug);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostForEdit returns not found when post doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostForEdit_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostForEditAsync("non-existent")).ReturnsAsync((PostForEdit?)null);
+
+        // Act
+        var result = await this.controller.GetPostForEdit("non-existent");
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that CreatePost returns created result when successful.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task CreatePost_WhenSuccessful_ReturnsCreatedResult()
+    {
+        // Arrange
+        var request = new CreatePostRequest(
+            "New Post",
+            "new-post",
+            "Summary",
+            "Content",
+            DateTimeOffset.UtcNow,
+            PostStatus.Draft,
+            new List<string> { "tag1" });
+        this.mockAdminPostService
+            .Setup(s => s.CreatePostAsync(request, "admin@test.com"))
+            .ReturnsAsync(new CreatePostResult(true, "new-post", null));
+
+        // Act
+        var result = await this.controller.CreatePost(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var createResult = Assert.IsType<CreatePostResult>(createdResult.Value);
+        Assert.True(createResult.Success);
+        Assert.Equal("new-post", createResult.Slug);
+    }
+
+    /// <summary>
+    /// Verifies that CreatePost returns conflict when slug exists.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task CreatePost_WhenSlugExists_ReturnsConflict()
+    {
+        // Arrange
+        var request = new CreatePostRequest(
+            "New Post",
+            "existing-slug",
+            "Summary",
+            "Content",
+            DateTimeOffset.UtcNow,
+            PostStatus.Draft,
+            new List<string>());
+        this.mockAdminPostService
+            .Setup(s => s.CreatePostAsync(request, "admin@test.com"))
+            .ReturnsAsync(new CreatePostResult(false, null, "A post with slug 'existing-slug' already exists."));
+
+        // Act
+        var result = await this.controller.CreatePost(request);
+
+        // Assert
+        var conflictResult = Assert.IsType<ConflictObjectResult>(result.Result);
+        var createResult = Assert.IsType<CreatePostResult>(conflictResult.Value);
+        Assert.False(createResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that UpdatePost returns success when update succeeds.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdatePost_WhenSuccessful_ReturnsOkResult()
+    {
+        // Arrange
+        var request = new UpdatePostRequest(
+            "Updated Title",
+            "Updated summary",
+            "Updated content",
+            DateTimeOffset.UtcNow,
+            PostStatus.Published,
+            new List<string> { "updated" });
+        this.mockAdminPostService
+            .Setup(s => s.UpdatePostAsync("test-post", request, "admin@test.com"))
+            .ReturnsAsync(new UpdatePostResult(true, null));
+
+        // Act
+        var result = await this.controller.UpdatePost("test-post", request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var updateResult = Assert.IsType<UpdatePostResult>(okResult.Value);
+        Assert.True(updateResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that UpdatePost returns not found when post doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdatePost_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        var request = new UpdatePostRequest(
+            "Title",
+            "Summary",
+            "Content",
+            DateTimeOffset.UtcNow,
+            PostStatus.Draft,
+            new List<string>());
+        this.mockAdminPostService
+            .Setup(s => s.UpdatePostAsync("non-existent", request, "admin@test.com"))
+            .ReturnsAsync(new UpdatePostResult(false, "Post not found"));
+
+        // Act
+        var result = await this.controller.UpdatePost("non-existent", request);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var updateResult = Assert.IsType<UpdatePostResult>(notFoundResult.Value);
+        Assert.False(updateResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that DeletePost returns success when delete succeeds.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeletePost_WhenSuccessful_ReturnsOkResult()
+    {
+        // Arrange
+        this.mockAdminPostService
+            .Setup(s => s.DeletePostAsync("test-post", "admin@test.com"))
+            .ReturnsAsync(new DeletePostResult(true, null));
+
+        // Act
+        var result = await this.controller.DeletePost("test-post");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var deleteResult = Assert.IsType<DeletePostResult>(okResult.Value);
+        Assert.True(deleteResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that DeletePost returns not found when post doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeletePost_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService
+            .Setup(s => s.DeletePostAsync("non-existent", "admin@test.com"))
+            .ReturnsAsync(new DeletePostResult(false, "Post not found"));
+
+        // Act
+        var result = await this.controller.DeletePost("non-existent");
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var deleteResult = Assert.IsType<DeletePostResult>(notFoundResult.Value);
+        Assert.False(deleteResult.Success);
+    }
+
     private void SetupUserContext(string userName)
     {
         var claims = new List<Claim>

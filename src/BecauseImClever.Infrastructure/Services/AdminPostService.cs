@@ -54,6 +54,142 @@ public class AdminPostService : IAdminPostService
     }
 
     /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> is null.</exception>
+    public async Task<PostForEdit?> GetPostForEditAsync(string slug)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+
+        this.logger.LogDebug("Retrieving post '{Slug}' for editing.", slug);
+
+        var post = await this.context.Posts
+            .AsNoTracking()
+            .Where(p => p.Slug == slug)
+            .Select(p => new PostForEdit(
+                p.Slug,
+                p.Title,
+                p.Summary,
+                p.Content,
+                p.PublishedDate,
+                p.Tags,
+                p.Status,
+                p.CreatedAt,
+                p.UpdatedAt,
+                p.CreatedBy,
+                p.UpdatedBy))
+            .FirstOrDefaultAsync();
+
+        if (post == null)
+        {
+            this.logger.LogWarning("Post with slug '{Slug}' not found for editing.", slug);
+        }
+        else
+        {
+            this.logger.LogDebug("Retrieved post '{Slug}' for editing.", slug);
+        }
+
+        return post;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> or <paramref name="createdBy"/> is null.</exception>
+    public async Task<CreatePostResult> CreatePostAsync(CreatePostRequest request, string createdBy)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(createdBy);
+
+        this.logger.LogDebug("Creating new post with slug '{Slug}' by '{CreatedBy}'.", request.Slug, createdBy);
+
+        // Check for duplicate slug
+        var existingPost = await this.context.Posts.AnyAsync(p => p.Slug == request.Slug);
+        if (existingPost)
+        {
+            this.logger.LogWarning("Cannot create post: slug '{Slug}' already exists.", request.Slug);
+            return new CreatePostResult(false, null, $"A post with slug '{request.Slug}' already exists.");
+        }
+
+        var now = DateTime.UtcNow;
+        var post = new BlogPost
+        {
+            Id = Guid.NewGuid(),
+            Slug = request.Slug,
+            Title = request.Title,
+            Summary = request.Summary,
+            Content = request.Content,
+            PublishedDate = request.PublishedDate,
+            Status = request.Status,
+            Tags = request.Tags.ToList(),
+            CreatedAt = now,
+            UpdatedAt = now,
+            CreatedBy = createdBy,
+            UpdatedBy = createdBy,
+        };
+
+        this.context.Posts.Add(post);
+        await this.context.SaveChangesAsync();
+
+        this.logger.LogInformation("Successfully created post '{Slug}' by '{CreatedBy}'.", request.Slug, createdBy);
+
+        return new CreatePostResult(true, post.Slug, null);
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/>, <paramref name="request"/>, or <paramref name="updatedBy"/> is null.</exception>
+    public async Task<UpdatePostResult> UpdatePostAsync(string slug, UpdatePostRequest request, string updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(updatedBy);
+
+        this.logger.LogDebug("Updating post '{Slug}' by '{UpdatedBy}'.", slug, updatedBy);
+
+        var post = await this.context.Posts.FirstOrDefaultAsync(p => p.Slug == slug);
+        if (post == null)
+        {
+            this.logger.LogWarning("Post with slug '{Slug}' not found for update.", slug);
+            return new UpdatePostResult(false, "Post not found");
+        }
+
+        post.Title = request.Title;
+        post.Summary = request.Summary;
+        post.Content = request.Content;
+        post.PublishedDate = request.PublishedDate;
+        post.Status = request.Status;
+        post.Tags = request.Tags.ToList();
+        post.UpdatedAt = DateTime.UtcNow;
+        post.UpdatedBy = updatedBy;
+
+        await this.context.SaveChangesAsync();
+
+        this.logger.LogInformation("Successfully updated post '{Slug}' by '{UpdatedBy}'.", slug, updatedBy);
+
+        return new UpdatePostResult(true, null);
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> or <paramref name="deletedBy"/> is null.</exception>
+    public async Task<DeletePostResult> DeletePostAsync(string slug, string deletedBy)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+        ArgumentNullException.ThrowIfNull(deletedBy);
+
+        this.logger.LogDebug("Deleting post '{Slug}' by '{DeletedBy}'.", slug, deletedBy);
+
+        var post = await this.context.Posts.FirstOrDefaultAsync(p => p.Slug == slug);
+        if (post == null)
+        {
+            this.logger.LogWarning("Post with slug '{Slug}' not found for deletion.", slug);
+            return new DeletePostResult(false, "Post not found");
+        }
+
+        this.context.Posts.Remove(post);
+        await this.context.SaveChangesAsync();
+
+        this.logger.LogInformation("Successfully deleted post '{Slug}' by '{DeletedBy}'.", slug, deletedBy);
+
+        return new DeletePostResult(true, null);
+    }
+
+    /// <inheritdoc/>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> or <paramref name="updatedBy"/> is null.</exception>
     public async Task<StatusUpdateResult> UpdateStatusAsync(string slug, PostStatus newStatus, string updatedBy)
     {
