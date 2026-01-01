@@ -144,6 +144,19 @@
     --radius: 4px;                  /* Subtle rounded corners */
 }
 
+[data-theme="monopoly"] {
+    --bg-color: #FBFBEA;           /* Property Card Cream */
+    --bg-secondary: #CDE6D0;        /* Board Green */
+    --text-color: #000000;          /* Black text */
+    --text-muted: #555555;          /* Muted gray */
+    --accent-color: #ED1B24;        /* Hotel Red */
+    --border-color: #000000;        /* Black borders */
+    --font-body: "Verdana", "Geneva", sans-serif;
+    --font-mono: "Courier New", monospace;
+    --card-shadow: 3px 3px 0 #000000; /* Hard black shadow */
+    --radius: 2px;
+}
+
 /* --- Global Reset & Base Styles --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -450,6 +463,24 @@ nav a:hover { color: var(--accent-color); }
     background-color: #8b1235;
 }
 
+[data-theme="monopoly"] .cta-button {
+    background-color: #F7941D; /* Chance Orange */
+    color: #000000;
+    border: 2px solid #000000;
+    box-shadow: 3px 3px 0 #000000;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+[data-theme="monopoly"] .cta-button:hover {
+    background-color: #F7941D;
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #000000;
+}
+[data-theme="monopoly"] .cta-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #000000;
+}
+
 /* --- Main Content Area (Grid) --- */
 .main-content {
     display: grid;
@@ -638,6 +669,17 @@ article.card figcaption {
     border-color: var(--accent-color);
 }
 
+[data-theme="monopoly"] .card {
+    background-color: #FFFFFF;
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 #000000;
+    border-radius: 0;
+}
+[data-theme="monopoly"] .card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000000;
+}
+
 /* Theme-specific Interest Cards */
 [data-theme="win95"] .interest-card {
     border-top: 2px solid #ffffff;
@@ -685,6 +727,16 @@ article.card figcaption {
 }
 [data-theme="retro"] .interest-icon {
     text-shadow: 0 0 10px var(--accent-color);
+}
+
+[data-theme="monopoly"] .interest-card {
+    background-color: #FFFFFF;
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 #000000;
+}
+[data-theme="monopoly"] .interest-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000000;
 }
 
 .card:hover {
@@ -764,6 +816,12 @@ article.card figcaption {
 }
 [data-theme="dungeon"] .sidebar-widget h3::after {
     content: " ===";
+}
+
+[data-theme="monopoly"] .sidebar-widget {
+    background-color: #FFFFFF;
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 #000000;
 }
 
 .sidebar-widget h3 {

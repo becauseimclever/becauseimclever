@@ -17,5 +17,7 @@ services:
       - EmailSettings__FromAddress=${SMTP_FROM_ADDRESS}
       - EmailSettings__FromName=${SMTP_FROM_NAME}
       - EmailSettings__ToAddress=${SMTP_TO_ADDRESS}
+      # Database connection string
+      - ConnectionStrings__BlogDb=Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USERNAME};Password=${DB_PASSWORD}
     env_file:
       - .env

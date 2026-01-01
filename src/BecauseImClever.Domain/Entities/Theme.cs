@@ -57,6 +57,11 @@ public sealed class Theme : IEquatable<Theme>
     public static readonly Theme RaspberryPi = new Theme("raspberrypi", "Raspberry Pi");
 
     /// <summary>
+    /// The Monopoly board game theme.
+    /// </summary>
+    public static readonly Theme Monopoly = new Theme("monopoly", "Monopoly");
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Theme"/> class.
     /// </summary>
     /// <param name="key">The unique key used in CSS data attributes.</param>
@@ -93,6 +98,7 @@ public sealed class Theme : IEquatable<Theme>
         WinXp,
         Vista,
         RaspberryPi,
+        Monopoly,
     }.AsReadOnly();
 
     /// <summary>
