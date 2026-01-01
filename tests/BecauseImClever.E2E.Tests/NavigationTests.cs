@@ -88,4 +88,23 @@ public class NavigationTests : PlaywrightTestBase
         await this.Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex(@"^https://becauseimclever\.com/?$"));
         Assert.True(this.Page.Url == this.BaseUrl || this.Page.Url == $"{this.BaseUrl}/");
     }
+
+    /// <summary>
+    /// Verifies that navigation is visible on mobile viewports.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task Navigation_MobileViewport_NavigationIsVisible()
+    {
+        // Arrange
+        await this.Page.SetViewportSizeAsync(375, 667); // iPhone SE size
+        await this.Page.GotoAsync(this.BaseUrl);
+
+        // Act & Assert
+        // Wait for nav to be visible - this will timeout and fail if it's hidden
+        await this.Page.WaitForSelectorAsync("nav ul", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
+
+        var isVisible = await this.Page.IsVisibleAsync("nav ul");
+        Assert.True(isVisible, "Navigation list should be visible on mobile");
+    }
 }

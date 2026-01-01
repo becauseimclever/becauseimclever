@@ -1,0 +1,443 @@
+@page "/admin/posts"
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@using System.Net.Http.Json
+@layout AdminLayout
+@attribute [Authorize(Policy = "Admin")]
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Admin - Posts</PageTitle>
+
+<div class="admin-posts">
+    <div class="admin-header">
+        <h1>Post Management</h1>
+        <p class="admin-subtitle">Manage blog post statuses and visibility</p>
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-error">
+            <span>@errorMessage</span>
+            <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+        </div>
+    }
+
+    @if (successMessage is not null)
+    {
+        <div class="alert alert-success">
+            <span>@successMessage</span>
+            <button class="alert-close" @onclick="() => successMessage = null">&times;</button>
+        </div>
+    }
+
+    <!-- Filter Controls -->
+    <div class="admin-filters">
+        <div class="filter-group">
+            <label for="status-filter">Status:</label>
+            <select id="status-filter" @bind="statusFilter" @bind:after="ApplyFilters">
+                <option value="">All</option>
+                <option value="Published">Published</option>
+                <option value="Draft">Draft</option>
+                <option value="Debug">Debug</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="search">Search:</label>
+            <input type="text" id="search" placeholder="Search posts..." @bind="searchQuery" @bind:after="ApplyFilters" />
+        </div>
+        <div class="filter-stats">
+            Showing @filteredPosts.Count() of @posts.Count() posts
+        </div>
+    </div>
+
+    <!-- Posts Table -->
+    @if (isLoading)
+    {
+        <div class="loading-indicator">
+            <span>Loading posts...</span>
+        </div>
+    }
+    else if (!filteredPosts.Any())
+    {
+        <div class="empty-state">
+            <p>No posts found matching your criteria.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th class="col-title">Title</th>
+                        <th class="col-date">Published</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-updated">Updated</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var post in filteredPosts)
+                    {
+                        <tr>
+                            <td class="col-title">
+                                <div class="post-title">
+                                    <a href="@($"/posts/{post.Slug}")" target="_blank">@post.Title</a>
+                                </div>
+                                <div class="post-slug">/@post.Slug</div>
+                            </td>
+                            <td class="col-date">@post.PublishedDate.ToString("MMM dd, yyyy")</td>
+                            <td class="col-status">
+                                <span class="status-badge status-@post.Status.ToString().ToLower()">
+                                    @post.Status
+                                </span>
+                            </td>
+                            <td class="col-updated">
+                                <div>@post.UpdatedAt.ToString("MMM dd, yyyy")</div>
+                                @if (!string.IsNullOrEmpty(post.UpdatedBy))
+                                {
+                                    <div class="updated-by">by @post.UpdatedBy</div>
+                                }
+                            </td>
+                            <td class="col-actions">
+                                <div class="action-dropdown">
+                                    <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@updatingPosts.Contains(post.Slug)">
+                                        <option value="Published" selected="@(post.Status == PostStatus.Published)">Published</option>
+                                        <option value="Draft" selected="@(post.Status == PostStatus.Draft)">Draft</option>
+                                        <option value="Debug" selected="@(post.Status == PostStatus.Debug)">Debug</option>
+                                    </select>
+                                    @if (updatingPosts.Contains(post.Slug))
+                                    {
+                                        <span class="updating-indicator">⏳</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<style>
+    .admin-header {
+        margin-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+    
+    .admin-header h1 {
+        margin: 0 0 0.5rem 0;
+        color: var(--text-color);
+    }
+    
+    .admin-subtitle {
+        color: var(--text-muted);
+        margin: 0;
+    }
+    
+    .admin-filters {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--card-bg);
+        border-radius: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filter-group label {
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-color);
+        color: var(--text-color);
+        font-size: 0.9rem;
+    }
+    
+    .filter-group input {
+        min-width: 200px;
+    }
+    
+    .filter-stats {
+        margin-left: auto;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card-bg);
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .admin-table th {
+        background: var(--bg-color);
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+    
+    .admin-table tbody tr:hover {
+        background: rgba(var(--accent-color-rgb, 102, 187, 106), 0.05);
+    }
+    
+    .col-title { width: 35%; }
+    .col-date { width: 15%; }
+    .col-status { width: 15%; }
+    .col-updated { width: 20%; }
+    .col-actions { width: 15%; }
+    
+    .post-title a {
+        color: var(--text-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .post-title a:hover {
+        color: var(--accent-color);
+    }
+    
+    .post-slug {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-family: monospace;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+    
+    .status-published {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+    }
+    
+    .status-draft {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+    
+    .status-debug {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+    
+    .updated-by {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    
+    .action-dropdown {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .action-dropdown select {
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-color);
+        color: var(--text-color);
+        cursor: pointer;
+    }
+    
+    .action-dropdown select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .updating-indicator {
+        font-size: 1rem;
+    }
+    
+    .alert {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-error {
+        background: rgba(244, 67, 54, 0.1);
+        border: 1px solid rgba(244, 67, 54, 0.3);
+        color: #f44336;
+    }
+    
+    .alert-success {
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #4caf50;
+    }
+    
+    .alert-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+    }
+    
+    .alert-close:hover {
+        opacity: 1;
+    }
+    
+    .loading-indicator,
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-muted);
+    }
+</style>
+
+@code {
+    private List<AdminPostSummary> posts = new();
+    private IEnumerable<AdminPostSummary> filteredPosts = Enumerable.Empty<AdminPostSummary>();
+    private HashSet<string> updatingPosts = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private string statusFilter = string.Empty;
+    private string searchQuery = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPosts();
+    }
+
+    private async Task LoadPosts()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<AdminPostSummary>>("api/admin/posts");
+            posts = result ?? new List<AdminPostSummary>();
+            ApplyFilters();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Failed to load posts: {ex.Message}";
+            posts = new List<AdminPostSummary>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredPosts = posts;
+
+        if (!string.IsNullOrEmpty(statusFilter))
+        {
+            if (Enum.TryParse<PostStatus>(statusFilter, out var status))
+            {
+                filteredPosts = filteredPosts.Where(p => p.Status == status);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            filteredPosts = filteredPosts.Where(p =>
+                p.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                p.Slug.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                p.Summary.Contains(query, StringComparison.OrdinalIgnoreCase));
+        }
+
+        filteredPosts = filteredPosts.OrderByDescending(p => p.PublishedDate);
+    }
+
+    private async Task OnStatusChange(string slug, ChangeEventArgs e)
+    {
+        var newStatusString = e.Value?.ToString();
+        if (string.IsNullOrEmpty(newStatusString) || !Enum.TryParse<PostStatus>(newStatusString, out var newStatus))
+        {
+            return;
+        }
+
+        var post = posts.FirstOrDefault(p => p.Slug == slug);
+        if (post is null || post.Status == newStatus)
+        {
+            return;
+        }
+
+        updatingPosts.Add(slug);
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var request = new { Status = (int)newStatus };
+            var response = await Http.PatchAsJsonAsync($"api/admin/posts/{slug}/status", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<StatusUpdateResult>();
+                if (result?.Success == true)
+                {
+                    successMessage = $"Status for '{post.Title}' updated to {newStatus}";
+                    await LoadPosts();
+                }
+                else
+                {
+                    errorMessage = result?.Error ?? "Failed to update status";
+                }
+            }
+            else
+            {
+                errorMessage = $"Failed to update status: {response.ReasonPhrase}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating status: {ex.Message}";
+        }
+        finally
+        {
+            updatingPosts.Remove(slug);
+        }
+    }
+}

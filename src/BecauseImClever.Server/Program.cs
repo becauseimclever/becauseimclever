@@ -1,5 +1,12 @@
 using BecauseImClever.Application.Interfaces;
+using BecauseImClever.Infrastructure.Data;
 using BecauseImClever.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Scalar.AspNetCore;
 
@@ -10,14 +17,67 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddOpenApi();
 
-builder.Services.AddScoped<IBlogService>(sp =>
-    new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
+// Configure blog storage - use database if connection string exists, otherwise use file-based
+var blogConnectionString = builder.Configuration.GetConnectionString("BlogDb");
+if (!string.IsNullOrEmpty(blogConnectionString))
+{
+    builder.Services.AddDbContext<BlogDbContext>(options =>
+        options.UseNpgsql(blogConnectionString));
+    builder.Services.AddScoped<IBlogService, DatabaseBlogService>();
+    builder.Services.AddScoped<IAdminPostService, AdminPostService>();
+    builder.Services.AddScoped<IDashboardService, DashboardService>();
+}
+else
+{
+    builder.Services.AddScoped<IBlogService>(sp =>
+        new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
+}
 
 builder.Services.AddHttpClient<IProjectService, GitHubProjectService>();
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection(EmailSettings.SectionName));
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Configure Authentication
+var authentikConfig = builder.Configuration.GetSection("Authentication:Authentik");
+var adminGroup = authentikConfig["AdminGroup"] ?? "becauseimclever-admins";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+    options.LoginPath = "/auth/login";
+    options.LogoutPath = "/auth/logout";
+})
+.AddOpenIdConnect(options =>
+{
+    options.Authority = authentikConfig["Authority"];
+    options.ClientId = authentikConfig["ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Authentik:ClientSecret"];
+    options.ResponseType = OpenIdConnectResponseType.Code;
+    options.SaveTokens = true;
+    options.GetClaimsFromUserInfoEndpoint = true;
+    options.Scope.Clear();
+    options.Scope.Add("openid");
+    options.Scope.Add("profile");
+    options.Scope.Add("email");
+    options.ClaimActions.MapJsonKey("groups", "groups");
+    options.TokenValidationParameters.NameClaimType = "preferred_username";
+    options.TokenValidationParameters.RoleClaimType = "groups";
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy =>
+        policy.RequireClaim("groups", adminGroup));
+});
 
 var app = builder.Build();
 
@@ -69,6 +129,9 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();

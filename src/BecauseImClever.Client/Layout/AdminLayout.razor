@@ -1,0 +1,116 @@
+@inherits LayoutComponentBase
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IThemeService ThemeService
+@inject NavigationManager Navigation
+
+<div class="layout-container">
+    <!-- Header -->
+    <header>
+        <a href="" class="logo">&lt;BecauseImClever /&gt;</a>
+        <nav>
+            <ul>
+                <li><a href="">Home</a></li>
+                <li><a href="posts">Blog</a></li>
+                <li><a href="projects">Projects</a></li>
+                <li><a href="clock">Clock</a></li>
+                <li><a href="about">About</a></li>
+            </ul>
+        </nav>
+        <select class="theme-switch" @onchange="OnThemeChanged" value="@currentTheme?.Key">
+            @foreach (var theme in availableThemes)
+            {
+                <option value="@theme.Key">@theme.DisplayName</option>
+            }
+        </select>
+    </header>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="@GetActiveClass("/admin")">
+                        <a href="admin">
+                            <span class="nav-icon">📊</span>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="@GetActiveClass("/admin/posts")">
+                        <a href="admin/posts">
+                            <span class="nav-icon">📝</span>
+                            <span>Posts</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="" class="back-to-site">
+                    <span class="nav-icon">🏠</span>
+                    <span>Back to Site</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="admin-content">
+            @Body
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 BecauseImClever. Built with .NET 10 & Blazor.</p>
+    </footer>
+</div>
+
+@code {
+    private Theme? currentTheme;
+    private IReadOnlyList<Theme> availableThemes = Array.Empty<Theme>();
+    private string currentPath = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableThemes = ThemeService.GetAvailableThemes();
+        currentTheme = await ThemeService.GetCurrentThemeAsync();
+        await ThemeService.SetThemeAsync(currentTheme);
+        currentPath = new Uri(Navigation.Uri).AbsolutePath;
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentPath = new Uri(e.Location).AbsolutePath;
+        StateHasChanged();
+    }
+
+    private string GetActiveClass(string path)
+    {
+        if (path == "/admin" && currentPath.Equals("/admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return "active";
+        }
+
+        if (path != "/admin" && currentPath.StartsWith(path, StringComparison.OrdinalIgnoreCase))
+        {
+            return "active";
+        }
+
+        return string.Empty;
+    }
+
+    private async Task OnThemeChanged(ChangeEventArgs e)
+    {
+        var selectedKey = e.Value?.ToString();
+        currentTheme = Theme.FromKey(selectedKey);
+        await ThemeService.SetThemeAsync(currentTheme);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}
