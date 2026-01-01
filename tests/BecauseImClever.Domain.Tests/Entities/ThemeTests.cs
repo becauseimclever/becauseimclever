@@ -118,13 +118,24 @@ public class ThemeTests
     }
 
     [Fact]
+    public void Monopoly_HasCorrectProperties()
+    {
+        // Arrange & Act
+        var theme = Theme.Monopoly;
+
+        // Assert
+        Assert.Equal("monopoly", theme.Key);
+        Assert.Equal("Monopoly", theme.DisplayName);
+    }
+
+    [Fact]
     public void All_ContainsAllThemes()
     {
         // Arrange & Act
         var allThemes = Theme.All;
 
         // Assert
-        Assert.Equal(10, allThemes.Count);
+        Assert.Equal(11, allThemes.Count);
         Assert.Contains(Theme.VsCode, allThemes);
         Assert.Contains(Theme.Retro, allThemes);
         Assert.Contains(Theme.Win95, allThemes);
@@ -135,6 +146,7 @@ public class ThemeTests
         Assert.Contains(Theme.WinXp, allThemes);
         Assert.Contains(Theme.Vista, allThemes);
         Assert.Contains(Theme.RaspberryPi, allThemes);
+        Assert.Contains(Theme.Monopoly, allThemes);
     }
 
     [Fact]
@@ -342,6 +354,7 @@ public class ThemeTests
     [InlineData("winxp")]
     [InlineData("vista")]
     [InlineData("raspberrypi")]
+    [InlineData("monopoly")]
     public void FromKey_WithAllValidKeys_ReturnsCorrectTheme(string key)
     {
         // Arrange & Act

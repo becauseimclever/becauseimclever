@@ -39,7 +39,7 @@ public class ThemeServiceTests : BunitContext
         var themes = service.GetAvailableThemes();
 
         // Assert
-        Assert.Equal(10, themes.Count);
+        Assert.Equal(11, themes.Count);
         Assert.Contains(Theme.VsCode, themes);
         Assert.Contains(Theme.Retro, themes);
         Assert.Contains(Theme.Win95, themes);
@@ -50,6 +50,7 @@ public class ThemeServiceTests : BunitContext
         Assert.Contains(Theme.WinXp, themes);
         Assert.Contains(Theme.Vista, themes);
         Assert.Contains(Theme.RaspberryPi, themes);
+        Assert.Contains(Theme.Monopoly, themes);
     }
 
     [Fact]
