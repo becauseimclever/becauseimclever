@@ -19,5 +19,10 @@ services:
       - EmailSettings__ToAddress=${SMTP_TO_ADDRESS}
       # Database connection string
       - ConnectionStrings__BlogDb=Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USERNAME};Password=${DB_PASSWORD}
+      # Authentik authentication settings
+      - Authentication__Authentik__Authority=${AUTHENTIK_AUTHORITY}
+      - Authentication__Authentik__ClientId=${AUTHENTIK_CLIENT_ID}
+      - Authentication__Authentik__ClientSecret=${AUTHENTIK_CLIENT_SECRET}
+      - Authentication__Authentik__AdminGroup=${AUTHENTIK_ADMIN_GROUP}
     env_file:
       - .env
