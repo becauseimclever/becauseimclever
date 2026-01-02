@@ -82,6 +82,34 @@ builder.Services.AddAuthentication(options =>
     options.ClaimActions.MapJsonKey("groups", "groups");
     options.TokenValidationParameters.NameClaimType = "preferred_username";
     options.TokenValidationParameters.RoleClaimType = "groups";
+
+    // Add event handlers to log authentication errors
+    options.Events = new OpenIdConnectEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OpenIdConnect");
+            logger.LogError(context.Exception, "OIDC Authentication failed: {Message}", context.Exception.Message);
+            return Task.CompletedTask;
+        },
+        OnRemoteFailure = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OpenIdConnect");
+            logger.LogError(context.Failure, "OIDC Remote failure: {Message}", context.Failure?.Message);
+            context.Response.Redirect($"/?error={Uri.EscapeDataString(context.Failure?.Message ?? "Unknown error")}");
+            context.HandleResponse();
+            return Task.CompletedTask;
+        },
+        OnTokenValidationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OpenIdConnect");
+            logger.LogError(context.Exception, "OIDC Token validation failed: {Message}", context.Exception.Message);
+            return Task.CompletedTask;
+        },
+    };
 });
 
 builder.Services.AddAuthorization(options =>
