@@ -1382,12 +1382,11 @@ footer {
 
     .sidebar-nav ul {
         display: flex;
-        overflow-x: auto;
+        flex-direction: column;
     }
 
     .sidebar-nav a {
         padding: 0.5rem 1rem;
-        white-space: nowrap;
     }
 
     .stats-grid {

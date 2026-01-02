@@ -102,13 +102,6 @@ builder.Services.AddAuthentication(options =>
             context.HandleResponse();
             return Task.CompletedTask;
         },
-        OnTokenValidationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("OpenIdConnect");
-            logger.LogError(context.Exception, "OIDC Token validation failed: {Message}", context.Exception.Message);
-            return Task.CompletedTask;
-        },
     };
 });
 

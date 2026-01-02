@@ -11,8 +11,15 @@
 
 <div class="admin-posts">
     <div class="admin-header">
-        <h1>Post Management</h1>
-        <p class="admin-subtitle">Manage blog post statuses and visibility</p>
+        <div class="admin-header-content">
+            <div>
+                <h1>Post Management</h1>
+                <p class="admin-subtitle">Manage blog post statuses and visibility</p>
+            </div>
+            <a href="admin/posts/new" class="btn btn-primary">
+                <span class="btn-icon">+</span> New Post
+            </a>
+        </div>
     </div>
 
     @if (errorMessage is not null)
@@ -101,7 +108,10 @@
                                 }
                             </td>
                             <td class="col-actions">
-                                <div class="action-dropdown">
+                                <div class="action-buttons">
+                                    <a href="@($"admin/posts/edit/{post.Slug}")" class="btn-action btn-edit" title="Edit post">
+                                        ✏️
+                                    </a>
                                     <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@updatingPosts.Contains(post.Slug)">
                                         <option value="Published" selected="@(post.Status == PostStatus.Published)">Published</option>
                                         <option value="Draft" selected="@(post.Status == PostStatus.Draft)">Draft</option>
@@ -128,6 +138,14 @@
         padding-bottom: 1rem;
     }
     
+    .admin-header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
     .admin-header h1 {
         margin: 0 0 0.5rem 0;
         color: var(--text-color);
@@ -136,6 +154,34 @@
     .admin-subtitle {
         color: var(--text-muted);
         margin: 0;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.2s, filter 0.2s;
+    }
+    
+    .btn-primary {
+        background: var(--accent-color);
+        color: var(--bg-color);
+    }
+    
+    .btn-primary:hover {
+        filter: brightness(1.1);
+    }
+    
+    .btn-icon {
+        font-size: 1.1rem;
+        font-weight: bold;
     }
     
     .admin-filters {
@@ -263,13 +309,33 @@
         color: var(--text-muted);
     }
     
-    .action-dropdown {
+    .action-buttons {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
     
-    .action-dropdown select {
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-color);
+        color: var(--text-color);
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    
+    .btn-action:hover {
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+    
+    .action-buttons select {
         padding: 0.5rem;
         border: 1px solid var(--border-color);
         border-radius: 4px;
@@ -278,7 +344,7 @@
         cursor: pointer;
     }
     
-    .action-dropdown select:disabled {
+    .action-buttons select:disabled {
         opacity: 0.6;
         cursor: not-allowed;
     }

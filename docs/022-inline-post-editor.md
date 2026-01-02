@@ -6,7 +6,7 @@ This feature enables administrators to create and edit blog posts directly throu
 
 ---
 
-## Status: 🔄 Phase 1 Complete
+## Status: 🔄 Phase 2 Complete
 
 ---
 
@@ -147,25 +147,25 @@ public record UpdatePostResult(
 
 ---
 
-### Phase 2: Basic Post Editor UI
+### Phase 2: Basic Post Editor UI ✅
 
 **Goal:** Admin can create posts with basic form (no preview yet)
 
 | Task | Description | Status |
 |------|-------------|--------|
-| 2.1 | Create `Admin/PostEditor.razor` page | ⏳ |
-| 2.2 | Add route `/admin/posts/new` for new posts | ⏳ |
-| 2.3 | Add route `/admin/posts/edit/{slug}` for editing | ⏳ |
-| 2.4 | Add form fields: Title, Summary, Tags | ⏳ |
-| 2.5 | Add auto-generated Slug field (from title) | ⏳ |
-| 2.6 | Add date picker for Published Date | ⏳ |
-| 2.7 | Add status dropdown (Draft/Published) | ⏳ |
-| 2.8 | Add basic textarea for markdown content | ⏳ |
-| 2.9 | Wire up form submission to API | ⏳ |
-| 2.10 | Add "New Post" button to `Admin/Posts.razor` | ⏳ |
-| 2.11 | Add "Edit" button to post list items | ⏳ |
-| 2.12 | Handle success/error responses with notifications | ⏳ |
-| 2.13 | Unit tests for editor component | ⏳ |
+| 2.1 | Create `Admin/PostEditor.razor` page | ✅ |
+| 2.2 | Add route `/admin/posts/new` for new posts | ✅ |
+| 2.3 | Add route `/admin/posts/edit/{slug}` for editing | ✅ |
+| 2.4 | Add form fields: Title, Summary, Tags | ✅ |
+| 2.5 | Add auto-generated Slug field (from title) | ✅ |
+| 2.6 | Add date picker for Published Date | ✅ |
+| 2.7 | Add status dropdown (Draft/Published/Debug) | ✅ |
+| 2.8 | Add basic textarea for markdown content | ✅ |
+| 2.9 | Wire up form submission to API | ✅ |
+| 2.10 | Add "New Post" button to `Admin/Posts.razor` | ✅ |
+| 2.11 | Add "Edit" button to post list items | ✅ |
+| 2.12 | Handle success/error responses with notifications | ✅ |
+| 2.13 | Unit tests for editor component (13 tests) | ✅ |
 
 ---
 
