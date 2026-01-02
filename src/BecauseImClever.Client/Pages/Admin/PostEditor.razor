@@ -68,8 +68,10 @@
 
                     <!-- Content -->
                     <div class="form-group form-group-content">
-                        <label for="content">Content (Markdown) <span class="required">*</span></label>
-                        <InputTextArea id="content" @bind-Value="formModel.Content" rows="20" placeholder="Write your post in Markdown..." class="markdown-textarea" />
+                        <label>Content (Markdown) <span class="required">*</span></label>
+                        <MarkdownEditor @bind-Value="formModel.Content"
+                                        @bind-IsPreviewOnly="isPreviewOnly"
+                                        Placeholder="Write your post in Markdown..." />
                         <ValidationMessage For="() => formModel.Content" />
                     </div>
                 </div>
@@ -306,13 +308,6 @@
         color: var(--text-muted);
     }
 
-    .markdown-textarea {
-        font-family: 'Consolas', 'Monaco', monospace;
-        line-height: 1.6;
-        resize: vertical;
-        min-height: 400px;
-    }
-
     .form-group-content {
         flex: 1;
     }
@@ -501,6 +496,7 @@
     private bool isSaving;
     private bool isDeleting;
     private bool showDeleteConfirm;
+    private bool isPreviewOnly;
     private string? errorMessage;
 
     private bool IsEditMode => !string.IsNullOrEmpty(Slug);

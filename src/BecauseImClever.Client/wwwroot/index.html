@@ -48,6 +48,27 @@
                 observer.observe(element);
             }
         };
+
+        window.markdownEditor = {
+            getSelection: (textAreaId) => {
+                const textarea = document.getElementById(textAreaId);
+                if (!textarea) {
+                    return { start: 0, end: 0, selectedText: '' };
+                }
+                return {
+                    start: textarea.selectionStart,
+                    end: textarea.selectionEnd,
+                    selectedText: textarea.value.substring(textarea.selectionStart, textarea.selectionEnd)
+                };
+            },
+            setSelection: (textAreaId, start, end) => {
+                const textarea = document.getElementById(textAreaId);
+                if (textarea) {
+                    textarea.focus();
+                    textarea.setSelectionRange(start, end);
+                }
+            }
+        };
     </script>
 </body>
 
