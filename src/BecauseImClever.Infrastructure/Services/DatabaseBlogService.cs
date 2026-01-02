@@ -3,6 +3,7 @@ namespace BecauseImClever.Infrastructure.Services;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using BecauseImClever.Infrastructure.Data;
+using Markdig;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ public class DatabaseBlogService : IBlogService
 {
     private readonly BlogDbContext context;
     private readonly ILogger<DatabaseBlogService> logger;
+    private readonly MarkdownPipeline markdownPipeline;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DatabaseBlogService"/> class.
@@ -27,6 +29,9 @@ public class DatabaseBlogService : IBlogService
 
         this.context = context;
         this.logger = logger;
+        this.markdownPipeline = new MarkdownPipelineBuilder()
+            .UseAdvancedExtensions()
+            .Build();
     }
 
     /// <inheritdoc/>
@@ -40,6 +45,12 @@ public class DatabaseBlogService : IBlogService
             .ToListAsync();
 
         this.logger.LogInformation("Retrieved {Count} blog posts from database.", posts.Count);
+
+        // Render markdown to HTML for display
+        foreach (var post in posts)
+        {
+            post.Content = Markdown.ToHtml(post.Content, this.markdownPipeline);
+        }
 
         return posts;
     }
@@ -57,6 +68,12 @@ public class DatabaseBlogService : IBlogService
             .ToListAsync();
 
         this.logger.LogInformation("Retrieved {Count} blog posts for page {Page}.", posts.Count, page);
+
+        // Render markdown to HTML for display
+        foreach (var post in posts)
+        {
+            post.Content = Markdown.ToHtml(post.Content, this.markdownPipeline);
+        }
 
         return posts;
     }
@@ -82,6 +99,9 @@ public class DatabaseBlogService : IBlogService
         else
         {
             this.logger.LogInformation("Retrieved blog post '{Title}' with slug '{Slug}'.", post.Title, slug);
+
+            // Render markdown to HTML for display
+            post.Content = Markdown.ToHtml(post.Content, this.markdownPipeline);
         }
 
         return post;
