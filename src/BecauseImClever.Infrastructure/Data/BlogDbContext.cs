@@ -23,6 +23,16 @@ public class BlogDbContext : DbContext
     public DbSet<BlogPost> Posts => this.Set<BlogPost>();
 
     /// <summary>
+    /// Gets the feature settings table.
+    /// </summary>
+    public DbSet<FeatureSettings> FeatureSettings => this.Set<FeatureSettings>();
+
+    /// <summary>
+    /// Gets the extension detection events table.
+    /// </summary>
+    public DbSet<ExtensionDetectionEvent> ExtensionDetectionEvents => this.Set<ExtensionDetectionEvent>();
+
+    /// <summary>
     /// Configures the model for the database.
     /// </summary>
     /// <param name="modelBuilder">The model builder.</param>
