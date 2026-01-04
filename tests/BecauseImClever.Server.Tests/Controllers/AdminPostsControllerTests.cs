@@ -14,6 +14,7 @@ using Moq;
 public class AdminPostsControllerTests
 {
     private readonly Mock<IAdminPostService> mockAdminPostService;
+    private readonly Mock<IPostImageService> mockPostImageService;
     private readonly AdminPostsController controller;
 
     /// <summary>
@@ -22,7 +23,8 @@ public class AdminPostsControllerTests
     public AdminPostsControllerTests()
     {
         this.mockAdminPostService = new Mock<IAdminPostService>();
-        this.controller = new AdminPostsController(this.mockAdminPostService.Object);
+        this.mockPostImageService = new Mock<IPostImageService>();
+        this.controller = new AdminPostsController(this.mockAdminPostService.Object, this.mockPostImageService.Object);
         this.SetupUserContext("admin@test.com");
     }
 
@@ -33,8 +35,19 @@ public class AdminPostsControllerTests
     public void Constructor_WithNullAdminPostService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(null!));
+        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(null!, this.mockPostImageService.Object));
         Assert.Equal("adminPostService", exception.ParamName);
+    }
+
+    /// <summary>
+    /// Verifies that the constructor throws when postImageService is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullPostImageService_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(this.mockAdminPostService.Object, null!));
+        Assert.Equal("postImageService", exception.ParamName);
     }
 
     /// <summary>
@@ -425,6 +438,220 @@ public class AdminPostsControllerTests
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         var deleteResult = Assert.IsType<DeletePostResult>(notFoundResult.Value);
         Assert.False(deleteResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that GetImages returns images from service.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetImages_ReturnsImagesFromService()
+    {
+        // Arrange
+        var expectedImages = new List<ImageSummary>
+        {
+            new ImageSummary(Guid.NewGuid(), "image1.png", "image1.png", "image/png", 1024, "Alt 1", "/api/posts/test/images/image1.png", DateTime.UtcNow),
+            new ImageSummary(Guid.NewGuid(), "image2.png", "image2.png", "image/png", 2048, "Alt 2", "/api/posts/test/images/image2.png", DateTime.UtcNow),
+        };
+        this.mockPostImageService.Setup(s => s.GetImagesForPostAsync("test-post")).ReturnsAsync(expectedImages);
+
+        // Act
+        var result = await this.controller.GetImages("test-post");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var images = Assert.IsAssignableFrom<IEnumerable<ImageSummary>>(okResult.Value);
+        Assert.Equal(2, images.Count());
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns BadRequest when no file provided.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WithNullFile_ReturnsBadRequest()
+    {
+        // Act
+        var result = await this.controller.UploadImage("test-post", null!, null);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(badRequestResult.Value);
+        Assert.False(uploadResult.Success);
+        Assert.Contains("No file", uploadResult.Error);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns BadRequest when validation fails.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WithInvalidContentType_ReturnsBadRequest()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(1024);
+        fileMock.Setup(f => f.ContentType).Returns("application/pdf");
+        this.mockPostImageService.Setup(s => s.ValidateImage("application/pdf", 1024)).Returns("Invalid content type");
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, null);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(badRequestResult.Value);
+        Assert.False(uploadResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns Created when upload succeeds.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenSuccessful_ReturnsCreated()
+    {
+        // Arrange
+        var fileContent = new byte[] { 1, 2, 3, 4 };
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(fileContent.Length);
+        fileMock.Setup(f => f.ContentType).Returns("image/png");
+        fileMock.Setup(f => f.FileName).Returns("test.png");
+        fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+            .Callback<Stream, CancellationToken>((stream, _) => stream.Write(fileContent));
+
+        this.mockPostImageService.Setup(s => s.ValidateImage("image/png", fileContent.Length)).Returns((string?)null);
+        this.mockPostImageService
+            .Setup(s => s.UploadImageAsync(It.IsAny<UploadImageRequest>(), "admin@test.com"))
+            .ReturnsAsync(UploadImageResult.Succeeded("/api/posts/test/images/test.png", "test.png"));
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, "Test alt text");
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(createdResult.Value);
+        Assert.True(uploadResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteImage returns Ok when deletion succeeds.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteImage_WhenSuccessful_ReturnsOk()
+    {
+        // Arrange
+        this.mockPostImageService
+            .Setup(s => s.DeleteImageAsync("test-post", "test.png", "admin@test.com"))
+            .ReturnsAsync(DeleteImageResult.Succeeded());
+
+        // Act
+        var result = await this.controller.DeleteImage("test-post", "test.png");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var deleteResult = Assert.IsType<DeleteImageResult>(okResult.Value);
+        Assert.True(deleteResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteImage returns NotFound when image doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteImage_WhenNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockPostImageService
+            .Setup(s => s.DeleteImageAsync("test-post", "non-existent.png", "admin@test.com"))
+            .ReturnsAsync(DeleteImageResult.Failed("Image not found"));
+
+        // Act
+        var result = await this.controller.DeleteImage("test-post", "non-existent.png");
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var deleteResult = Assert.IsType<DeleteImageResult>(notFoundResult.Value);
+        Assert.False(deleteResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that CheckSlugAvailability returns available when slug does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task CheckSlugAvailability_WhenSlugDoesNotExist_ReturnsAvailable()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.SlugExistsAsync("new-slug")).ReturnsAsync(false);
+
+        // Act
+        var result = await this.controller.CheckSlugAvailability("new-slug");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var availabilityResult = Assert.IsType<SlugAvailabilityResult>(okResult.Value);
+        Assert.True(availabilityResult.Available);
+        Assert.Equal("new-slug", availabilityResult.Slug);
+    }
+
+    /// <summary>
+    /// Verifies that CheckSlugAvailability returns unavailable when slug exists.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task CheckSlugAvailability_WhenSlugExists_ReturnsUnavailable()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.SlugExistsAsync("existing-slug")).ReturnsAsync(true);
+
+        // Act
+        var result = await this.controller.CheckSlugAvailability("existing-slug");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var availabilityResult = Assert.IsType<SlugAvailabilityResult>(okResult.Value);
+        Assert.False(availabilityResult.Available);
+        Assert.Equal("existing-slug", availabilityResult.Slug);
+    }
+
+    /// <summary>
+    /// Verifies that GetAllTags returns all tags from service.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllTags_ReturnsAllTagsFromService()
+    {
+        // Arrange
+        var expectedTags = new List<string> { "blazor", "csharp", "dotnet" };
+        this.mockAdminPostService.Setup(s => s.GetAllTagsAsync()).ReturnsAsync(expectedTags);
+
+        // Act
+        var result = await this.controller.GetAllTags();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var tags = Assert.IsAssignableFrom<IEnumerable<string>>(okResult.Value);
+        Assert.Equal(expectedTags, tags);
+    }
+
+    /// <summary>
+    /// Verifies that GetAllTags returns empty collection when no tags exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllTags_WhenNoTags_ReturnsEmptyCollection()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetAllTagsAsync()).ReturnsAsync(Array.Empty<string>());
+
+        // Act
+        var result = await this.controller.GetAllTags();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var tags = Assert.IsAssignableFrom<IEnumerable<string>>(okResult.Value);
+        Assert.Empty(tags);
     }
 
     private void SetupUserContext(string userName)

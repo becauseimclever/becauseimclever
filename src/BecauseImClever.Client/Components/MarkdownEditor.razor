@@ -34,6 +34,12 @@
                 <button type="button" class="toolbar-btn" title="Image (Ctrl+Shift+I)" @onclick="() => InsertFormatting(FormattingType.Image)">
                     🖼️
                 </button>
+                @if (!string.IsNullOrEmpty(PostSlug))
+                {
+                    <button type="button" class="toolbar-btn toolbar-btn-upload" title="Upload Image" @onclick="OpenImageUploadDialog">
+                        📤
+                    </button>
+                }
             </div>
             <div class="toolbar-separator"></div>
             <div class="toolbar-group">
@@ -89,12 +95,19 @@
                     <button type="button" class="btn-link" @onclick="TogglePreview">← Back to Editor</button>
                 }
             </div>
-            <div class="preview-content markdown-body">
+            <div id="@PreviewPaneId" class="preview-content markdown-body">
                 @((MarkupString)RenderedHtml)
             </div>
         </div>
     </div>
 </div>
+
+@if (showImageUploadDialog)
+{
+    <ImageUploadDialog PostSlug="@PostSlug"
+                       OnImageInserted="HandleImageInserted"
+                       OnClose="CloseImageUploadDialog" />
+}
 
 <style>
     .markdown-editor {
@@ -155,6 +168,16 @@
     .toolbar-btn.active {
         background: var(--accent-color);
         color: var(--bg-color);
+    }
+
+    .toolbar-btn-upload {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .toolbar-btn-upload:hover {
+        filter: brightness(1.1);
+        background: var(--accent-color);
     }
 
     .toolbar-icon {
@@ -419,9 +442,20 @@
     [Parameter]
     public EventCallback<bool> IsPreviewOnlyChanged { get; set; }
 
+    /// <summary>
+    /// Gets or sets the post slug for image uploads.
+    /// When provided, the image upload button will be shown.
+    /// </summary>
+    [Parameter]
+    public string? PostSlug { get; set; }
+
     private string TextAreaId { get; } = $"markdown-editor-{Guid.NewGuid():N}";
 
+    private string PreviewPaneId { get; } = $"markdown-preview-{Guid.NewGuid():N}";
+
     private string RenderedHtml => RenderMarkdown(Value);
+
+    private bool showImageUploadDialog;
 
     private static string RenderMarkdown(string markdown)
     {
@@ -440,6 +474,24 @@
         }
     }
 
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await HighlightCodeBlocksAsync();
+    }
+
+    private async Task HighlightCodeBlocksAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("markdownEditor.highlightCode", PreviewPaneId);
+        }
+        catch
+        {
+            // Ignore JS interop errors during pre-rendering or when Prism is not loaded
+        }
+    }
+
     private async Task OnValueChanged(ChangeEventArgs e)
     {
         Value = e.Value?.ToString() ?? string.Empty;
@@ -450,6 +502,32 @@
     {
         IsPreviewOnly = !IsPreviewOnly;
         await IsPreviewOnlyChanged.InvokeAsync(IsPreviewOnly);
+    }
+
+    private void OpenImageUploadDialog()
+    {
+        showImageUploadDialog = true;
+    }
+
+    private void CloseImageUploadDialog()
+    {
+        showImageUploadDialog = false;
+    }
+
+    private async Task HandleImageInserted(string markdown)
+    {
+        // Insert the markdown at the current cursor position
+        var result = await JS.InvokeAsync<TextSelection>("markdownEditor.getSelection", TextAreaId);
+
+        var newValue = Value[..result.Start] + markdown + Value[result.End..];
+        Value = newValue;
+        await ValueChanged.InvokeAsync(Value);
+
+        // Set cursor position after insert
+        var newCursorPos = result.Start + markdown.Length;
+        await JS.InvokeVoidAsync("markdownEditor.setSelection", TextAreaId, newCursorPos, newCursorPos);
+
+        showImageUploadDialog = false;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)

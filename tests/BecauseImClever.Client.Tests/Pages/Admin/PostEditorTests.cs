@@ -353,6 +353,136 @@ public class PostEditorTests : BunitContext
         Assert.Contains("This action cannot be undone", cut.Markup);
     }
 
+    /// <summary>
+    /// Verifies that word count displays correctly with content.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WithContent_DisplaysWordCount()
+    {
+        // Arrange
+        var content = "This is a test post with exactly ten words here."; // Exactly 10 words
+        var postForEdit = new PostForEdit(
+            "test-post",
+            "Test Post",
+            "Summary",
+            content,
+            DateTimeOffset.Now,
+            new List<string>(),
+            PostStatus.Draft,
+            DateTime.UtcNow,
+            DateTime.UtcNow,
+            null,
+            null);
+
+        this.ConfigureServices(postForEdit);
+
+        // Act
+        var cut = this.Render<PostEditor>(parameters => parameters
+            .Add(p => p.Slug, "test-post"));
+
+        // Assert - 10 words, 1 min read (minimum)
+        Assert.Contains("10 words", cut.Markup);
+        Assert.Contains("1 min read", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that word count shows zero for empty content.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WithEmptyContent_DisplaysZeroWordCount()
+    {
+        // Arrange
+        this.ConfigureServices();
+
+        // Act
+        var cut = this.Render<PostEditor>();
+
+        // Assert
+        Assert.Contains("0 words", cut.Markup);
+        Assert.Contains("1 min read", cut.Markup); // Minimum 1 min
+    }
+
+    /// <summary>
+    /// Verifies that reading time calculates correctly for longer content.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WithLongContent_CalculatesCorrectReadingTime()
+    {
+        // Arrange - 400 words = 2 min read (200 wpm)
+        var words = string.Join(" ", Enumerable.Repeat("word", 400));
+        var postForEdit = new PostForEdit(
+            "test-post",
+            "Test Post",
+            "Summary",
+            words,
+            DateTimeOffset.Now,
+            new List<string>(),
+            PostStatus.Draft,
+            DateTime.UtcNow,
+            DateTime.UtcNow,
+            null,
+            null);
+
+        this.ConfigureServices(postForEdit);
+
+        // Act
+        var cut = this.Render<PostEditor>(parameters => parameters
+            .Add(p => p.Slug, "test-post"));
+
+        // Assert - 400 words / 200 wpm = 2 min
+        Assert.Contains("400 words", cut.Markup);
+        Assert.Contains("2 min read", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that the editor registers beforeunload handler.
+    /// </summary>
+    [Fact]
+    public void PostEditor_OnFirstRender_RegistersBeforeUnloadHandler()
+    {
+        // Arrange
+        this.ConfigureServices();
+
+        // Act
+        var cut = this.Render<PostEditor>();
+
+        // Assert - verify JS interop was called
+        var jsInvocations = this.JSInterop.Invocations
+            .Where(i => i.Identifier == "postEditor.registerBeforeUnload")
+            .ToList();
+        Assert.Single(jsInvocations);
+    }
+
+    /// <summary>
+    /// Verifies that unsaved changes indicator is not shown for unchanged content.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WhenNoChanges_DoesNotShowUnsavedIndicator()
+    {
+        // Arrange
+        var postForEdit = new PostForEdit(
+            "test-post",
+            "Test Post",
+            "Summary",
+            "Content",
+            DateTimeOffset.Now,
+            new List<string>(),
+            PostStatus.Draft,
+            DateTime.UtcNow,
+            DateTime.UtcNow,
+            null,
+            null);
+
+        this.ConfigureServices(postForEdit);
+
+        // Act
+        var cut = this.Render<PostEditor>(parameters => parameters
+            .Add(p => p.Slug, "test-post"));
+
+        // Assert
+        Assert.DoesNotContain("Unsaved changes", cut.Markup);
+    }
+
     private static HttpClient CreateMockHttpClient(
         PostForEdit? postForEdit,
         bool notFound,

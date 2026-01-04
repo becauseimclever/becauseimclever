@@ -29,6 +29,7 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddScoped<IDashboardService, DashboardService>();
     builder.Services.AddScoped<IFeatureToggleService, FeatureToggleService>();
     builder.Services.AddScoped<IExtensionTrackingService, ExtensionTrackingService>();
+    builder.Services.AddScoped<IPostImageService, PostImageService>();
 }
 else
 {

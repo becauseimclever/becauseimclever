@@ -3,17 +3,35 @@
 @using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Domain.Entities
 @using System.Net.Http.Json
+@implements IDisposable
 @layout AdminLayout
 @attribute [Authorize(Policy = "Admin")]
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Admin - @(IsEditMode ? "Edit Post" : "New Post")</PageTitle>
 
 <div class="post-editor">
     <div class="editor-header">
-        <h1>@(IsEditMode ? "Edit Post" : "Create New Post")</h1>
-        <p class="editor-subtitle">@(IsEditMode ? $"Editing: {originalTitle}" : "Write a new blog post")</p>
+        <div class="editor-header-main">
+            <h1>@(IsEditMode ? "Edit Post" : "Create New Post")</h1>
+            <p class="editor-subtitle">@(IsEditMode ? $"Editing: {originalTitle}" : "Write a new blog post")</p>
+        </div>
+        <div class="editor-header-status">
+            @if (hasUnsavedChanges)
+            {
+                <span class="unsaved-indicator">● Unsaved changes</span>
+            }
+            @if (isAutoSaving)
+            {
+                <span class="autosave-indicator">Saving...</span>
+            }
+            else if (lastAutoSaveTime.HasValue)
+            {
+                <span class="autosave-indicator saved">Saved @lastAutoSaveTime.Value.ToString("HH:mm")</span>
+            }
+        </div>
     </div>
 
     @if (errorMessage is not null)
@@ -54,8 +72,16 @@
                                 <button type="button" class="btn-link" @onclick="GenerateSlug">Generate from title</button>
                             }
                         </label>
-                        <InputText id="slug" @bind-Value="formModel.Slug" placeholder="url-friendly-slug" disabled="@IsEditMode" />
+                        <InputText id="slug" @bind-Value="formModel.Slug" placeholder="url-friendly-slug" disabled="@IsEditMode" @oninput="OnSlugChanged" class="@GetSlugInputClass()" />
                         <span class="form-hint">URL: /posts/@formModel.Slug</span>
+                        @if (!string.IsNullOrEmpty(slugValidationMessage))
+                        {
+                            <span class="@(slugIsValid ? "validation-success" : "validation-error")">@slugValidationMessage</span>
+                        }
+                        @if (isCheckingSlug)
+                        {
+                            <span class="slug-checking">Checking availability...</span>
+                        }
                         <ValidationMessage For="() => formModel.Slug" />
                     </div>
 
@@ -68,9 +94,13 @@
 
                     <!-- Content -->
                     <div class="form-group form-group-content">
-                        <label>Content (Markdown) <span class="required">*</span></label>
+                        <div class="content-label-row">
+                            <label>Content (Markdown) <span class="required">*</span></label>
+                            <span class="word-count">@WordCount words · @ReadingTime min read</span>
+                        </div>
                         <MarkdownEditor @bind-Value="formModel.Content"
                                         @bind-IsPreviewOnly="isPreviewOnly"
+                                        PostSlug="@(IsEditMode ? Slug : null)"
                                         Placeholder="Write your post in Markdown..." />
                         <ValidationMessage For="() => formModel.Content" />
                     </div>
@@ -123,14 +153,32 @@
                     <!-- Tags Card -->
                     <div class="sidebar-card">
                         <h3>Tags</h3>
-                        <div class="form-group">
-                            <InputText @bind-Value="formModel.TagsInput" placeholder="tag1, tag2, tag3" />
+                        <div class="form-group tag-input-container">
+                            <InputText @bind-Value="formModel.TagsInput" 
+                                       placeholder="tag1, tag2, tag3" 
+                                       @oninput="OnTagInputChanged"
+                                       @onfocus="ShowTagSuggestions"
+                                       @onblur="OnTagInputBlur" />
                             <span class="form-hint">Comma-separated list of tags</span>
+                            @if (showTagSuggestions && filteredTags.Any())
+                            {
+                                <div class="tag-suggestions">
+                                    @foreach (var tag in filteredTags)
+                                    {
+                                        <button type="button" class="tag-suggestion" @onmousedown="() => AddTag(tag)" @onmousedown:preventDefault>
+                                            @tag
+                                        </button>
+                                    }
+                                </div>
+                            }
                         </div>
                         <div class="tags-preview">
                             @foreach (var tag in GetTags())
                             {
-                                <span class="tag">@tag</span>
+                                <span class="tag">
+                                    @tag
+                                    <button type="button" class="tag-remove" @onclick="() => RemoveTag(tag)">&times;</button>
+                                </span>
                             }
                         </div>
                     </div>
@@ -196,12 +244,15 @@
     }
 
     .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
         margin-bottom: 2rem;
         border-bottom: 2px solid var(--border-color);
         padding-bottom: 1rem;
     }
 
-    .editor-header h1 {
+    .editor-header-main h1 {
         margin: 0 0 0.5rem 0;
         color: var(--text-color);
     }
@@ -209,6 +260,37 @@
     .editor-subtitle {
         color: var(--text-muted);
         margin: 0;
+    }
+
+    .editor-header-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+    }
+
+    .unsaved-indicator {
+        color: #ff9800;
+    }
+
+    .autosave-indicator {
+        color: var(--text-muted);
+    }
+
+    .autosave-indicator.saved {
+        color: #4caf50;
+    }
+
+    .content-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .word-count {
+        font-size: 0.8rem;
+        color: var(--text-muted);
     }
 
     .form-grid {
@@ -374,6 +456,60 @@
         padding: 0.25rem 0.5rem;
         border-radius: 4px;
         font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .tag-remove {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0;
+        line-height: 1;
+        opacity: 0.7;
+    }
+
+    .tag-remove:hover {
+        opacity: 1;
+    }
+
+    .tag-input-container {
+        position: relative;
+    }
+
+    .tag-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 2px;
+    }
+
+    .tag-suggestion {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        background: none;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .tag-suggestion:hover {
+        background: var(--accent-color);
+        color: var(--bg-color);
     }
 
     .metadata-info {
@@ -475,6 +611,33 @@
         font-size: 0.85rem;
     }
 
+    .validation-error {
+        color: #f44336;
+        font-size: 0.85rem;
+        display: block;
+    }
+
+    .validation-success {
+        color: #4caf50;
+        font-size: 0.85rem;
+        display: block;
+    }
+
+    .slug-checking {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-style: italic;
+        display: block;
+    }
+
+    .slug-input-valid {
+        border-color: #4caf50 !important;
+    }
+
+    .slug-input-invalid {
+        border-color: #f44336 !important;
+    }
+
     @@media (max-width: 1024px) {
         .form-grid {
             grid-template-columns: 1fr;
@@ -491,21 +654,52 @@
     public string? Slug { get; set; }
 
     private PostEditorModel formModel = new();
+    private PostEditorModel? originalFormState;
     private string? originalTitle;
     private bool isLoading = true;
     private bool isSaving;
     private bool isDeleting;
     private bool showDeleteConfirm;
     private bool isPreviewOnly;
+    private bool isAutoSaving;
+    private DateTime? lastAutoSaveTime;
+    private System.Threading.Timer? autoSaveTimer;
+    private const int AutoSaveIntervalMs = 30000; // 30 seconds
     private string? errorMessage;
 
+    // Slug validation state
+    private string? slugValidationMessage;
+    private bool slugIsValid;
+    private bool isCheckingSlug;
+    private System.Threading.CancellationTokenSource? slugCheckCts;
+    private const int SlugCheckDebounceMs = 500;
+
+    // Tag autocomplete state
+    private List<string> allTags = new();
+    private List<string> filteredTags = new();
+    private bool showTagSuggestions;
+
     private bool IsEditMode => !string.IsNullOrEmpty(Slug);
+
+    private bool hasUnsavedChanges => originalFormState is not null && !FormEquals(formModel, originalFormState);
+
+    private int WordCount => string.IsNullOrWhiteSpace(formModel.Content)
+        ? 0
+        : formModel.Content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+    private int ReadingTime => Math.Max(1, (int)Math.Ceiling(WordCount / 200.0)); // Average 200 words per minute
 
     protected override async Task OnInitializedAsync()
     {
         if (IsEditMode)
         {
             await LoadPost();
+            // Start auto-save timer for edit mode
+            autoSaveTimer = new System.Threading.Timer(
+                async _ => await InvokeAsync(AutoSaveAsync),
+                null,
+                AutoSaveIntervalMs,
+                AutoSaveIntervalMs);
         }
         else
         {
@@ -513,6 +707,24 @@
             formModel.Status = PostStatus.Draft;
             isLoading = false;
         }
+
+        // Load all existing tags for autocomplete
+        await LoadAllTagsAsync();
+
+        // Capture original state for change detection (must be after LoadPost)
+        originalFormState = CloneFormModel(formModel);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register beforeunload handler for unsaved changes warning
+            await JS.InvokeVoidAsync("postEditor.registerBeforeUnload");
+        }
+
+        // Sync unsaved changes state to JavaScript
+        await JS.InvokeVoidAsync("postEditor.setUnsavedChanges", hasUnsavedChanges);
     }
 
     private async Task LoadPost()
@@ -562,6 +774,7 @@
         if (!IsEditMode && string.IsNullOrEmpty(formModel.Slug))
         {
             GenerateSlug();
+            _ = ValidateSlugAsync(formModel.Slug);
         }
     }
 
@@ -582,6 +795,154 @@
         formModel.Slug = new string(formModel.Slug
             .Where(c => char.IsLetterOrDigit(c) || c == '-')
             .ToArray());
+
+        // Trigger validation after generating slug
+        _ = ValidateSlugAsync(formModel.Slug);
+    }
+
+    private async Task OnSlugChanged(ChangeEventArgs e)
+    {
+        if (IsEditMode)
+        {
+            return;
+        }
+
+        var newSlug = e.Value?.ToString() ?? string.Empty;
+        formModel.Slug = newSlug;
+
+        await ValidateSlugAsync(newSlug);
+    }
+
+    private async Task ValidateSlugAsync(string slug)
+    {
+        // Cancel any pending validation
+        slugCheckCts?.Cancel();
+        slugCheckCts = new System.Threading.CancellationTokenSource();
+        var token = slugCheckCts.Token;
+
+        // Reset validation state
+        slugValidationMessage = null;
+        slugIsValid = false;
+        isCheckingSlug = false;
+
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return;
+        }
+
+        // Validate URL-safe format
+        var formatError = ValidateSlugFormat(slug);
+        if (formatError != null)
+        {
+            slugValidationMessage = formatError;
+            slugIsValid = false;
+            return;
+        }
+
+        // Debounce before checking availability
+        isCheckingSlug = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(SlugCheckDebounceMs, token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // Check uniqueness via API
+            var response = await Http.GetFromJsonAsync<SlugAvailabilityResult>($"api/admin/posts/check-slug/{slug}", token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (response != null)
+            {
+                if (response.Available)
+                {
+                    slugValidationMessage = "✓ Slug is available";
+                    slugIsValid = true;
+                }
+                else
+                {
+                    slugValidationMessage = "✗ Slug is already in use";
+                    slugIsValid = false;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancelled requests
+        }
+        catch (HttpRequestException)
+        {
+            // Silently fail - will be validated on submit
+            slugValidationMessage = null;
+        }
+        finally
+        {
+            isCheckingSlug = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string? ValidateSlugFormat(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return "Slug is required";
+        }
+
+        if (slug.Length < 3)
+        {
+            return "Slug must be at least 3 characters";
+        }
+
+        if (slug.Length > 200)
+        {
+            return "Slug must be 200 characters or less";
+        }
+
+        if (!slug.All(c => char.IsLetterOrDigit(c) || c == '-'))
+        {
+            return "Slug can only contain letters, numbers, and hyphens";
+        }
+
+        if (slug.StartsWith('-') || slug.EndsWith('-'))
+        {
+            return "Slug cannot start or end with a hyphen";
+        }
+
+        if (slug.Contains("--"))
+        {
+            return "Slug cannot contain consecutive hyphens";
+        }
+
+        return null;
+    }
+
+    private string GetSlugInputClass()
+    {
+        if (IsEditMode || string.IsNullOrWhiteSpace(formModel.Slug))
+        {
+            return string.Empty;
+        }
+
+        if (isCheckingSlug)
+        {
+            return string.Empty;
+        }
+
+        if (slugValidationMessage == null)
+        {
+            return string.Empty;
+        }
+
+        return slugIsValid ? "slug-input-valid" : "slug-input-invalid";
     }
 
     private IEnumerable<string> GetTags()
@@ -597,6 +958,104 @@
             .Where(t => !string.IsNullOrWhiteSpace(t));
     }
 
+    private async Task LoadAllTagsAsync()
+    {
+        try
+        {
+            var tags = await Http.GetFromJsonAsync<List<string>>("api/admin/posts/tags");
+            allTags = tags ?? new List<string>();
+        }
+        catch
+        {
+            allTags = new List<string>();
+        }
+    }
+
+    private void OnTagInputChanged(ChangeEventArgs e)
+    {
+        formModel.TagsInput = e.Value?.ToString() ?? string.Empty;
+        UpdateTagSuggestions();
+    }
+
+    private void UpdateTagSuggestions()
+    {
+        var currentTags = GetTags().ToList();
+        var lastTagPart = GetLastTagPart();
+
+        if (string.IsNullOrWhiteSpace(lastTagPart))
+        {
+            // Show all unused tags
+            filteredTags = allTags
+                .Where(t => !currentTags.Contains(t, StringComparer.OrdinalIgnoreCase))
+                .Take(10)
+                .ToList();
+        }
+        else
+        {
+            // Filter by partial match
+            filteredTags = allTags
+                .Where(t => t.Contains(lastTagPart, StringComparison.OrdinalIgnoreCase))
+                .Where(t => !currentTags.Contains(t, StringComparer.OrdinalIgnoreCase))
+                .Take(10)
+                .ToList();
+        }
+    }
+
+    private string GetLastTagPart()
+    {
+        if (string.IsNullOrWhiteSpace(formModel.TagsInput))
+        {
+            return string.Empty;
+        }
+
+        var parts = formModel.TagsInput.Split(',');
+        return parts.Last().Trim();
+    }
+
+    private void ShowTagSuggestions()
+    {
+        showTagSuggestions = true;
+        UpdateTagSuggestions();
+    }
+
+    private void OnTagInputBlur()
+    {
+        // Delay hiding to allow click on suggestion to register
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            showTagSuggestions = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void AddTag(string tag)
+    {
+        var currentTags = GetTags().ToList();
+
+        if (currentTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (currentTags.Any())
+        {
+            formModel.TagsInput = string.Join(", ", currentTags) + ", " + tag;
+        }
+        else
+        {
+            formModel.TagsInput = tag;
+        }
+
+        UpdateTagSuggestions();
+    }
+
+    private void RemoveTag(string tag)
+    {
+        var currentTags = GetTags().ToList();
+        currentTags.RemoveAll(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase));
+        formModel.TagsInput = string.Join(", ", currentTags);
+    }
+
     private async Task HandleSubmit()
     {
         if (string.IsNullOrWhiteSpace(formModel.Title) ||
@@ -606,6 +1065,17 @@
         {
             errorMessage = "Please fill in all required fields.";
             return;
+        }
+
+        // Validate slug format for new posts
+        if (!IsEditMode)
+        {
+            var formatError = ValidateSlugFormat(formModel.Slug);
+            if (formatError != null)
+            {
+                errorMessage = formatError;
+                return;
+            }
         }
 
         isSaving = true;
@@ -716,6 +1186,81 @@
         {
             isDeleting = false;
         }
+    }
+
+    private async Task AutoSaveAsync()
+    {
+        // Only auto-save if there are unsaved changes and we're in edit mode
+        if (!IsEditMode || !hasUnsavedChanges || isSaving || isAutoSaving)
+        {
+            return;
+        }
+
+        isAutoSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var tags = GetTags().ToList();
+            var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+
+            var request = new UpdatePostRequest(
+                formModel.Title,
+                formModel.Summary,
+                formModel.Content,
+                publishedDate,
+                formModel.Status,
+                tags);
+
+            var response = await Http.PutAsJsonAsync($"api/admin/posts/{Slug}", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                lastAutoSaveTime = DateTime.Now;
+                originalFormState = CloneFormModel(formModel);
+            }
+        }
+        catch
+        {
+            // Silently fail auto-save, user can still manually save
+        }
+        finally
+        {
+            isAutoSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private static PostEditorModel CloneFormModel(PostEditorModel model) => new()
+    {
+        Title = model.Title,
+        Slug = model.Slug,
+        Summary = model.Summary,
+        Content = model.Content,
+        PublishedDate = model.PublishedDate,
+        Status = model.Status,
+        TagsInput = model.TagsInput,
+        CreatedAt = model.CreatedAt,
+        UpdatedAt = model.UpdatedAt,
+        CreatedBy = model.CreatedBy,
+        UpdatedBy = model.UpdatedBy,
+    };
+
+    private static bool FormEquals(PostEditorModel a, PostEditorModel b) =>
+        a.Title == b.Title &&
+        a.Slug == b.Slug &&
+        a.Summary == b.Summary &&
+        a.Content == b.Content &&
+        a.PublishedDate == b.PublishedDate &&
+        a.Status == b.Status &&
+        a.TagsInput == b.TagsInput;
+
+    public void Dispose()
+    {
+        autoSaveTimer?.Dispose();
+        slugCheckCts?.Cancel();
+        slugCheckCts?.Dispose();
+        _ = JS.InvokeVoidAsync("postEditor.unregisterBeforeUnload");
     }
 
     private class PostEditorModel

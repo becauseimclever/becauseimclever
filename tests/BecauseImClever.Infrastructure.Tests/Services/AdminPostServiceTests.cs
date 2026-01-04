@@ -920,6 +920,166 @@ public class AdminPostServiceTests
             service.GetPostForEditAsync(null!));
     }
 
+    /// <summary>
+    /// Verifies that SlugExistsAsync returns true when slug exists.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task SlugExistsAsync_WhenSlugExists_ReturnsTrue()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var post = this.CreateTestPost("existing-slug", "Test Post", DateTime.UtcNow);
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.SlugExistsAsync("existing-slug");
+
+        // Assert
+        Assert.True(result);
+    }
+
+    /// <summary>
+    /// Verifies that SlugExistsAsync returns false when slug does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task SlugExistsAsync_WhenSlugDoesNotExist_ReturnsFalse()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.SlugExistsAsync("non-existent-slug");
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that SlugExistsAsync is case-sensitive.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task SlugExistsAsync_WithDifferentCase_ReturnsFalse()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var post = this.CreateTestPost("my-slug", "Test Post", DateTime.UtcNow);
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.SlugExistsAsync("MY-SLUG");
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that SlugExistsAsync throws when slug is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task SlugExistsAsync_WithNullSlug_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            service.SlugExistsAsync(null!));
+    }
+
+    /// <summary>
+    /// Verifies that GetAllTagsAsync returns empty collection when no posts exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllTagsAsync_WhenNoPosts_ReturnsEmptyCollection()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetAllTagsAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetAllTagsAsync returns unique tags from all posts.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllTagsAsync_WithMultiplePosts_ReturnsUniqueTagsSorted()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var post1 = this.CreateTestPost("post-1", "Post 1", DateTime.UtcNow);
+        post1.Tags = new List<string> { "blazor", "dotnet" };
+
+        var post2 = this.CreateTestPost("post-2", "Post 2", DateTime.UtcNow);
+        post2.Tags = new List<string> { "dotnet", "csharp", "aspnet" };
+
+        context.Posts.AddRange(post1, post2);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetAllTagsAsync();
+
+        // Assert
+        var tags = result.ToList();
+        Assert.Equal(4, tags.Count);
+        Assert.Equal(new[] { "aspnet", "blazor", "csharp", "dotnet" }, tags);
+    }
+
+    /// <summary>
+    /// Verifies that GetAllTagsAsync returns tags sorted alphabetically.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllTagsAsync_ReturnsSortedAlphabetically()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var post = this.CreateTestPost("post-1", "Post 1", DateTime.UtcNow);
+        post.Tags = new List<string> { "zebra", "apple", "mango" };
+
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetAllTagsAsync();
+
+        // Assert
+        var tags = result.ToList();
+        Assert.Equal(new[] { "apple", "mango", "zebra" }, tags);
+    }
+
     private BlogDbContext CreateContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<BlogDbContext>()

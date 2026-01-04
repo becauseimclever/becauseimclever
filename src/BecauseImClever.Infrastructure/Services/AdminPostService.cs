@@ -264,6 +264,42 @@ public class AdminPostService : IAdminPostService
         return new BatchStatusUpdateResult(allSuccess, successCount, errors);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> is null.</exception>
+    public async Task<bool> SlugExistsAsync(string slug)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+
+        this.logger.LogDebug("Checking if slug '{Slug}' exists.", slug);
+
+        var exists = await this.context.Posts.AnyAsync(p => p.Slug == slug);
+
+        this.logger.LogDebug("Slug '{Slug}' exists: {Exists}.", slug, exists);
+
+        return exists;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<string>> GetAllTagsAsync()
+    {
+        this.logger.LogDebug("Retrieving all unique tags.");
+
+        var allTags = await this.context.Posts
+            .AsNoTracking()
+            .Select(p => p.Tags)
+            .ToListAsync();
+
+        var tags = allTags
+            .SelectMany(t => t)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
+
+        this.logger.LogDebug("Retrieved {Count} unique tags.", tags.Count);
+
+        return tags;
+    }
+
     private async Task<StatusUpdateResult> UpdateStatusInternalAsync(string slug, PostStatus newStatus, string updatedBy)
     {
         var post = await this.context.Posts.FirstOrDefaultAsync(p => p.Slug == slug);

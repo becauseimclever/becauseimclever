@@ -12,20 +12,30 @@ using Moq;
 public class PostsControllerTests
 {
     private readonly Mock<IBlogService> mockBlogService;
+    private readonly Mock<IPostImageService> mockPostImageService;
     private readonly PostsController controller;
 
     public PostsControllerTests()
     {
         this.mockBlogService = new Mock<IBlogService>();
-        this.controller = new PostsController(this.mockBlogService.Object);
+        this.mockPostImageService = new Mock<IPostImageService>();
+        this.controller = new PostsController(this.mockBlogService.Object, this.mockPostImageService.Object);
     }
 
     [Fact]
     public void Constructor_WithNullBlogService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(null!));
+        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(null!, this.mockPostImageService.Object));
         Assert.Equal("blogService", exception.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WithNullPostImageService_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(this.mockBlogService.Object, null!));
+        Assert.Equal("postImageService", exception.ParamName);
     }
 
     [Fact]
@@ -127,5 +137,40 @@ public class PostsControllerTests
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetImage_WhenImageExists_ReturnsFile()
+    {
+        // Arrange
+        var imageData = new byte[] { 1, 2, 3, 4 };
+        var image = new PostImage
+        {
+            Filename = "test.png",
+            ContentType = "image/png",
+            Data = imageData,
+        };
+        this.mockPostImageService.Setup(s => s.GetImageAsync("test-post", "test.png")).ReturnsAsync(image);
+
+        // Act
+        var result = await this.controller.GetImage("test-post", "test.png");
+
+        // Assert
+        var fileResult = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("image/png", fileResult.ContentType);
+        Assert.Equal(imageData, fileResult.FileContents);
+    }
+
+    [Fact]
+    public async Task GetImage_WhenImageNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockPostImageService.Setup(s => s.GetImageAsync("test-post", "non-existent.png")).ReturnsAsync((PostImage?)null);
+
+        // Act
+        var result = await this.controller.GetImage("test-post", "non-existent.png");
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result);
     }
 }

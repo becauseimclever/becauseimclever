@@ -6,7 +6,7 @@ This feature enables administrators to create and edit blog posts directly throu
 
 ---
 
-## Status: 🔄 Phase 3 Complete
+## Status: 🔄 Phase 5 In Progress
 
 ---
 
@@ -181,7 +181,7 @@ public record UpdatePostResult(
 | 3.4 | Implement side-by-side editor/preview layout | ✅ |
 | 3.5 | Add toggle for preview-only view | ✅ |
 | 3.6 | Integrate Markdig for preview rendering | ✅ |
-| 3.7 | Add syntax highlighting for code blocks in preview | ⏳ |
+| 3.7 | Add syntax highlighting for code blocks in preview | ✅ |
 | 3.8 | Add keyboard shortcuts (Ctrl+B, Ctrl+I, etc.) | ✅ |
 | 3.9 | Style editor to match site theme | ✅ |
 | 3.10 | Unit tests for markdown editor component (42 tests) | ✅ |
@@ -211,26 +211,28 @@ public record UpdatePostResult(
 
 | Task | Description | Status |
 |------|-------------|--------|
-| 4.1 | Create `PostImage` entity (if not exists from 021) | ⏳ |
-| 4.2 | Create database migration for `post_images` table | ⏳ |
-| 4.3 | Create `IPostImageService` interface | ⏳ |
-| 4.4 | Implement `DatabasePostImageService` | ⏳ |
-| 4.5 | Add POST `/api/admin/posts/{slug}/images` endpoint | ⏳ |
-| 4.6 | Add GET `/api/posts/{slug}/images/{filename}` endpoint | ⏳ |
-| 4.7 | Add DELETE `/api/admin/posts/{slug}/images/{filename}` endpoint | ⏳ |
-| 4.8 | Add image upload button to editor toolbar | ⏳ |
-| 4.9 | Create image upload modal/dialog | ⏳ |
-| 4.10 | Auto-insert markdown image syntax after upload | ⏳ |
+| 4.1 | Create `PostImage` entity (if not exists from 021) | ✅ |
+| 4.2 | Create database migration for `post_images` table | ✅ |
+| 4.3 | Create `IPostImageService` interface | ✅ |
+| 4.4 | Implement `DatabasePostImageService` | ✅ |
+| 4.5 | Add POST `/api/admin/posts/{slug}/images` endpoint | ✅ |
+| 4.6 | Add GET `/api/posts/{slug}/images/{filename}` endpoint | ✅ |
+| 4.7 | Add DELETE `/api/admin/posts/{slug}/images/{filename}` endpoint | ✅ |
+| 4.8 | Add image upload button to editor toolbar | ✅ |
+| 4.9 | Create image upload modal/dialog | ✅ |
+| 4.10 | Auto-insert markdown image syntax after upload | ✅ |
 | 4.11 | Add drag-and-drop image upload to editor | ⏳ |
 | 4.12 | Add paste image support (Ctrl+V) | ⏳ |
-| 4.13 | Create image gallery panel for managing images | ⏳ |
-| 4.14 | Add image validation (size, type limits) | ⏳ |
-| 4.15 | Unit tests for image service | ⏳ |
-| 4.16 | Unit tests for image controller | ⏳ |
+| 4.13 | Create image gallery panel for managing images | ✅ |
+| 4.14 | Add image validation (size, type limits) | ✅ |
+| 4.15 | Unit tests for image service (28 tests) | ✅ |
+| 4.16 | Unit tests for image controller (8 tests) | ✅ |
+| 4.17 | Create ClientPostImageService for client-side API calls | ✅ |
+| 4.18 | Unit tests for ClientPostImageService (8 tests) | ✅ |
 
 #### Image Storage Options
 
-**Option A: PostgreSQL BYTEA (Recommended for simplicity)**
+**Option A: PostgreSQL BYTEA (Recommended for simplicity)** ← Implemented
 - Store images as binary data in `post_images` table
 - Pros: Single data store, transactional with posts, simpler backup
 - Cons: Larger database size, slightly slower for large images
@@ -257,16 +259,19 @@ public record UpdatePostResult(
 
 | Task | Description | Status |
 |------|-------------|--------|
-| 5.1 | Auto-save draft every 30 seconds | ⏳ |
-| 5.2 | Show "Saving..." indicator during auto-save | ⏳ |
-| 5.3 | Unsaved changes warning when navigating away | ⏳ |
-| 5.4 | Slug validation (URL-safe, uniqueness check) | ⏳ |
-| 5.5 | Tag autocomplete from existing tags | ⏳ |
+| 5.1 | Auto-save draft every 30 seconds | ✅ |
+| 5.2 | Show "Saving..." indicator during auto-save | ✅ |
+| 5.3 | Unsaved changes warning when navigating away | ✅ |
+| 5.4 | Slug validation (URL-safe, uniqueness check) | ✅ |
+| 5.5 | Tag autocomplete from existing tags | ✅ |
 | 5.6 | Full-screen editor mode | ⏳ |
 | 5.7 | Post preview page (view as published) | ⏳ |
-| 5.8 | Word count / reading time estimate | ⏳ |
+| 5.8 | Word count / reading time estimate | ✅ |
 | 5.9 | Undo/redo support | ⏳ |
 | 5.10 | E2E tests for complete editor workflow | ⏳ |
+| 5.11 | Unit tests for word count and unsaved changes (5 tests) | ✅ |
+| 5.12 | Unit tests for slug validation (6 tests) | ✅ |
+| 5.13 | Unit tests for tag autocomplete (5 tests) | ✅ |
 
 ---
 

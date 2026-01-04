@@ -8,6 +8,8 @@
     <base href="/" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/site.css" />
+    <!-- Prism.js syntax highlighting - Tomorrow Night theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" integrity="sha512-vswe+cgvic/XBoF1OcM/TeJ2FW0OofqAVdCZiEYkd6dwGXthvkSFWOoGGJgS2CW70VK5dQM5Oh+7ne47s74VTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <script type="importmap"></script>
     <script>
@@ -35,8 +37,20 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <!-- Prism.js syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js" integrity="sha512-pL/BGhxRoYZSf/nUHK0e7Nwu0Jn2uGl9LFf0jaW+nmLH9B8I3k3HdG39XlkLsNBv8NFzMCW6jBLNVEz2W1xKSg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js" integrity="sha512-6LaQMqY4JZ0Sw78S+d2cNz8Y2pV2RZO1lybZcxf4qDv2t3EeMvHqq2lL8TkpLwFXBHYWRkLNKP2xyLlL+iQjSA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js" integrity="sha512-AKaNmg8COK0zEbjTdMHJAPJ0z6VeNqvRvH4/d5M4sHJbQQUToMBtodq4HaV4fa+WV2UTfoperElm66c9/8cKmQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js" integrity="sha512-1VkazJuUiagCF7Bm54nvPNE2W+rvJtvHo6roNmViO2xHKwF9m9oF9a5IKNsfcF79X1h9i3H0AxT2LInRHPLwgg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js" integrity="sha512-xwzbKUnu/pqtXnS2WQs1aOMoe0DjYMEkMAAzSdCKM8z61w3zkAwX/dT/Oy5nUl2IbING3grrgYU5QW/jLfnPYg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js" integrity="sha512-T6glVY8vmGAf4YBLvRhcHvqfVb4M2uPUC7d7qy5GtmBH2jqdq7k8qX6hFng4UxIjTUhCTsEjkLHLNKS+6UWgTg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js" integrity="sha512-EbWcBLu9WT5tQ/RKlhCkC3xYHRzHI4bI0+fmxPl8pxwqvICfNlNdyviJ7O8dcTH29NJrq0w4S7FRjQKzX5X4cQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" integrity="sha512-whYbGFIB4E6C0Bqs+2LNy4lYX6e+dWxHa1FW6J/y3r+2e0b1S6Q0Pf9JQ4V2JWm1IdKT3MBuUK41p3xVxr20ig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js" integrity="sha512-rI4RJHZ1EhjP1IjOcmfnyJRfREeNijJbcb1DZCOmZ5M7IhJJr8jCekxKpVmPW9DPCc95UO/0wMnKk5XL3LvXQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="js/fingerprint.js"></script>
     <script src="js/extension-detection.js"></script>
+    <script src="js/post-editor.js"></script>
     <script>
         window.initIntersectionObserver = (dotNetHelper, elementId) => {
             const observer = new IntersectionObserver((entries) => {
@@ -68,6 +82,15 @@
                 if (textarea) {
                     textarea.focus();
                     textarea.setSelectionRange(start, end);
+                }
+            },
+            highlightCode: (containerId) => {
+                const container = document.getElementById(containerId);
+                if (container && typeof Prism !== 'undefined') {
+                    const codeBlocks = container.querySelectorAll('pre code');
+                    codeBlocks.forEach((block) => {
+                        Prism.highlightElement(block);
+                    });
                 }
             }
         };

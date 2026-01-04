@@ -61,4 +61,17 @@ public interface IAdminPostService
     /// <param name="updatedBy">The identifier of the user making the changes.</param>
     /// <returns>The result of the batch update operation.</returns>
     Task<BatchStatusUpdateResult> UpdateStatusesAsync(IEnumerable<StatusUpdate> updates, string updatedBy);
+
+    /// <summary>
+    /// Checks if a blog post with the specified slug already exists.
+    /// </summary>
+    /// <param name="slug">The slug to check.</param>
+    /// <returns>True if a post with the slug exists; otherwise, false.</returns>
+    Task<bool> SlugExistsAsync(string slug);
+
+    /// <summary>
+    /// Gets all unique tags used across all blog posts.
+    /// </summary>
+    /// <returns>A collection of unique tags sorted alphabetically.</returns>
+    Task<IEnumerable<string>> GetAllTagsAsync();
 }

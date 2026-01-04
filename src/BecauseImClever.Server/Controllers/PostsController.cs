@@ -12,16 +12,20 @@ namespace BecauseImClever.Server.Controllers
     public class PostsController : ControllerBase
     {
         private readonly IBlogService blogService;
+        private readonly IPostImageService postImageService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PostsController"/> class.
         /// </summary>
         /// <param name="blogService">The blog service dependency.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="blogService"/> is null.</exception>
-        public PostsController(IBlogService blogService)
+        /// <param name="postImageService">The post image service dependency.</param>
+        /// <exception cref="ArgumentNullException">Thrown when required dependencies are null.</exception>
+        public PostsController(IBlogService blogService, IPostImageService postImageService)
         {
             ArgumentNullException.ThrowIfNull(blogService);
+            ArgumentNullException.ThrowIfNull(postImageService);
             this.blogService = blogService;
+            this.postImageService = postImageService;
         }
 
         /// <summary>
@@ -56,6 +60,25 @@ namespace BecauseImClever.Server.Controllers
             }
 
             return post;
+        }
+
+        /// <summary>
+        /// Gets an image for a blog post.
+        /// </summary>
+        /// <param name="slug">The slug of the blog post.</param>
+        /// <param name="filename">The filename of the image.</param>
+        /// <returns>The image file if found; otherwise, a 404 Not Found response.</returns>
+        [HttpGet("{slug}/images/{filename}")]
+        [ResponseCache(Duration = 86400)] // Cache for 24 hours
+        public async Task<IActionResult> GetImage(string slug, string filename)
+        {
+            var image = await this.postImageService.GetImageAsync(slug, filename);
+            if (image == null)
+            {
+                return this.NotFound();
+            }
+
+            return this.File(image.Data, image.ContentType, image.Filename);
         }
     }
 }

@@ -23,6 +23,11 @@ public class BlogDbContext : DbContext
     public DbSet<BlogPost> Posts => this.Set<BlogPost>();
 
     /// <summary>
+    /// Gets the post images table.
+    /// </summary>
+    public DbSet<PostImage> PostImages => this.Set<PostImage>();
+
+    /// <summary>
     /// Gets the feature settings table.
     /// </summary>
     public DbSet<FeatureSettings> FeatureSettings => this.Set<FeatureSettings>();

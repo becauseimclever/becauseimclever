@@ -69,4 +69,9 @@ public class BlogPost
     /// Gets or sets the identifier of the user who last updated the blog post.
     /// </summary>
     public string? UpdatedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the collection of images associated with this blog post.
+    /// </summary>
+    public ICollection<PostImage> Images { get; set; } = new List<PostImage>();
 }
