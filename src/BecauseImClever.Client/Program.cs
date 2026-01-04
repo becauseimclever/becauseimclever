@@ -17,6 +17,7 @@ builder.Services.AddScoped<IProjectService, ClientProjectService>();
 builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddScoped<IBrowserFingerprintService, ClientBrowserFingerprintService>();
 builder.Services.AddScoped<IBrowserExtensionDetector, ClientBrowserExtensionDetector>();
+builder.Services.AddScoped<IClientExtensionTrackingService, ClientExtensionTrackingService>();
 
 // Add authentication services
 builder.Services.AddAuthorizationCore(options =>
