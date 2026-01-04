@@ -192,4 +192,74 @@ public class ExtensionTrackingServiceTests : IDisposable
         // Assert
         Assert.Empty(result);
     }
+
+    /// <summary>
+    /// Verifies that DeleteDataByFingerprintAsync deletes matching records.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteDataByFingerprintAsync_DeletesMatchingRecords()
+    {
+        // Arrange
+        var service = new ExtensionTrackingService(this.context);
+        var targetHash = "target-user";
+
+        this.context.ExtensionDetectionEvents.AddRange(
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = targetHash, ExtensionId = "honey", ExtensionName = "Honey", DetectedAt = DateTime.UtcNow },
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = targetHash, ExtensionId = "rakuten", ExtensionName = "Rakuten", DetectedAt = DateTime.UtcNow },
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = "other-user", ExtensionId = "honey", ExtensionName = "Honey", DetectedAt = DateTime.UtcNow });
+        await this.context.SaveChangesAsync();
+
+        // Act
+        var deletedCount = await service.DeleteDataByFingerprintAsync(targetHash);
+
+        // Assert
+        Assert.Equal(2, deletedCount);
+        var remaining = await this.context.ExtensionDetectionEvents.ToListAsync();
+        Assert.Single(remaining);
+        Assert.Equal("other-user", remaining[0].FingerprintHash);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteDataByFingerprintAsync returns zero when no data found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteDataByFingerprintAsync_WhenNoData_ReturnsZero()
+    {
+        // Arrange
+        var service = new ExtensionTrackingService(this.context);
+
+        // Act
+        var deletedCount = await service.DeleteDataByFingerprintAsync("nonexistent");
+
+        // Assert
+        Assert.Equal(0, deletedCount);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteDataByFingerprintAsync removes all records for fingerprint.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteDataByFingerprintAsync_RemovesAllRecordsForFingerprint()
+    {
+        // Arrange
+        var service = new ExtensionTrackingService(this.context);
+        var targetHash = "delete-me";
+
+        this.context.ExtensionDetectionEvents.AddRange(
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = targetHash, ExtensionId = "ext1", ExtensionName = "Ext 1", DetectedAt = DateTime.UtcNow },
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = targetHash, ExtensionId = "ext2", ExtensionName = "Ext 2", DetectedAt = DateTime.UtcNow },
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = targetHash, ExtensionId = "ext3", ExtensionName = "Ext 3", DetectedAt = DateTime.UtcNow });
+        await this.context.SaveChangesAsync();
+
+        // Act
+        var deletedCount = await service.DeleteDataByFingerprintAsync(targetHash);
+
+        // Assert
+        Assert.Equal(3, deletedCount);
+        var remaining = await this.context.ExtensionDetectionEvents.ToListAsync();
+        Assert.Empty(remaining);
+    }
 }

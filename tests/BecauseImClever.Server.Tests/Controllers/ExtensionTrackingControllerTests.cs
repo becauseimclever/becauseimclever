@@ -144,4 +144,64 @@ public class ExtensionTrackingControllerTests
         Assert.IsType<NoContentResult>(result);
         this.trackingServiceMock.Verify(x => x.TrackDetectionAsync(It.IsAny<string>(), It.IsAny<DetectedExtension>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
+
+    /// <summary>
+    /// Verifies that DeleteMyData deletes data for fingerprint hash.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteMyData_DeletesDataForFingerprint()
+    {
+        // Arrange
+        var request = new DeleteDataRequest("my-fingerprint-hash");
+        this.trackingServiceMock.Setup(x => x.DeleteDataByFingerprintAsync("my-fingerprint-hash"))
+            .ReturnsAsync(5);
+
+        // Act
+        var result = await this.controller.DeleteMyData(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteDataResponse>(okResult.Value);
+        Assert.Equal(5, response.DeletedRecords);
+        Assert.Contains("5", response.Message);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteMyData returns zero when no data found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteMyData_WhenNoDataFound_ReturnsZeroRecords()
+    {
+        // Arrange
+        var request = new DeleteDataRequest("unknown-hash");
+        this.trackingServiceMock.Setup(x => x.DeleteDataByFingerprintAsync("unknown-hash"))
+            .ReturnsAsync(0);
+
+        // Act
+        var result = await this.controller.DeleteMyData(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteDataResponse>(okResult.Value);
+        Assert.Equal(0, response.DeletedRecords);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteMyData returns BadRequest when fingerprint is empty.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteMyData_WhenFingerprintEmpty_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new DeleteDataRequest(string.Empty);
+
+        // Act
+        var result = await this.controller.DeleteMyData(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
 }

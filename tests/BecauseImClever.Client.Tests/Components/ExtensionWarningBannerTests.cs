@@ -22,6 +22,7 @@ public class ExtensionWarningBannerTests : TestContext
     private readonly Mock<IFeatureToggleService> featureToggleMock;
     private readonly Mock<IBrowserFingerprintService> fingerprintMock;
     private readonly Mock<IClientExtensionTrackingService> trackingMock;
+    private readonly Mock<IConsentService> consentMock;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionWarningBannerTests"/> class.
@@ -32,11 +33,13 @@ public class ExtensionWarningBannerTests : TestContext
         this.featureToggleMock = new Mock<IFeatureToggleService>();
         this.fingerprintMock = new Mock<IBrowserFingerprintService>();
         this.trackingMock = new Mock<IClientExtensionTrackingService>();
+        this.consentMock = new Mock<IConsentService>();
 
         this.Services.AddSingleton(this.detectorMock.Object);
         this.Services.AddSingleton(this.featureToggleMock.Object);
         this.Services.AddSingleton(this.fingerprintMock.Object);
         this.Services.AddSingleton(this.trackingMock.Object);
+        this.Services.AddSingleton(this.consentMock.Object);
 
         // Setup default JSInterop for localStorage
         this.JSInterop.SetupVoid("localStorage.setItem", _ => true);
@@ -46,6 +49,9 @@ public class ExtensionWarningBannerTests : TestContext
         // Setup default fingerprint
         this.fingerprintMock.Setup(x => x.CollectFingerprintAsync())
             .ReturnsAsync(new BrowserFingerprint("canvas", "renderer", "1920x1080", 24, "UTC", "en-US", "Win32", 8));
+
+        // Setup default consent (consented by default for tests)
+        this.consentMock.Setup(x => x.HasUserConsentedAsync()).ReturnsAsync(true);
     }
 
     /// <summary>

@@ -38,6 +38,11 @@ public class MainLayoutTests : BunitContext
 
         var trackingMock = new Mock<IClientExtensionTrackingService>();
         this.Services.AddSingleton(trackingMock.Object);
+
+        // Setup consent service mock
+        var consentMock = new Mock<IConsentService>();
+        consentMock.Setup(x => x.HasConsentBeenGivenAsync()).ReturnsAsync(true);
+        this.Services.AddSingleton(consentMock.Object);
     }
 
     [Fact]

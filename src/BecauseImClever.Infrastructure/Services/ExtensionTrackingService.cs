@@ -69,4 +69,22 @@ public class ExtensionTrackingService : IExtensionTrackingService
             .Distinct()
             .CountAsync();
     }
+
+    /// <inheritdoc />
+    public async Task<int> DeleteDataByFingerprintAsync(string fingerprintHash)
+    {
+        var events = await this.context.ExtensionDetectionEvents
+            .Where(e => e.FingerprintHash == fingerprintHash)
+            .ToListAsync();
+
+        if (events.Count == 0)
+        {
+            return 0;
+        }
+
+        this.context.ExtensionDetectionEvents.RemoveRange(events);
+        await this.context.SaveChangesAsync();
+
+        return events.Count;
+    }
 }

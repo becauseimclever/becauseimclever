@@ -37,4 +37,11 @@ public interface IExtensionTrackingService
     /// </summary>
     /// <returns>The count of unique visitors with extensions.</returns>
     Task<int> GetTotalUniqueVisitorsWithExtensionsAsync();
+
+    /// <summary>
+    /// Deletes all tracking data associated with a specific fingerprint hash (GDPR right to erasure).
+    /// </summary>
+    /// <param name="fingerprintHash">The hash of the browser fingerprint to delete data for.</param>
+    /// <returns>The number of records deleted.</returns>
+    Task<int> DeleteDataByFingerprintAsync(string fingerprintHash);
 }

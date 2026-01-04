@@ -1,0 +1,70 @@
+@using BecauseImClever.Application.Interfaces
+@inject IBrowserFingerprintService FingerprintService
+@inject IDataDeletionService DeletionService
+
+<div class="data-deletion-form">
+    <h3>Your Data Rights</h3>
+    <p>
+        Under GDPR and similar regulations, you have the right to request deletion of your data.
+        Click the button below to delete all tracking data associated with this browser.
+    </p>
+    
+    @if (isProcessing)
+    {
+        <p class="processing">Processing your request...</p>
+    }
+    else if (result != null)
+    {
+        @if (result.Success)
+        {
+            <div class="success-message">
+                <span class="icon">✓</span>
+                <p>@result.Message</p>
+                @if (result.DeletedRecords > 0)
+                {
+                    <p>@result.DeletedRecords record(s) were deleted.</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="error-message">
+                <span class="icon">✗</span>
+                <p>An error occurred while processing your request. Please try again later.</p>
+            </div>
+        }
+    }
+    else
+    {
+        <button class="delete-btn" @onclick="DeleteMyDataAsync">
+            Delete My Data
+        </button>
+    }
+</div>
+
+@code {
+    private bool isProcessing;
+    private DeletionResult? result;
+
+    private async Task DeleteMyDataAsync()
+    {
+        isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var fingerprint = await FingerprintService.CollectFingerprintAsync();
+            var hash = fingerprint.ComputeHash();
+            result = await DeletionService.DeleteMyDataAsync(hash);
+        }
+        catch
+        {
+            result = new DeletionResult(false, 0, "An error occurred");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

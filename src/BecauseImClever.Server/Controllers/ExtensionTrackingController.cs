@@ -80,6 +80,28 @@ public class ExtensionTrackingController : ControllerBase
         return this.Ok(new ExtensionStatisticsResponse(totalVisitors, extensionCounts));
     }
 
+    /// <summary>
+    /// Deletes all tracking data for a specific fingerprint (GDPR right to erasure).
+    /// </summary>
+    /// <param name="request">The request containing the fingerprint hash.</param>
+    /// <returns>Response indicating how many records were deleted.</returns>
+    [HttpPost("delete-my-data")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DeleteMyData([FromBody] DeleteDataRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FingerprintHash))
+        {
+            return this.BadRequest("Fingerprint hash is required.");
+        }
+
+        var deletedCount = await this.trackingService.DeleteDataByFingerprintAsync(request.FingerprintHash);
+        var message = deletedCount > 0
+            ? $"Successfully deleted {deletedCount} tracking record(s) associated with your browser."
+            : "No tracking data found for your browser.";
+
+        return this.Ok(new DeleteDataResponse(deletedCount, message));
+    }
+
     private static string HashString(string input)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));

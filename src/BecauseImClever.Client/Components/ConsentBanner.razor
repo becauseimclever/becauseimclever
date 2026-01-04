@@ -1,0 +1,45 @@
+@using BecauseImClever.Application.Interfaces
+@inject IConsentService ConsentService
+
+@if (showBanner)
+{
+    <div class="consent-banner">
+        <div class="consent-content">
+            <h3>Privacy & Extension Detection Consent</h3>
+            <p>
+                We would like to detect browser extensions to help protect you from potentially harmful ones. 
+                This information is collected anonymously and helps us provide security warnings.
+            </p>
+            <p class="privacy-note">
+                Your privacy matters to us. No personal data is stored, only hashed identifiers for analytics purposes.
+                <a href="/privacy">Read our full Privacy Policy</a>
+            </p>
+            <div class="consent-actions">
+                <button class="accept-btn" @onclick="AcceptAsync">Accept</button>
+                <button class="decline-btn" @onclick="DeclineAsync">Decline</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showBanner;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hasConsented = await this.ConsentService.HasConsentBeenGivenAsync();
+        this.showBanner = !hasConsented;
+    }
+
+    private async Task AcceptAsync()
+    {
+        await this.ConsentService.SaveConsentAsync(true);
+        this.showBanner = false;
+    }
+
+    private async Task DeclineAsync()
+    {
+        await this.ConsentService.SaveConsentAsync(false);
+        this.showBanner = false;
+    }
+}
