@@ -13,6 +13,7 @@ using BecauseImClever.Domain.Entities;
 /// <param name="Status">The current status of the post.</param>
 /// <param name="UpdatedAt">When the post was last updated.</param>
 /// <param name="UpdatedBy">Who last updated the post.</param>
+/// <param name="ScheduledPublishDate">The optional scheduled publish date for future publication.</param>
 public record AdminPostSummary(
     string Slug,
     string Title,
@@ -21,4 +22,5 @@ public record AdminPostSummary(
     IReadOnlyList<string> Tags,
     PostStatus Status,
     DateTime UpdatedAt,
-    string? UpdatedBy);
+    string? UpdatedBy,
+    DateTimeOffset? ScheduledPublishDate = null);

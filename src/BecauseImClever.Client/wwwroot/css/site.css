@@ -1142,6 +1142,10 @@ footer {
     color: #28a745;
 }
 
+.stat-card.scheduled .stat-value {
+    color: #17a2b8;
+}
+
 .stat-card.draft .stat-value {
     color: #ffc107;
 }

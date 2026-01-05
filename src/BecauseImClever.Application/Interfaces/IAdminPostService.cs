@@ -74,4 +74,14 @@ public interface IAdminPostService
     /// </summary>
     /// <returns>A collection of unique tags sorted alphabetically.</returns>
     Task<IEnumerable<string>> GetAllTagsAsync();
+
+    /// <summary>
+    /// Gets all scheduled posts that are ready to be published.
+    /// </summary>
+    /// <param name="currentTime">The current time to compare against scheduled dates.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of posts ready to be published.</returns>
+    Task<IEnumerable<BlogPost>> GetScheduledPostsReadyToPublishAsync(
+        DateTimeOffset currentTime,
+        CancellationToken cancellationToken = default);
 }

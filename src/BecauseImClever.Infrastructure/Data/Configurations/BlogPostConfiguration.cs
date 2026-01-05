@@ -83,6 +83,9 @@ public class BlogPostConfiguration : IEntityTypeConfiguration<BlogPost>
             .HasColumnName("updated_by")
             .HasMaxLength(100);
 
+        builder.Property(p => p.ScheduledPublishDate)
+            .HasColumnName("scheduled_publish_date");
+
         builder.HasIndex(p => p.PublishedDate)
             .IsDescending();
     }

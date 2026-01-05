@@ -12,6 +12,7 @@ using BecauseImClever.Domain.Entities;
 /// <param name="PublishedDate">The publication date of the post.</param>
 /// <param name="Status">The status of the post.</param>
 /// <param name="Tags">The tags associated with the post.</param>
+/// <param name="ScheduledPublishDate">The optional scheduled publish date for future publication.</param>
 public record CreatePostRequest(
     string Title,
     string Slug,
@@ -19,4 +20,5 @@ public record CreatePostRequest(
     string Content,
     DateTimeOffset PublishedDate,
     PostStatus Status,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    DateTimeOffset? ScheduledPublishDate = null);

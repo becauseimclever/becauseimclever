@@ -1080,6 +1080,117 @@ public class AdminPostServiceTests
         Assert.Equal(new[] { "apple", "mango", "zebra" }, tags);
     }
 
+    /// <summary>
+    /// Verifies that GetScheduledPostsReadyToPublishAsync returns posts with scheduled status and past date.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetScheduledPostsReadyToPublishAsync_WithReadyPosts_ReturnsPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var readyPost = this.CreateTestPost("ready-post", "Ready Post", DateTime.UtcNow.AddDays(-1), PostStatus.Scheduled);
+        readyPost.ScheduledPublishDate = DateTimeOffset.UtcNow.AddDays(-1);
+
+        var futurePost = this.CreateTestPost("future-post", "Future Post", DateTime.UtcNow, PostStatus.Scheduled);
+        futurePost.ScheduledPublishDate = DateTimeOffset.UtcNow.AddDays(7);
+
+        var publishedPost = this.CreateTestPost("published-post", "Published Post", DateTime.UtcNow, PostStatus.Published);
+
+        context.Posts.AddRange(readyPost, futurePost, publishedPost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetScheduledPostsReadyToPublishAsync(DateTimeOffset.UtcNow);
+
+        // Assert
+        var posts = result.ToList();
+        Assert.Single(posts);
+        Assert.Equal("ready-post", posts[0].Slug);
+    }
+
+    /// <summary>
+    /// Verifies that GetScheduledPostsReadyToPublishAsync returns empty when no posts are ready.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetScheduledPostsReadyToPublishAsync_WithNoReadyPosts_ReturnsEmpty()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var futurePost = this.CreateTestPost("future-post", "Future Post", DateTime.UtcNow, PostStatus.Scheduled);
+        futurePost.ScheduledPublishDate = DateTimeOffset.UtcNow.AddDays(7);
+
+        context.Posts.Add(futurePost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetScheduledPostsReadyToPublishAsync(DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetScheduledPostsReadyToPublishAsync does not return non-scheduled posts.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetScheduledPostsReadyToPublishAsync_WithNonScheduledStatus_DoesNotReturnPost()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var draftPost = this.CreateTestPost("draft-post", "Draft Post", DateTime.UtcNow.AddDays(-1), PostStatus.Draft);
+        draftPost.ScheduledPublishDate = DateTimeOffset.UtcNow.AddDays(-1);
+
+        context.Posts.Add(draftPost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetScheduledPostsReadyToPublishAsync(DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetScheduledPostsReadyToPublishAsync does not return posts without scheduled date.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetScheduledPostsReadyToPublishAsync_WithNullScheduledDate_DoesNotReturnPost()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var postWithoutDate = this.CreateTestPost("no-date-post", "No Date Post", DateTime.UtcNow.AddDays(-1), PostStatus.Scheduled);
+        postWithoutDate.ScheduledPublishDate = null;
+
+        context.Posts.Add(postWithoutDate);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetScheduledPostsReadyToPublishAsync(DateTimeOffset.UtcNow);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
     private BlogDbContext CreateContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<BlogDbContext>()

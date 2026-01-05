@@ -30,6 +30,9 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddScoped<IFeatureToggleService, FeatureToggleService>();
     builder.Services.AddScoped<IExtensionTrackingService, ExtensionTrackingService>();
     builder.Services.AddScoped<IPostImageService, PostImageService>();
+
+    // Register scheduled post publisher background service
+    builder.Services.AddHostedService<ScheduledPostPublisherService>();
 }
 else
 {

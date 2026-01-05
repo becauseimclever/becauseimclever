@@ -45,7 +45,8 @@ public class AdminPostService : IAdminPostService
                 p.Tags,
                 p.Status,
                 p.UpdatedAt,
-                p.UpdatedBy))
+                p.UpdatedBy,
+                p.ScheduledPublishDate))
             .ToListAsync();
 
         this.logger.LogInformation("Retrieved {Count} posts for admin view.", posts.Count);
@@ -75,7 +76,8 @@ public class AdminPostService : IAdminPostService
                 p.CreatedAt,
                 p.UpdatedAt,
                 p.CreatedBy,
-                p.UpdatedBy))
+                p.UpdatedBy,
+                p.ScheduledPublishDate))
             .FirstOrDefaultAsync();
 
         if (post == null)
@@ -118,6 +120,7 @@ public class AdminPostService : IAdminPostService
             PublishedDate = request.PublishedDate,
             Status = request.Status,
             Tags = request.Tags.ToList(),
+            ScheduledPublishDate = request.ScheduledPublishDate,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedBy = createdBy,
@@ -155,6 +158,7 @@ public class AdminPostService : IAdminPostService
         post.PublishedDate = request.PublishedDate;
         post.Status = request.Status;
         post.Tags = request.Tags.ToList();
+        post.ScheduledPublishDate = request.ScheduledPublishDate;
         post.UpdatedAt = DateTime.UtcNow;
         post.UpdatedBy = updatedBy;
 
@@ -298,6 +302,24 @@ public class AdminPostService : IAdminPostService
         this.logger.LogDebug("Retrieved {Count} unique tags.", tags.Count);
 
         return tags;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<BlogPost>> GetScheduledPostsReadyToPublishAsync(
+        DateTimeOffset currentTime,
+        CancellationToken cancellationToken = default)
+    {
+        this.logger.LogDebug("Retrieving scheduled posts ready for publishing (cutoff: {CurrentTime}).", currentTime);
+
+        var posts = await this.context.Posts
+            .Where(p => p.Status == PostStatus.Scheduled
+                && p.ScheduledPublishDate != null
+                && p.ScheduledPublishDate <= currentTime)
+            .ToListAsync(cancellationToken);
+
+        this.logger.LogDebug("Found {Count} scheduled post(s) ready for publishing.", posts.Count);
+
+        return posts;
     }
 
     private async Task<StatusUpdateResult> UpdateStatusInternalAsync(string slug, PostStatus newStatus, string updatedBy)

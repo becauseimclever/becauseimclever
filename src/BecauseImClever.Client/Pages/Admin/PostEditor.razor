@@ -147,13 +147,34 @@
                     <div class="sidebar-card">
                         <h3>Status</h3>
                         <div class="form-group">
-                            <InputSelect @bind-Value="formModel.Status">
+                            <InputSelect @bind-Value="formModel.Status" @bind-Value:after="OnStatusChanged">
                                 <option value="@PostStatus.Draft">Draft</option>
                                 <option value="@PostStatus.Published">Published</option>
+                                <option value="@PostStatus.Scheduled">Scheduled</option>
                                 <option value="@PostStatus.Debug">Debug</option>
                             </InputSelect>
                         </div>
                     </div>
+
+                    @if (formModel.Status == PostStatus.Scheduled)
+                    {
+                        <!-- Scheduled Date Card -->
+                        <div class="sidebar-card scheduled-card">
+                            <h3>Schedule Publication</h3>
+                            <div class="form-group">
+                                <label for="scheduledDate">Publish Date</label>
+                                <InputDate Type="InputDateType.DateTimeLocal" id="scheduledDate" @bind-Value="formModel.ScheduledPublishDate" />
+                                <span class="form-hint">Post will be automatically published at this date and time.</span>
+                            </div>
+                            @if (formModel.ScheduledPublishDate.HasValue)
+                            {
+                                <div class="scheduled-info">
+                                    <span class="scheduled-icon">📅</span>
+                                    <span>Scheduled for @formModel.ScheduledPublishDate.Value.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+                                </div>
+                            }
+                        </div>
+                    }
 
                     <!-- Published Date Card -->
                     <div class="sidebar-card">
@@ -438,6 +459,27 @@
         color: var(--text-muted);
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 0.5rem;
+    }
+
+    .scheduled-card {
+        border-color: var(--accent-color);
+        background: rgba(var(--accent-color-rgb, 99, 102, 241), 0.05);
+    }
+
+    .scheduled-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: var(--bg-color);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: var(--text-color);
+        margin-top: 0.75rem;
+    }
+
+    .scheduled-icon {
+        font-size: 1.2rem;
     }
 
     .form-group {
@@ -1024,6 +1066,7 @@
                     UpdatedAt = post.UpdatedAt,
                     CreatedBy = post.CreatedBy,
                     UpdatedBy = post.UpdatedBy,
+                    ScheduledPublishDate = post.ScheduledPublishDate?.LocalDateTime,
                 };
                 originalTitle = post.Title;
             }
@@ -1354,6 +1397,21 @@
         formModel.TagsInput = string.Join(", ", currentTags);
     }
 
+    private void OnStatusChanged()
+    {
+        // When switching to Scheduled status, set a default scheduled date if not set
+        if (formModel.Status == PostStatus.Scheduled && !formModel.ScheduledPublishDate.HasValue)
+        {
+            formModel.ScheduledPublishDate = DateTime.Now.AddDays(1).Date.AddHours(9); // Tomorrow at 9 AM
+        }
+
+        // Clear scheduled date when switching away from Scheduled status
+        if (formModel.Status != PostStatus.Scheduled)
+        {
+            formModel.ScheduledPublishDate = null;
+        }
+    }
+
     private async Task HandleSubmit()
     {
         if (string.IsNullOrWhiteSpace(formModel.Title) ||
@@ -1383,6 +1441,9 @@
         {
             var tags = GetTags().ToList();
             var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+            var scheduledDate = formModel.ScheduledPublishDate.HasValue
+                ? new DateTimeOffset(formModel.ScheduledPublishDate.Value, TimeSpan.Zero)
+                : (DateTimeOffset?)null;
 
             if (IsEditMode)
             {
@@ -1392,7 +1453,8 @@
                     formModel.Content,
                     publishedDate,
                     formModel.Status,
-                    tags);
+                    tags,
+                    scheduledDate);
 
                 var response = await Http.PutAsJsonAsync($"api/admin/posts/{Slug}", request);
 
@@ -1415,7 +1477,8 @@
                     formModel.Content,
                     publishedDate,
                     formModel.Status,
-                    tags);
+                    tags,
+                    scheduledDate);
 
                 var response = await Http.PostAsJsonAsync("api/admin/posts", request);
 
@@ -1521,6 +1584,9 @@
         {
             var tags = GetTags().ToList();
             var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+            var scheduledDate = formModel.ScheduledPublishDate.HasValue
+                ? new DateTimeOffset(formModel.ScheduledPublishDate.Value, TimeSpan.Zero)
+                : (DateTimeOffset?)null;
 
             var request = new UpdatePostRequest(
                 formModel.Title,
@@ -1528,7 +1594,8 @@
                 formModel.Content,
                 publishedDate,
                 formModel.Status,
-                tags);
+                tags,
+                scheduledDate);
 
             var response = await Http.PutAsJsonAsync($"api/admin/posts/{Slug}", request);
 
@@ -1562,6 +1629,7 @@
         UpdatedAt = model.UpdatedAt,
         CreatedBy = model.CreatedBy,
         UpdatedBy = model.UpdatedBy,
+        ScheduledPublishDate = model.ScheduledPublishDate,
     };
 
     private static bool FormEquals(PostEditorModel a, PostEditorModel b) =>
@@ -1571,7 +1639,8 @@
         a.Content == b.Content &&
         a.PublishedDate == b.PublishedDate &&
         a.Status == b.Status &&
-        a.TagsInput == b.TagsInput;
+        a.TagsInput == b.TagsInput &&
+        a.ScheduledPublishDate == b.ScheduledPublishDate;
 
     public void Dispose()
     {
@@ -1595,5 +1664,6 @@
         public DateTime UpdatedAt { get; set; }
         public string? CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
+        public DateTime? ScheduledPublishDate { get; set; }
     }
 }

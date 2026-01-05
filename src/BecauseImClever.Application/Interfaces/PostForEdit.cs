@@ -16,6 +16,7 @@ using BecauseImClever.Domain.Entities;
 /// <param name="UpdatedAt">When the post was last updated.</param>
 /// <param name="CreatedBy">Who created the post.</param>
 /// <param name="UpdatedBy">Who last updated the post.</param>
+/// <param name="ScheduledPublishDate">The optional scheduled publish date for future publication.</param>
 public record PostForEdit(
     string Slug,
     string Title,
@@ -27,4 +28,5 @@ public record PostForEdit(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     string? CreatedBy,
-    string? UpdatedBy);
+    string? UpdatedBy,
+    DateTimeOffset? ScheduledPublishDate = null);

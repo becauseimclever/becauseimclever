@@ -39,6 +39,10 @@
                 <p class="stat-value">@stats.PublishedPosts</p>
                 <p class="stat-label">Published</p>
             </div>
+            <div class="stat-card scheduled">
+                <p class="stat-value">@stats.ScheduledPosts</p>
+                <p class="stat-label">Scheduled</p>
+            </div>
             <div class="stat-card draft">
                 <p class="stat-value">@stats.DraftPosts</p>
                 <p class="stat-label">Drafts</p>
@@ -94,5 +98,5 @@
         }
     }
 
-    private record DashboardStats(int TotalPosts, int PublishedPosts, int DraftPosts, int DebugPosts);
+    private record DashboardStats(int TotalPosts, int PublishedPosts, int DraftPosts, int DebugPosts, int ScheduledPosts);
 }

@@ -206,4 +206,103 @@ public class BlogPostTests
         // Assert
         Assert.Equal(PostStatus.Published, blogPost.Status);
     }
+
+    [Fact]
+    public void ScheduledPublishDate_ShouldBeSettableAndGettable()
+    {
+        // Arrange
+        var blogPost = new BlogPost();
+        var expectedDate = new DateTimeOffset(2026, 2, 15, 9, 0, 0, TimeSpan.Zero);
+
+        // Act
+        blogPost.ScheduledPublishDate = expectedDate;
+
+        // Assert
+        Assert.Equal(expectedDate, blogPost.ScheduledPublishDate);
+    }
+
+    [Fact]
+    public void ScheduledPublishDate_ShouldDefaultToNull()
+    {
+        // Arrange & Act
+        var blogPost = new BlogPost();
+
+        // Assert
+        Assert.Null(blogPost.ScheduledPublishDate);
+    }
+
+    [Fact]
+    public void ScheduledPublishDate_ShouldAcceptNullValue()
+    {
+        // Arrange
+        var blogPost = new BlogPost
+        {
+            ScheduledPublishDate = new DateTimeOffset(2026, 2, 15, 9, 0, 0, TimeSpan.Zero),
+        };
+
+        // Act
+        blogPost.ScheduledPublishDate = null;
+
+        // Assert
+        Assert.Null(blogPost.ScheduledPublishDate);
+    }
+
+    [Fact]
+    public void IsScheduled_WhenStatusIsScheduledAndDateInFuture_ReturnsTrue()
+    {
+        // Arrange
+        var futureDate = DateTimeOffset.UtcNow.AddDays(7);
+        var blogPost = new BlogPost
+        {
+            Status = PostStatus.Scheduled,
+            ScheduledPublishDate = futureDate,
+        };
+
+        // Act & Assert
+        Assert.True(blogPost.IsScheduled);
+    }
+
+    [Fact]
+    public void IsScheduled_WhenStatusIsNotScheduled_ReturnsFalse()
+    {
+        // Arrange
+        var futureDate = DateTimeOffset.UtcNow.AddDays(7);
+        var blogPost = new BlogPost
+        {
+            Status = PostStatus.Published,
+            ScheduledPublishDate = futureDate,
+        };
+
+        // Act & Assert
+        Assert.False(blogPost.IsScheduled);
+    }
+
+    [Fact]
+    public void IsScheduled_WhenScheduledDateIsNull_ReturnsFalse()
+    {
+        // Arrange
+        var blogPost = new BlogPost
+        {
+            Status = PostStatus.Scheduled,
+            ScheduledPublishDate = null,
+        };
+
+        // Act & Assert
+        Assert.False(blogPost.IsScheduled);
+    }
+
+    [Fact]
+    public void IsScheduled_WhenScheduledDateIsPast_ReturnsFalse()
+    {
+        // Arrange
+        var pastDate = DateTimeOffset.UtcNow.AddDays(-1);
+        var blogPost = new BlogPost
+        {
+            Status = PostStatus.Scheduled,
+            ScheduledPublishDate = pastDate,
+        };
+
+        // Act & Assert
+        Assert.False(blogPost.IsScheduled);
+    }
 }

@@ -192,17 +192,17 @@ WHERE status = 'Scheduled' AND scheduled_publish_date IS NOT NULL;
 5. **Catch-Up on Missed Posts**: If the server was down, the service publishes all posts with a scheduled date up to the current time on the next run.
 
 ## Implementation Tasks
-- [ ] Add `ScheduledPublishDate` property to `Post` entity
-- [ ] Add `Scheduled` value to `PostStatus` enum
-- [ ] Create database migration
-- [ ] Implement `GetScheduledPostsReadyToPublishAsync` in repository
-- [ ] Create `ScheduledPostPublisherService` background service
-- [ ] Add API endpoints for scheduling
-- [ ] Update admin UI with scheduling controls
-- [ ] Add scheduled posts to admin dashboard
-- [ ] Write unit tests for scheduling logic
-- [ ] Write integration tests for background service
-- [ ] Add logging and monitoring for auto-publishing
+- [x] Add `ScheduledPublishDate` property to `Post` entity
+- [x] Add `Scheduled` value to `PostStatus` enum
+- [x] Create database migration
+- [x] Implement `GetScheduledPostsReadyToPublishAsync` in repository
+- [x] Create `ScheduledPostPublisherService` background service
+- [x] Add API endpoints for scheduling
+- [x] Update admin UI with scheduling controls
+- [x] Add scheduled posts to admin dashboard
+- [x] Write unit tests for scheduling logic
+- [x] Write integration tests for background service
+- [x] Add logging and monitoring for auto-publishing
 
 ## Success Criteria
 - Posts can be scheduled for future publication via admin UI

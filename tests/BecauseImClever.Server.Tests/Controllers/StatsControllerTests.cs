@@ -52,7 +52,7 @@ public class StatsControllerTests
     public async Task GetStats_ReturnsOkWithStats()
     {
         // Arrange
-        var expectedStats = new DashboardStats(10, 5, 3, 2);
+        var expectedStats = new DashboardStats(10, 5, 3, 2, 1);
         this.mockDashboardService
             .Setup(s => s.GetStatsAsync())
             .ReturnsAsync(expectedStats);
@@ -69,6 +69,7 @@ public class StatsControllerTests
         Assert.Equal(5, stats.PublishedPosts);
         Assert.Equal(3, stats.DraftPosts);
         Assert.Equal(2, stats.DebugPosts);
+        Assert.Equal(1, stats.ScheduledPosts);
     }
 
     /// <summary>
@@ -79,7 +80,7 @@ public class StatsControllerTests
     public async Task GetStats_CallsDashboardService()
     {
         // Arrange
-        var expectedStats = new DashboardStats(0, 0, 0, 0);
+        var expectedStats = new DashboardStats(0, 0, 0, 0, 0);
         this.mockDashboardService
             .Setup(s => s.GetStatsAsync())
             .ReturnsAsync(expectedStats);
@@ -101,7 +102,7 @@ public class StatsControllerTests
     public async Task GetStats_WhenNoPosts_ReturnsZeroCounts()
     {
         // Arrange
-        var emptyStats = new DashboardStats(0, 0, 0, 0);
+        var emptyStats = new DashboardStats(0, 0, 0, 0, 0);
         this.mockDashboardService
             .Setup(s => s.GetStatsAsync())
             .ReturnsAsync(emptyStats);
@@ -115,6 +116,7 @@ public class StatsControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var stats = Assert.IsType<DashboardStats>(okResult.Value);
         Assert.Equal(0, stats.TotalPosts);
+        Assert.Equal(0, stats.ScheduledPosts);
     }
 
     private StatsController CreateController()
