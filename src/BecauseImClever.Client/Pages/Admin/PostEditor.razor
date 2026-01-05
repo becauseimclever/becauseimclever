@@ -12,11 +12,23 @@
 
 <PageTitle>Admin - @(IsEditMode ? "Edit Post" : "New Post")</PageTitle>
 
-<div class="post-editor">
+<div class="post-editor @(isFullscreen ? "fullscreen" : "")">
     <div class="editor-header">
         <div class="editor-header-main">
             <h1>@(IsEditMode ? "Edit Post" : "Create New Post")</h1>
             <p class="editor-subtitle">@(IsEditMode ? $"Editing: {originalTitle}" : "Write a new blog post")</p>
+        </div>
+        <div class="editor-header-actions">
+            <button type="button" class="btn-icon" @onclick="ToggleFullscreen" title="@(isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen (F11)")">
+                @if (isFullscreen)
+                {
+                    <span class="icon">⊠</span>
+                }
+                else
+                {
+                    <span class="icon">⛶</span>
+                }
+            </button>
         </div>
         <div class="editor-header-status">
             @if (hasUnsavedChanges)
@@ -122,6 +134,7 @@
                                     <span>@(IsEditMode ? "Update Post" : "Create Post")</span>
                                 }
                             </button>
+                            <button type="button" class="btn btn-secondary" @onclick="ShowPreview">Preview</button>
                             <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
                             @if (IsEditMode)
                             {
@@ -237,10 +250,77 @@
     </div>
 }
 
+@if (showPreview)
+{
+    <div class="preview-overlay" @onclick="ClosePreview">
+        <div class="preview-container" @onclick:stopPropagation>
+            <div class="preview-header">
+                <h2>Post Preview</h2>
+                <button type="button" class="btn-close" @onclick="ClosePreview">&times;</button>
+            </div>
+            <div class="preview-content">
+                <article class="blog-post-preview">
+                    <header class="post-header">
+                        <h1>@formModel.Title</h1>
+                        <div class="post-meta">
+                            <time>@formModel.PublishedDate.ToString("MMMM dd, yyyy")</time>
+                            <span class="reading-time">@ReadingTime min read</span>
+                        </div>
+                        @if (GetTags().Any())
+                        {
+                            <div class="post-tags">
+                                @foreach (var tag in GetTags())
+                                {
+                                    <span class="post-tag">@tag</span>
+                                }
+                            </div>
+                        }
+                    </header>
+                    <div class="post-summary">
+                        <p>@formModel.Summary</p>
+                    </div>
+                    <div class="post-body">
+                        @((MarkupString)RenderMarkdown(formModel.Content))
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     .post-editor {
         max-width: 1400px;
         margin: 0 auto;
+        transition: all 0.3s ease;
+    }
+
+    .post-editor.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-width: none;
+        margin: 0;
+        padding: 1rem;
+        background: var(--bg-color);
+        z-index: 9999;
+        overflow-y: auto;
+    }
+
+    .post-editor.fullscreen .form-grid {
+        grid-template-columns: 1fr;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .post-editor.fullscreen .form-sidebar {
+        display: none;
+    }
+
+    .post-editor.fullscreen .form-group-content {
+        min-height: calc(100vh - 300px);
     }
 
     .editor-header {
@@ -250,6 +330,38 @@
         margin-bottom: 2rem;
         border-bottom: 2px solid var(--border-color);
         padding-bottom: 1rem;
+    }
+
+    .editor-header-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .btn-icon {
+        background: none;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+        background: var(--accent-color);
+        color: var(--bg-color);
+        border-color: var(--accent-color);
+    }
+
+    .btn-icon .icon {
+        font-size: 1.2rem;
+        line-height: 1;
     }
 
     .editor-header-main h1 {
@@ -606,6 +718,158 @@
         margin-top: 1.5rem;
     }
 
+    /* Preview Modal Styles */
+    .preview-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        z-index: 10000;
+        overflow-y: auto;
+        padding: 2rem;
+    }
+
+    .preview-container {
+        background: var(--bg-color);
+        border-radius: 12px;
+        max-width: 900px;
+        width: 100%;
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: var(--bg-color);
+        z-index: 1;
+    }
+
+    .preview-header h2 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 1.1rem;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0;
+        line-height: 1;
+    }
+
+    .btn-close:hover {
+        color: var(--text-color);
+    }
+
+    .preview-content {
+        padding: 2rem;
+    }
+
+    .blog-post-preview .post-header h1 {
+        font-size: 2.5rem;
+        margin: 0 0 1rem 0;
+        color: var(--text-color);
+        line-height: 1.2;
+    }
+
+    .blog-post-preview .post-meta {
+        display: flex;
+        gap: 1rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .blog-post-preview .post-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .blog-post-preview .post-tag {
+        background: var(--accent-color);
+        color: var(--bg-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+    }
+
+    .blog-post-preview .post-summary {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        border-left: 4px solid var(--accent-color);
+        padding-left: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .blog-post-preview .post-body {
+        line-height: 1.8;
+        color: var(--text-color);
+    }
+
+    .blog-post-preview .post-body h1,
+    .blog-post-preview .post-body h2,
+    .blog-post-preview .post-body h3 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+
+    .blog-post-preview .post-body p {
+        margin-bottom: 1rem;
+    }
+
+    .blog-post-preview .post-body code {
+        background: var(--code-bg, rgba(0, 0, 0, 0.1));
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+
+    .blog-post-preview .post-body pre {
+        background: var(--code-bg, #1e1e1e);
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+
+    .blog-post-preview .post-body pre code {
+        background: none;
+        padding: 0;
+    }
+
+    .blog-post-preview .post-body img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .blog-post-preview .post-body blockquote {
+        border-left: 4px solid var(--accent-color);
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
     .validation-message {
         color: #f44336;
         font-size: 0.85rem;
@@ -679,6 +943,13 @@
     private List<string> filteredTags = new();
     private bool showTagSuggestions;
 
+    // Fullscreen mode
+    private bool isFullscreen;
+
+    // Preview mode
+    private bool showPreview;
+    private static readonly Markdig.MarkdownPipeline markdownPipeline = Markdig.MarkdownExtensions.UseAdvancedExtensions(new Markdig.MarkdownPipelineBuilder()).Build();
+
     private bool IsEditMode => !string.IsNullOrEmpty(Slug);
 
     private bool hasUnsavedChanges => originalFormState is not null && !FormEquals(formModel, originalFormState);
@@ -721,6 +992,9 @@
         {
             // Register beforeunload handler for unsaved changes warning
             await JS.InvokeVoidAsync("postEditor.registerBeforeUnload");
+
+            // Register keyboard shortcuts for fullscreen
+            await JS.InvokeVoidAsync("postEditor.registerFullscreenKeys", DotNetObjectReference.Create(this));
         }
 
         // Sync unsaved changes state to JavaScript
@@ -945,6 +1219,30 @@
         return slugIsValid ? "slug-input-valid" : "slug-input-invalid";
     }
 
+    private void ToggleFullscreen()
+    {
+        isFullscreen = !isFullscreen;
+    }
+
+    /// <summary>
+    /// Called from JavaScript when F11 or Escape key is pressed.
+    /// </summary>
+    /// <param name="key">The key that was pressed.</param>
+    [JSInvokable]
+    public void HandleFullscreenKey(string key)
+    {
+        if (key == "F11")
+        {
+            isFullscreen = true;
+            StateHasChanged();
+        }
+        else if (key == "Escape" && isFullscreen)
+        {
+            isFullscreen = false;
+            StateHasChanged();
+        }
+    }
+
     private IEnumerable<string> GetTags()
     {
         if (string.IsNullOrWhiteSpace(formModel.TagsInput))
@@ -1157,6 +1455,26 @@
         showDeleteConfirm = false;
     }
 
+    private void ShowPreview()
+    {
+        showPreview = true;
+    }
+
+    private void ClosePreview()
+    {
+        showPreview = false;
+    }
+
+    private static string RenderMarkdown(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            return string.Empty;
+        }
+
+        return Markdig.Markdown.ToHtml(markdown, markdownPipeline);
+    }
+
     private async Task DeletePost()
     {
         isDeleting = true;
@@ -1261,6 +1579,7 @@
         slugCheckCts?.Cancel();
         slugCheckCts?.Dispose();
         _ = JS.InvokeVoidAsync("postEditor.unregisterBeforeUnload");
+        _ = JS.InvokeVoidAsync("postEditor.unregisterFullscreenKeys");
     }
 
     private class PostEditorModel

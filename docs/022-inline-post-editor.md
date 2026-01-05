@@ -221,8 +221,8 @@ public record UpdatePostResult(
 | 4.8 | Add image upload button to editor toolbar | ✅ |
 | 4.9 | Create image upload modal/dialog | ✅ |
 | 4.10 | Auto-insert markdown image syntax after upload | ✅ |
-| 4.11 | Add drag-and-drop image upload to editor | ⏳ |
-| 4.12 | Add paste image support (Ctrl+V) | ⏳ |
+| 4.11 | Add drag-and-drop image upload to editor | ✅ |
+| 4.12 | Add paste image support (Ctrl+V) | ✅ |
 | 4.13 | Create image gallery panel for managing images | ✅ |
 | 4.14 | Add image validation (size, type limits) | ✅ |
 | 4.15 | Unit tests for image service (28 tests) | ✅ |
@@ -264,11 +264,11 @@ public record UpdatePostResult(
 | 5.3 | Unsaved changes warning when navigating away | ✅ |
 | 5.4 | Slug validation (URL-safe, uniqueness check) | ✅ |
 | 5.5 | Tag autocomplete from existing tags | ✅ |
-| 5.6 | Full-screen editor mode | ⏳ |
-| 5.7 | Post preview page (view as published) | ⏳ |
+| 5.6 | Full-screen editor mode | ✅ |
+| 5.7 | Post preview page (view as published) | ✅ |
 | 5.8 | Word count / reading time estimate | ✅ |
-| 5.9 | Undo/redo support | ⏳ |
-| 5.10 | E2E tests for complete editor workflow | ⏳ |
+| 5.9 | Undo/redo support | ✅ |
+| 5.10 | E2E tests for complete editor workflow | ✅ |
 | 5.11 | Unit tests for word count and unsaved changes (5 tests) | ✅ |
 | 5.12 | Unit tests for slug validation (6 tests) | ✅ |
 | 5.13 | Unit tests for tag autocomplete (5 tests) | ✅ |

@@ -1,11 +1,23 @@
 @using Markdig
+@using BecauseImClever.Client.Services
 @inject IJSRuntime JS
+@inject ClientPostImageService ImageService
+@implements IAsyncDisposable
 
 <div class="markdown-editor @(IsPreviewOnly ? "preview-only" : "split-view")">
     <!-- Toolbar -->
     @if (!IsPreviewOnly)
     {
         <div class="editor-toolbar">
+            <div class="toolbar-group">
+                <button type="button" class="toolbar-btn" title="Undo (Ctrl+Z)" @onclick="Undo">
+                    ↶
+                </button>
+                <button type="button" class="toolbar-btn" title="Redo (Ctrl+Y)" @onclick="Redo">
+                    ↷
+                </button>
+            </div>
+            <div class="toolbar-separator"></div>
             <div class="toolbar-group">
                 <button type="button" class="toolbar-btn" title="Bold (Ctrl+B)" @onclick="() => InsertFormatting(FormattingType.Bold)">
                     <span class="toolbar-icon">B</span>
@@ -75,7 +87,21 @@
         <!-- Editor Pane -->
         @if (!IsPreviewOnly)
         {
-            <div class="editor-pane">
+            <div class="editor-pane @(isDraggingFile ? "drag-over" : "")">
+                @if (isDraggingFile)
+                {
+                    <div class="drop-overlay">
+                        <span class="drop-icon">📷</span>
+                        <span>Drop image to upload</span>
+                    </div>
+                }
+                @if (isUploadingImage)
+                {
+                    <div class="upload-overlay">
+                        <div class="upload-spinner"></div>
+                        <span>Uploading image...</span>
+                    </div>
+                }
                 <textarea id="@TextAreaId"
                           class="editor-textarea"
                           value="@Value"
@@ -212,6 +238,65 @@
         display: flex;
         flex-direction: column;
         border-right: 1px solid var(--border-color);
+        position: relative;
+    }
+
+    .editor-pane.drag-over {
+        background: var(--bg-secondary);
+    }
+
+    .editor-pane.drag-over .editor-textarea {
+        opacity: 0.3;
+    }
+
+    .drop-overlay,
+    .upload-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: rgba(var(--accent-rgb, 59, 130, 246), 0.1);
+        border: 2px dashed var(--accent-color);
+        border-radius: 8px;
+        margin: 0.5rem;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .upload-overlay {
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .drop-icon {
+        font-size: 3rem;
+    }
+
+    .drop-overlay span,
+    .upload-overlay span {
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+    .upload-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .editor-textarea {
@@ -456,6 +541,9 @@
     private string RenderedHtml => RenderMarkdown(Value);
 
     private bool showImageUploadDialog;
+    private bool isDraggingFile;
+    private bool isUploadingImage;
+    private DotNetObjectReference<MarkdownEditor>? dotNetRef;
 
     private static string RenderMarkdown(string markdown)
     {
@@ -478,6 +566,111 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await HighlightCodeBlocksAsync();
+
+        if (firstRender && !string.IsNullOrEmpty(PostSlug))
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("markdownEditor.registerImageHandlers", TextAreaId, dotNetRef);
+            }
+            catch
+            {
+                // Ignore JS interop errors
+            }
+        }
+    }
+
+    /// <summary>
+    /// Disposes the component and unregisters JS handlers.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetRef is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("markdownEditor.unregisterImageHandlers", TextAreaId);
+            }
+            catch
+            {
+                // Ignore disposal errors
+            }
+
+            dotNetRef.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Called from JavaScript when a file is being dragged over the editor.
+    /// </summary>
+    /// <param name="isDragging">Whether a file is being dragged.</param>
+    [JSInvokable]
+    public void OnDragStateChanged(bool isDragging)
+    {
+        isDraggingFile = isDragging;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Called from JavaScript when an image file is dropped or pasted.
+    /// </summary>
+    /// <param name="base64Data">Base64 encoded image data.</param>
+    /// <param name="fileName">The file name.</param>
+    /// <param name="contentType">The content type.</param>
+    /// <returns>A task representing the async operation.</returns>
+    [JSInvokable]
+    public async Task OnImageReceived(string base64Data, string fileName, string contentType)
+    {
+        if (string.IsNullOrEmpty(PostSlug))
+        {
+            return;
+        }
+
+        isDraggingFile = false;
+        isUploadingImage = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = Convert.FromBase64String(base64Data);
+            using var stream = new MemoryStream(bytes);
+
+            var result = await ImageService.UploadImageAsync(
+                PostSlug,
+                stream,
+                fileName,
+                contentType,
+                altText: null);
+
+            if (result.Success)
+            {
+                var markdown = $"![{fileName}]({result.ImageUrl})";
+                await InsertTextAtCursor(markdown);
+            }
+        }
+        catch
+        {
+            // Silently fail - user can use the dialog instead
+        }
+        finally
+        {
+            isUploadingImage = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InsertTextAtCursor(string text)
+    {
+        var selection = await JS.InvokeAsync<TextSelection>("markdownEditor.getSelection", TextAreaId);
+
+        var newValue = Value[..selection.Start] + text + Value[selection.End..];
+        Value = newValue;
+        await ValueChanged.InvokeAsync(Value);
+
+        var newCursorPos = selection.Start + text.Length;
+        await JS.InvokeVoidAsync("markdownEditor.setSelection", TextAreaId, newCursorPos, newCursorPos);
     }
 
     private async Task HighlightCodeBlocksAsync()
@@ -604,6 +797,16 @@
         // Set cursor position after insert
         var newCursorPos = result.Start + prefix.Length + textToInsert.Length;
         await JS.InvokeVoidAsync("markdownEditor.setSelection", TextAreaId, newCursorPos, newCursorPos);
+    }
+
+    private async Task Undo()
+    {
+        await JS.InvokeVoidAsync("markdownEditor.undo", TextAreaId);
+    }
+
+    private async Task Redo()
+    {
+        await JS.InvokeVoidAsync("markdownEditor.redo", TextAreaId);
     }
 
     private enum FormattingType

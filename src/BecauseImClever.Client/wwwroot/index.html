@@ -66,6 +66,7 @@
         };
 
         window.markdownEditor = {
+            _handlers: {},
             getSelection: (textAreaId) => {
                 const textarea = document.getElementById(textAreaId);
                 if (!textarea) {
@@ -92,6 +93,114 @@
                         Prism.highlightElement(block);
                     });
                 }
+            },
+            undo: (textAreaId) => {
+                const textarea = document.getElementById(textAreaId);
+                if (textarea) {
+                    textarea.focus();
+                    document.execCommand('undo', false, null);
+                }
+            },
+            redo: (textAreaId) => {
+                const textarea = document.getElementById(textAreaId);
+                if (textarea) {
+                    textarea.focus();
+                    document.execCommand('redo', false, null);
+                }
+            },
+            registerImageHandlers: (textAreaId, dotNetRef) => {
+                const textarea = document.getElementById(textAreaId);
+                if (!textarea) return;
+
+                const editorPane = textarea.closest('.editor-pane');
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+                const maxSize = 5 * 1024 * 1024; // 5 MB
+
+                const isValidImage = (file) => {
+                    return file && allowedTypes.includes(file.type) && file.size <= maxSize;
+                };
+
+                const processFile = async (file) => {
+                    if (!isValidImage(file)) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const base64 = e.target.result.split(',')[1];
+                        await dotNetRef.invokeMethodAsync('OnImageReceived', base64, file.name, file.type);
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                const handlers = {
+                    dragenter: (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (e.dataTransfer.types.includes('Files')) {
+                            dotNetRef.invokeMethodAsync('OnDragStateChanged', true);
+                        }
+                    },
+                    dragover: (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    },
+                    dragleave: (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Only trigger leave if we're leaving the editor pane entirely
+                        if (!editorPane.contains(e.relatedTarget)) {
+                            dotNetRef.invokeMethodAsync('OnDragStateChanged', false);
+                        }
+                    },
+                    drop: async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dotNetRef.invokeMethodAsync('OnDragStateChanged', false);
+                        
+                        const files = Array.from(e.dataTransfer.files);
+                        const imageFile = files.find(f => allowedTypes.includes(f.type));
+                        if (imageFile) {
+                            await processFile(imageFile);
+                        }
+                    },
+                    paste: async (e) => {
+                        const items = Array.from(e.clipboardData?.items || []);
+                        const imageItem = items.find(item => item.type.startsWith('image/'));
+                        
+                        if (imageItem) {
+                            e.preventDefault();
+                            const file = imageItem.getAsFile();
+                            if (file) {
+                                await processFile(file);
+                            }
+                        }
+                    }
+                };
+
+                // Attach handlers to editor pane for drag events
+                editorPane.addEventListener('dragenter', handlers.dragenter);
+                editorPane.addEventListener('dragover', handlers.dragover);
+                editorPane.addEventListener('dragleave', handlers.dragleave);
+                editorPane.addEventListener('drop', handlers.drop);
+                
+                // Attach paste handler to textarea
+                textarea.addEventListener('paste', handlers.paste);
+
+                // Store handlers for cleanup
+                window.markdownEditor._handlers[textAreaId] = { handlers, editorPane, textarea };
+            },
+            unregisterImageHandlers: (textAreaId) => {
+                const stored = window.markdownEditor._handlers[textAreaId];
+                if (!stored) return;
+
+                const { handlers, editorPane, textarea } = stored;
+                
+                editorPane.removeEventListener('dragenter', handlers.dragenter);
+                editorPane.removeEventListener('dragover', handlers.dragover);
+                editorPane.removeEventListener('dragleave', handlers.dragleave);
+                editorPane.removeEventListener('drop', handlers.drop);
+                textarea.removeEventListener('paste', handlers.paste);
+                
+                delete window.markdownEditor._handlers[textAreaId];
             }
         };
     </script>

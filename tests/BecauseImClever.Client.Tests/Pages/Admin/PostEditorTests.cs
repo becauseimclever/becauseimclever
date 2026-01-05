@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Pages.Admin;
+using BecauseImClever.Client.Services;
 using BecauseImClever.Domain.Entities;
 using Bunit;
 using Microsoft.AspNetCore.Authorization;
@@ -313,8 +314,8 @@ public class PostEditorTests : BunitContext
         var cut = this.Render<PostEditor>();
 
         // Assert
-        var cancelButton = cut.Find("button.btn-secondary");
-        Assert.Contains("Cancel", cancelButton.TextContent);
+        var cancelButtons = cut.FindAll("button.btn-secondary");
+        Assert.Contains(cancelButtons, b => b.TextContent.Contains("Cancel"));
     }
 
     /// <summary>
@@ -561,6 +562,10 @@ public class PostEditorTests : BunitContext
 
         var httpClient = CreateMockHttpClient(postForEdit, notFound, pendingTask);
         this.Services.AddSingleton(httpClient);
+
+        // Register ClientPostImageService for MarkdownEditor
+        var imageService = new ClientPostImageService(httpClient);
+        this.Services.AddSingleton(imageService);
 
         // Setup authorization - mock the policy authorization
         this.Services.AddAuthorizationCore(options =>

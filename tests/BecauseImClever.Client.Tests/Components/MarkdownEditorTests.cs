@@ -1,9 +1,11 @@
 namespace BecauseImClever.Client.Tests.Components;
 
 using BecauseImClever.Client.Components;
+using BecauseImClever.Client.Services;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 /// <summary>
 /// Unit tests for the <see cref="MarkdownEditor"/> component.
@@ -16,6 +18,11 @@ public class MarkdownEditorTests : BunitContext
     public MarkdownEditorTests()
     {
         this.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        // Register mock ClientPostImageService
+        var mockHttpClient = new HttpClient();
+        var imageService = new ClientPostImageService(mockHttpClient);
+        this.Services.AddSingleton(imageService);
     }
 
     /// <summary>
