@@ -1,0 +1,55 @@
+/* ==========================================================================
+   Mac OS 9 Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="macos9"] {
+    /* Colors */
+    --color-bg: #e8e8e8;
+    --color-bg-secondary: #d0d0d0;
+    --color-text: #000000;
+    --color-text-muted: #404040;
+    --color-accent: #0000cc;
+    --color-border: #a0a0a0;
+
+    /* Typography */
+    --font-body: "Geneva", "Lucida Grande", "Segoe UI", sans-serif;
+    --font-mono: "Monaco", "Courier New", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    --radius: 3px;
+
+    /* Buttons */
+    --btn-bg: #dddddd;
+    --btn-color: #000000;
+    --btn-border: 1px solid #808080;
+
+    /* Cards */
+    --card-bg: #eeeeee;
+}
+
+/* Mac OS 9 beveled look */
+[data-theme="macos9"] .card,
+[data-theme="macos9"] .interest-card,
+[data-theme="macos9"] .sidebar-widget {
+    border: 1px solid #808080;
+    box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    background-color: #eeeeee;
+}
+
+[data-theme="macos9"] .cta-button {
+    box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+    background-image: linear-gradient(to bottom, #ffffff 0%, #dddddd 100%);
+}
+
+[data-theme="macos9"] .cta-button:active {
+    background-image: linear-gradient(to bottom, #cccccc 0%, #eeeeee 100%);
+    box-shadow: 1px 1px 0 #808080 inset;
+}
+
+[data-theme="macos9"] article.card img {
+    border: 2px inset var(--color-border);
+    box-shadow: none;
+    border-radius: 0;
+}

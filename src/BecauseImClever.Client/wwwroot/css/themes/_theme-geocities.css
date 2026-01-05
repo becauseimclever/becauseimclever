@@ -1,0 +1,107 @@
+/* ==========================================================================
+   GeoCities Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="geocities"] {
+    /* Colors */
+    --color-bg: #000000;
+    --color-bg-secondary: #111111;
+    --color-text: #ffff00;
+    --color-text-muted: #00ff00;
+    --color-accent: #ff0000;
+    --color-border: #0000ff;
+
+    /* Typography */
+    --font-body: "Comic Sans MS", "Chalkboard SE", sans-serif;
+    --font-mono: "Courier New", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 5px 5px 0 #ff00ff;
+    --radius: 0px;
+
+    /* Buttons */
+    --btn-bg: #0000ff;
+    --btn-color: #ffffff;
+    --btn-border: 3px ridge #00ff00;
+
+    /* Cards */
+    --card-bg: #000033;
+}
+
+/* GeoCities Animations */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes rainbow {
+    0% { color: red; border-color: red; }
+    14% { color: orange; border-color: orange; }
+    28% { color: yellow; border-color: yellow; }
+    42% { color: green; border-color: green; }
+    57% { color: blue; border-color: blue; }
+    71% { color: indigo; border-color: indigo; }
+    85% { color: violet; border-color: violet; }
+    100% { color: red; border-color: red; }
+}
+
+@keyframes wobble {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
+}
+
+[data-theme="geocities"] .logo {
+    animation: rainbow 2s infinite linear, wobble 1s infinite ease-in-out;
+}
+
+[data-theme="geocities"] h1,
+[data-theme="geocities"] h2,
+[data-theme="geocities"] h3 {
+    animation: blink 1s infinite step-end;
+    color: #ff00ff;
+}
+
+[data-theme="geocities"] .card,
+[data-theme="geocities"] .interest-card {
+    border: 4px groove #00ff00;
+    background-color: #000033;
+    border-radius: 0;
+    animation: rainbow 5s infinite;
+}
+
+[data-theme="geocities"] .interest-icon {
+    text-shadow: 2px 2px #ff00ff;
+}
+
+[data-theme="geocities"] .sidebar-widget {
+    border: 3px dashed #ff00ff;
+    background-color: #1a0000;
+}
+
+[data-theme="geocities"] a:hover {
+    background-color: yellow;
+    color: red;
+    text-decoration: none;
+    cursor: help;
+}
+
+[data-theme="geocities"] .cta-button {
+    font-family: "Times New Roman", serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: blink 0.5s infinite;
+}
+
+[data-theme="geocities"] .cta-button:hover {
+    background-color: #ff0000;
+    border-color: #ffff00;
+}
+
+[data-theme="geocities"] article.card img {
+    border: 3px ridge #00ff00;
+    border-radius: 0;
+}

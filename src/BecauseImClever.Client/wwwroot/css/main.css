@@ -1,0 +1,35 @@
+/* ==========================================================================
+   BecauseImClever - Main Stylesheet
+   
+   This file aggregates all CSS modules in the correct order.
+   Themes only override CSS custom properties defined in _variables.css
+   ========================================================================== */
+
+/* === Base Styles === */
+@import url("base/_reset.css");
+@import url("base/_variables.css");
+@import url("base/_typography.css");
+@import url("base/_utilities.css");
+
+/* === Components === */
+@import url("components/_buttons.css");
+@import url("components/_cards.css");
+@import url("components/_navigation.css");
+@import url("components/_forms.css");
+@import url("components/_layout.css");
+@import url("components/_admin.css");
+@import url("components/_modal.css");
+@import url("components/_blog.css");
+@import url("components/_blazor.css");
+
+/* === Themes (CSS Variable Overrides) === */
+@import url("themes/_theme-retro.css");
+@import url("themes/_theme-win95.css");
+@import url("themes/_theme-macos9.css");
+@import url("themes/_theme-macos7.css");
+@import url("themes/_theme-geocities.css");
+@import url("themes/_theme-dungeon.css");
+@import url("themes/_theme-winxp.css");
+@import url("themes/_theme-vista.css");
+@import url("themes/_theme-raspberrypi.css");
+@import url("themes/_theme-monopoly.css");

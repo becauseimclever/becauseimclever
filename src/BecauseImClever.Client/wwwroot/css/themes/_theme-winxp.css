@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Windows XP Luna Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="winxp"] {
+    /* Colors */
+    --color-bg: #ece9d8;
+    --color-bg-secondary: #d4d0c8;
+    --color-text: #000000;
+    --color-text-muted: #555555;
+    --color-accent: #0a246a;
+    --color-border: #0054e3;
+
+    /* XP-specific colors */
+    --xp-accent-light: #0054e3;
+    --xp-green: #5eac00;
+    --xp-green-light: #81c81d;
+    --xp-border-light: #ffffff;
+    --xp-border-dark: #003c74;
+
+    /* Typography */
+    --font-body: "Tahoma", "Segoe UI", sans-serif;
+    --font-mono: "Lucida Console", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    --radius: 6px;
+
+    /* Cards */
+    --card-bg: var(--color-bg-secondary);
+}
+
+/* XP Header styling */
+[data-theme="winxp"] header {
+    background: linear-gradient(180deg, #245edb 0%, #003c74 100%);
+    border-bottom: 2px solid #001e3a;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="winxp"] .logo {
+    color: #ffffff;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+    font-style: italic;
+}
+
+[data-theme="winxp"] nav a {
+    color: #ffffff;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="winxp"] nav a:hover {
+    color: #ece9d8;
+}
+
+[data-theme="winxp"] .theme-switch {
+    background-color: #245edb;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+}
+
+/* XP Card with title bar effect */
+[data-theme="winxp"] .card {
+    border: 1px solid var(--color-border);
+    border-top: 25px solid var(--color-accent);
+    position: relative;
+}
+
+[data-theme="winxp"] .card:hover {
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* XP Start button style CTA */
+[data-theme="winxp"] .cta-button {
+    background: linear-gradient(180deg, var(--xp-green-light) 0%, var(--xp-green) 100%);
+    color: #ffffff;
+    border: 1px solid #3d7300;
+    border-radius: 4px;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+    font-family: "Tahoma", sans-serif;
+    font-weight: bold;
+    font-style: italic;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="winxp"] .cta-button:hover {
+    background: linear-gradient(180deg, #9ae04c 0%, #5eac00 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="winxp"] .cta-button:active {
+    background: linear-gradient(180deg, var(--xp-green) 0%, var(--xp-green-light) 100%);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
