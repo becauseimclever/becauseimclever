@@ -69,4 +69,34 @@ public class BlogPost
     /// Gets or sets the identifier of the user who last updated the blog post.
     /// </summary>
     public string? UpdatedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the unique identifier of the post's author.
+    /// Used for access control to determine post ownership.
+    /// </summary>
+    public string? AuthorId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the display name of the post's author.
+    /// Denormalized for performance in listings.
+    /// </summary>
+    public string? AuthorName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the collection of images associated with this blog post.
+    /// </summary>
+    public ICollection<PostImage> Images { get; set; } = new List<PostImage>();
+
+    /// <summary>
+    /// Gets or sets the date and time when the post should be published.
+    /// If null, the post publishes immediately when status is set to Published.
+    /// </summary>
+    public DateTimeOffset? ScheduledPublishDate { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether this post is scheduled for future publication.
+    /// </summary>
+    public bool IsScheduled => this.ScheduledPublishDate.HasValue
+        && this.ScheduledPublishDate > DateTimeOffset.UtcNow
+        && this.Status == PostStatus.Scheduled;
 }

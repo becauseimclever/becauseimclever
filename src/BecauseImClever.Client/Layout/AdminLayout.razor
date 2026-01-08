@@ -1,8 +1,10 @@
 @inherits LayoutComponentBase
 @using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Domain.Entities
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IThemeService ThemeService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="layout-container">
     <!-- Header -->
@@ -29,22 +31,34 @@
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="sidebar-header">
-                <h2>Admin Panel</h2>
+                <h2>@(isAdmin ? "Admin Panel" : "Writer Panel")</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="@GetActiveClass("/admin")">
-                        <a href="admin">
-                            <span class="nav-icon">📊</span>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
+                    @if (isAdmin)
+                    {
+                        <li class="@GetActiveClass("/admin")">
+                            <a href="admin">
+                                <span class="nav-icon">📊</span>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                    }
                     <li class="@GetActiveClass("/admin/posts")">
                         <a href="admin/posts">
                             <span class="nav-icon">📝</span>
-                            <span>Posts</span>
+                            <span>@(isAdmin ? "Posts" : "My Posts")</span>
                         </a>
                     </li>
+                    @if (isAdmin)
+                    {
+                        <li class="@GetActiveClass("/admin/settings")">
+                            <a href="admin/settings">
+                                <span class="nav-icon">⚙️</span>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                    }
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -71,6 +85,8 @@
     private Theme? currentTheme;
     private IReadOnlyList<Theme> availableThemes = Array.Empty<Theme>();
     private string currentPath = string.Empty;
+    private bool isAdmin;
+    private bool isGuestWriter;
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,6 +95,12 @@
         await ThemeService.SetThemeAsync(currentTheme);
         currentPath = new Uri(Navigation.Uri).AbsolutePath;
         Navigation.LocationChanged += OnLocationChanged;
+
+        // Get user roles
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.HasClaim("groups", "becauseimclever-admins");
+        isGuestWriter = user.HasClaim("groups", "becauseimclever-writers");
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)

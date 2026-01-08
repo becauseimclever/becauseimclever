@@ -27,6 +27,13 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddScoped<IBlogService, DatabaseBlogService>();
     builder.Services.AddScoped<IAdminPostService, AdminPostService>();
     builder.Services.AddScoped<IDashboardService, DashboardService>();
+    builder.Services.AddScoped<IFeatureToggleService, FeatureToggleService>();
+    builder.Services.AddScoped<IExtensionTrackingService, ExtensionTrackingService>();
+    builder.Services.AddScoped<IPostImageService, PostImageService>();
+    builder.Services.AddScoped<IPostAuthorizationService, PostAuthorizationService>();
+
+    // Register scheduled post publisher background service
+    builder.Services.AddHostedService<ScheduledPostPublisherService>();
 }
 else
 {
@@ -105,13 +112,31 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+var guestWriterGroup = authentikConfig["GuestWriterGroup"] ?? "becauseimclever-writers";
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy =>
         policy.RequireClaim("groups", adminGroup));
+
+    options.AddPolicy("GuestWriter", policy =>
+        policy.RequireClaim("groups", guestWriterGroup));
+
+    options.AddPolicy("PostManagement", policy =>
+        policy.RequireAssertion(context =>
+            context.User.HasClaim("groups", adminGroup) ||
+            context.User.HasClaim("groups", guestWriterGroup)));
 });
 
 var app = builder.Build();
+
+// Apply database migrations if using database storage
+if (!string.IsNullOrEmpty(blogConnectionString))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Apply forwarded headers first (before any other middleware)
 // This ensures the app knows the original scheme (HTTPS) when behind a reverse proxy

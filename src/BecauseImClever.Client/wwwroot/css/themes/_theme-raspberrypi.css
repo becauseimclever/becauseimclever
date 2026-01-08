@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Raspberry Pi OS Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="raspberrypi"] {
+    /* Colors */
+    --color-bg: #3c3c3c;
+    --color-bg-secondary: #2d2d2d;
+    --color-text: #ffffff;
+    --color-text-muted: #b0b0b0;
+    --color-accent: #c51a4a;
+    --color-border: #555555;
+
+    /* Raspberry Pi-specific colors */
+    --rpi-accent-light: #e23a6a;
+
+    /* Typography */
+    --font-body: "Roboto", "Noto Sans", "Segoe UI", sans-serif;
+    --font-mono: "Source Code Pro", "DejaVu Sans Mono", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --radius: 4px;
+
+    /* Cards */
+    --card-bg: var(--color-bg-secondary);
+}
+
+/* Raspberry Pi card styling */
+[data-theme="raspberrypi"] .card {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="raspberrypi"] .card:hover {
+    border-color: var(--color-accent);
+}
+
+/* Raspberry Pi button styling */
+[data-theme="raspberrypi"] .cta-button {
+    background-color: var(--color-accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+[data-theme="raspberrypi"] .cta-button:hover {
+    background-color: var(--rpi-accent-light);
+}
+
+[data-theme="raspberrypi"] .cta-button:active {
+    background-color: #8b1235;
+}

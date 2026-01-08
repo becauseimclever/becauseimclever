@@ -60,6 +60,11 @@ namespace BecauseImClever.Client.Services
                     claims.Add(new Claim("groups", "becauseimclever-admins"));
                 }
 
+                if (userInfo.IsGuestWriter)
+                {
+                    claims.Add(new Claim("groups", "becauseimclever-writers"));
+                }
+
                 // Add additional claims from the server
                 if (userInfo.Claims != null)
                 {
@@ -111,6 +116,11 @@ namespace BecauseImClever.Client.Services
             /// Gets or sets a value indicating whether the user is an admin.
             /// </summary>
             public bool IsAdmin { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the user is a guest writer.
+            /// </summary>
+            public bool IsGuestWriter { get; set; }
 
             /// <summary>
             /// Gets or sets the user's claims.

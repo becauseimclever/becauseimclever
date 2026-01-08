@@ -1,0 +1,33 @@
+/* ==========================================================================
+   Blog Post Content & Images
+   ========================================================================== */
+
+article.card img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    margin: var(--spacing-md) 0;
+    box-shadow: var(--card-shadow);
+    display: block;
+}
+
+/* Hero image at top of post */
+article.card img.post-hero-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    margin: 0 0 var(--spacing-lg) 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+article.card figure {
+    margin: var(--spacing-lg) 0;
+    text-align: center;
+}
+
+article.card figcaption {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-top: var(--spacing-sm);
+    font-style: italic;
+}

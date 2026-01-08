@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Mac OS 7 Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="macos7"] {
+    /* Colors */
+    --color-bg: #ffffff;
+    --color-bg-secondary: #ffffff;
+    --color-text: #000000;
+    --color-text-muted: #404040;
+    --color-accent: #000000;
+    --color-border: #000000;
+
+    /* Typography */
+    --font-body: "Chicago", "Geneva", sans-serif;
+    --font-mono: "Monaco", "Courier New", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 2px 2px 0 #000000;
+    --radius: 2px;
+
+    /* Buttons */
+    --btn-bg: #ffffff;
+    --btn-color: #000000;
+    --btn-border: 2px solid #000000;
+    --btn-shadow: 2px 2px 0 #000000;
+
+    /* Cards */
+    --card-bg: #ffffff;
+}
+
+/* Mac OS 7 specific styling */
+[data-theme="macos7"] .card,
+[data-theme="macos7"] .interest-card {
+    border: 1px solid #000000;
+    box-shadow: 3px 3px 0 #000000;
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 4px 4px;
+    background-color: #ffffff;
+}
+
+[data-theme="macos7"] .card > *,
+[data-theme="macos7"] .interest-card > * {
+    background-color: #ffffff;
+    padding: 0.5rem;
+}
+
+[data-theme="macos7"] .sidebar-widget {
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 #000000;
+    border-radius: 4px;
+}
+
+[data-theme="macos7"] .cta-button {
+    box-shadow: var(--btn-shadow);
+    border-radius: 4px;
+}
+
+[data-theme="macos7"] .cta-button:active {
+    background-color: #000000;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+[data-theme="macos7"] .theme-switch {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="macos7"] .theme-switch:hover {
+    background-color: #eeeeee;
+}
+
+[data-theme="macos7"] .theme-switch option {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+[data-theme="macos7"] article.card img {
+    border: 2px inset var(--color-border);
+    box-shadow: none;
+    border-radius: 0;
+}

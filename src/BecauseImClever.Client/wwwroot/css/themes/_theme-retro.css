@@ -1,0 +1,43 @@
+/* ==========================================================================
+   Retro Terminal Theme (Fallout Pipboy Style)
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="retro"] {
+    /* Colors */
+    --color-bg: #0d1117;
+    --color-bg-secondary: #161b22;
+    --color-text: #00ff41;
+    --color-text-muted: #008f11;
+    --color-accent: #00ff41;
+    --color-border: #008f11;
+
+    /* Typography */
+    --font-body: "Courier New", Courier, monospace;
+    --font-mono: "Courier New", Courier, monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: none;
+    --radius: 0px;
+
+    /* Buttons */
+    --btn-bg: transparent;
+    --btn-color: var(--color-accent);
+    --btn-border: 1px solid var(--color-accent);
+    --btn-hover-bg: var(--color-accent);
+
+    /* Cards */
+    --card-bg: transparent;
+    --card-border: 1px solid var(--color-accent);
+    --card-hover-transform: none;
+    --card-hover-shadow: none;
+}
+
+/* Retro theme specific enhancements */
+[data-theme="retro"] .cta-button:hover {
+    color: #000;
+}
+
+[data-theme="retro"] .interest-icon {
+    text-shadow: 0 0 10px var(--color-accent);
+}

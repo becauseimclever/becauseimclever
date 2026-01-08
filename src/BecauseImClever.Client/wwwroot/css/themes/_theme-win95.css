@@ -1,0 +1,69 @@
+/* ==========================================================================
+   Windows 95 Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="win95"] {
+    /* Colors */
+    --color-bg: #008080;
+    --color-bg-secondary: #c0c0c0;
+    --color-text: #000000;
+    --color-text-muted: #404040;
+    --color-accent: #000080;
+    --color-border: #dfdfdf;
+
+    /* Typography */
+    --font-body: "MS Sans Serif", "Segoe UI", sans-serif;
+    --font-mono: "Courier New", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 2px 2px 0 #000000;
+    --radius: 0px;
+
+    /* Win95-specific 3D border variables */
+    --win95-border-light: #ffffff;
+    --win95-border-dark: #404040;
+
+    /* Buttons */
+    --btn-bg: #c0c0c0;
+    --btn-color: #000000;
+    --btn-border: none;
+    --btn-shadow: 1px 1px 0 #000000;
+
+    /* Cards */
+    --card-bg: var(--color-bg-secondary);
+    --card-hover-transform: none;
+}
+
+/* Win95 3D border effects (requires custom styling) */
+[data-theme="win95"] .card,
+[data-theme="win95"] .interest-card,
+[data-theme="win95"] .sidebar-widget {
+    border-top: 2px solid var(--win95-border-light);
+    border-left: 2px solid var(--win95-border-light);
+    border-right: 2px solid var(--win95-border-dark);
+    border-bottom: 2px solid var(--win95-border-dark);
+    box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="win95"] .cta-button {
+    border-top: 2px solid var(--win95-border-light);
+    border-left: 2px solid var(--win95-border-light);
+    border-right: 2px solid var(--win95-border-dark);
+    border-bottom: 2px solid var(--win95-border-dark);
+    box-shadow: 1px 1px 0 #000000;
+}
+
+[data-theme="win95"] .cta-button:active {
+    border-top: 2px solid var(--win95-border-dark);
+    border-left: 2px solid var(--win95-border-dark);
+    border-right: 2px solid var(--win95-border-light);
+    border-bottom: 2px solid var(--win95-border-light);
+    box-shadow: none;
+}
+
+[data-theme="win95"] article.card img {
+    border: 2px inset var(--color-border);
+    box-shadow: none;
+    border-radius: 0;
+}

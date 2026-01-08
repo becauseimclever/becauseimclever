@@ -35,14 +35,16 @@ public class DashboardService : IDashboardService
         var publishedPosts = await this.context.Posts.CountAsync(p => p.Status == PostStatus.Published);
         var draftPosts = await this.context.Posts.CountAsync(p => p.Status == PostStatus.Draft);
         var debugPosts = await this.context.Posts.CountAsync(p => p.Status == PostStatus.Debug);
+        var scheduledPosts = await this.context.Posts.CountAsync(p => p.Status == PostStatus.Scheduled);
 
         this.logger.LogDebug(
-            "Dashboard stats: Total={Total}, Published={Published}, Draft={Draft}, Debug={Debug}",
+            "Dashboard stats: Total={Total}, Published={Published}, Draft={Draft}, Debug={Debug}, Scheduled={Scheduled}",
             totalPosts,
             publishedPosts,
             draftPosts,
-            debugPosts);
+            debugPosts,
+            scheduledPosts);
 
-        return new DashboardStats(totalPosts, publishedPosts, draftPosts, debugPosts);
+        return new DashboardStats(totalPosts, publishedPosts, draftPosts, debugPosts, scheduledPosts);
     }
 }

@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Monopoly Board Game Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="monopoly"] {
+    /* Colors */
+    --color-bg: #FBFBEA;
+    --color-bg-secondary: #CDE6D0;
+    --color-text: #000000;
+    --color-text-muted: #555555;
+    --color-accent: #ED1B24;
+    --color-border: #000000;
+
+    /* Monopoly-specific colors */
+    --monopoly-orange: #F7941D;
+
+    /* Typography */
+    --font-body: "Verdana", "Geneva", sans-serif;
+    --font-mono: "Courier New", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: 3px 3px 0 #000000;
+    --radius: 2px;
+
+    /* Buttons */
+    --btn-bg: var(--monopoly-orange);
+    --btn-color: #000000;
+    --btn-border: 2px solid #000000;
+    --btn-shadow: 3px 3px 0 #000000;
+
+    /* Cards */
+    --card-bg: #FFFFFF;
+}
+
+/* Monopoly card styling */
+[data-theme="monopoly"] .card,
+[data-theme="monopoly"] .interest-card,
+[data-theme="monopoly"] .sidebar-widget {
+    background-color: #FFFFFF;
+    border: 2px solid #000000;
+    box-shadow: 4px 4px 0 #000000;
+    border-radius: 0;
+}
+
+[data-theme="monopoly"] .card:hover,
+[data-theme="monopoly"] .interest-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000000;
+}
+
+/* Monopoly button styling */
+[data-theme="monopoly"] .cta-button {
+    background-color: var(--monopoly-orange);
+    color: #000000;
+    border: 2px solid #000000;
+    box-shadow: 3px 3px 0 #000000;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+[data-theme="monopoly"] .cta-button:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 #000000;
+}
+
+[data-theme="monopoly"] .cta-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #000000;
+}

@@ -1,9 +1,11 @@
 namespace BecauseImClever.Client.Tests.Components;
 
 using BecauseImClever.Client.Components;
+using BecauseImClever.Client.Services;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 /// <summary>
 /// Unit tests for the <see cref="MarkdownEditor"/> component.
@@ -16,6 +18,11 @@ public class MarkdownEditorTests : BunitContext
     public MarkdownEditorTests()
     {
         this.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        // Register mock ClientPostImageService
+        var mockHttpClient = new HttpClient();
+        var imageService = new ClientPostImageService(mockHttpClient);
+        this.Services.AddSingleton(imageService);
     }
 
     /// <summary>
@@ -553,5 +560,58 @@ public class MarkdownEditorTests : BunitContext
         Assert.Contains("<img", cut.Markup);
         Assert.Contains("alt=\"alt text\"", cut.Markup);
         Assert.Contains("src=\"image.png\"", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that code blocks with a language specifier get the language class for syntax highlighting.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_CodeBlockWithLanguage_AddsLanguageClass()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "```csharp\nvar x = 1;\n```"));
+
+        // Assert - Markdig should add language-csharp class to code element
+        Assert.Contains("<pre>", cut.Markup);
+        Assert.Contains("language-csharp", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that different language specifiers produce appropriate classes.
+    /// </summary>
+    /// <param name="language">The language specifier in the code block.</param>
+    [Theory]
+    [InlineData("javascript")]
+    [InlineData("python")]
+    [InlineData("html")]
+    [InlineData("css")]
+    [InlineData("json")]
+    [InlineData("xml")]
+    [InlineData("sql")]
+    public void MarkdownEditor_CodeBlockWithLanguage_SupportsMultipleLanguages(string language)
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, $"```{language}\ncode\n```"));
+
+        // Assert
+        Assert.Contains($"language-{language}", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that code blocks without language specifier still render correctly.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_CodeBlockWithoutLanguage_RendersCorrectly()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "```\nplain code\n```"));
+
+        // Assert - Should still have pre and code elements
+        Assert.Contains("<pre>", cut.Markup);
+        Assert.Contains("<code>", cut.Markup);
+        Assert.Contains("plain code", cut.Markup);
     }
 }

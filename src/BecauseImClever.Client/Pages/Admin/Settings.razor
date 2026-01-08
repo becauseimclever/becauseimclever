@@ -1,0 +1,218 @@
+@page "/admin/settings"
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@using System.Net.Http.Json
+@layout AdminLayout
+@attribute [Authorize(Policy = "Admin")]
+@inject HttpClient Http
+
+<PageTitle>Admin - Settings</PageTitle>
+
+<div class="admin-settings">
+    <div class="settings-header">
+        <h1>Settings</h1>
+        <p>Manage application settings and feature toggles.</p>
+    </div>
+
+    <section class="settings-section">
+        <h2>Feature Toggles</h2>
+        <p class="section-description">Enable or disable application features.</p>
+
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p>Loading settings...</p>
+            </div>
+        }
+        else if (errorMessage is not null)
+        {
+            <div class="alert alert-error">
+                <span>@errorMessage</span>
+                <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+            </div>
+        }
+        else
+        {
+            <div class="feature-toggles">
+                <div class="feature-toggle-card">
+                    <div class="feature-info">
+                        <h3>Extension Detection</h3>
+                        <p>Detect browser extensions (like Honey) and display warnings to users about potentially harmful extensions.</p>
+                        @if (extensionDetectionFeature is not null)
+                        {
+                            <div class="feature-meta">
+                                <span class="status-badge @(extensionDetectionFeature.IsEnabled ? "enabled" : "disabled")">
+                                    @(extensionDetectionFeature.IsEnabled ? "Enabled" : "Disabled")
+                                </span>
+                                <span class="last-modified">
+                                    Last modified by @extensionDetectionFeature.LastModifiedBy 
+                                    on @extensionDetectionFeature.LastModifiedAt.ToString("g")
+                                </span>
+                            </div>
+                            @if (!extensionDetectionFeature.IsEnabled && !string.IsNullOrEmpty(extensionDetectionFeature.DisabledReason))
+                            {
+                                <p class="disabled-reason">Reason: @extensionDetectionFeature.DisabledReason</p>
+                            }
+                        }
+                    </div>
+                    <div class="feature-controls">
+                        <label class="toggle-switch">
+                            <input type="checkbox" 
+                                   id="extension-detection-toggle"
+                                   checked="@(extensionDetectionFeature?.IsEnabled ?? false)"
+                                   @onchange="OnExtensionDetectionToggled"
+                                   disabled="@isSaving" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+
+    @if (showConfirmDialog)
+    {
+        <div class="modal-overlay" @onclick="CloseConfirmDialog">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h3>@confirmDialogTitle</h3>
+                <p>@confirmDialogMessage</p>
+                
+                @if (!confirmDialogEnabling)
+                {
+                    <div class="form-group">
+                        <label for="disableReason">Reason (optional):</label>
+                        <input type="text" 
+                               id="disableReason" 
+                               @bind="disableReason" 
+                               placeholder="Enter a reason for disabling this feature" />
+                    </div>
+                }
+                
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" @onclick="CloseConfirmDialog" disabled="@isSaving">Cancel</button>
+                    <button class="btn @(confirmDialogEnabling ? "btn-success" : "btn-danger")" 
+                            @onclick="ConfirmToggle" 
+                            disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-small"></span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            @(confirmDialogEnabling ? "Enable" : "Disable")
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private const string ExtensionDetectionFeatureName = "ExtensionDetection";
+    
+    private FeatureSettings? extensionDetectionFeature;
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? errorMessage;
+    
+    private bool showConfirmDialog;
+    private string confirmDialogTitle = string.Empty;
+    private string confirmDialogMessage = string.Empty;
+    private bool confirmDialogEnabling;
+    private string? disableReason;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFeatureSettingsAsync();
+    }
+
+    private async Task LoadFeatureSettingsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            var response = await Http.GetAsync($"api/admin/features/{ExtensionDetectionFeatureName}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                extensionDetectionFeature = await response.Content.ReadFromJsonAsync<FeatureSettings>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // Feature doesn't exist yet, initialize with default disabled state
+                extensionDetectionFeature = new FeatureSettings
+                {
+                    FeatureName = ExtensionDetectionFeatureName,
+                    IsEnabled = false,
+                    LastModifiedAt = DateTime.UtcNow,
+                    LastModifiedBy = "System",
+                };
+            }
+            else
+            {
+                errorMessage = "Failed to load feature settings.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Failed to load settings: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnExtensionDetectionToggled(ChangeEventArgs e)
+    {
+        var newValue = (bool)(e.Value ?? false);
+        
+        confirmDialogEnabling = newValue;
+        confirmDialogTitle = newValue ? "Enable Extension Detection?" : "Disable Extension Detection?";
+        confirmDialogMessage = newValue 
+            ? "This will enable extension detection and show consent banners to visitors. Are you sure?"
+            : "This will stop all extension detection and tracking. Existing data will be preserved. Are you sure?";
+        disableReason = null;
+        showConfirmDialog = true;
+    }
+
+    private void CloseConfirmDialog()
+    {
+        showConfirmDialog = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmToggle()
+    {
+        try
+        {
+            isSaving = true;
+            
+            var request = new SetFeatureStatusRequest(confirmDialogEnabling, confirmDialogEnabling ? null : disableReason);
+            var response = await Http.PutAsJsonAsync($"api/admin/features/{ExtensionDetectionFeatureName}", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadFeatureSettingsAsync();
+                showConfirmDialog = false;
+            }
+            else
+            {
+                errorMessage = "Failed to update feature setting.";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Failed to update setting: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

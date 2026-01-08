@@ -1,0 +1,88 @@
+@page "/admin/extension-statistics"
+@using BecauseImClever.Application
+@using BecauseImClever.Application.Interfaces
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "Admin")]
+@inject IExtensionStatisticsService StatisticsService
+
+<h1>Extension Detection Statistics</h1>
+
+@if (isLoading)
+{
+    <p>Loading statistics...</p>
+}
+else if (statistics == null)
+{
+    <div class="error-message">
+        <p>Error loading statistics. Please try again later.</p>
+    </div>
+}
+else if (statistics.TotalUniqueVisitors == 0)
+{
+    <div class="no-data-message">
+        <p>No extension data collected yet.</p>
+    </div>
+}
+else
+{
+    <div class="statistics-container">
+        <div class="stat-card total-visitors">
+            <h2>Total Unique Visitors</h2>
+            <p class="stat-value">@statistics.TotalUniqueVisitors</p>
+            <p class="stat-description">Visitors with detected extensions</p>
+        </div>
+
+        <div class="extension-breakdown">
+            <h2>Extension Breakdown</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Extension</th>
+                        <th>Unique Visitors</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var extension in statistics.ExtensionCounts.OrderByDescending(x => x.Value))
+                    {
+                        var percentage = statistics.TotalUniqueVisitors > 0
+                            ? (extension.Value * 100.0 / statistics.TotalUniqueVisitors).ToString("F1")
+                            : "0";
+                        <tr>
+                            <td>@GetExtensionDisplayName(extension.Key)</td>
+                            <td>@extension.Value</td>
+                            <td>@percentage%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private ExtensionStatisticsResponse? statistics;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            statistics = await StatisticsService.GetStatisticsAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string GetExtensionDisplayName(string extensionId)
+    {
+        return extensionId switch
+        {
+            "honey" => "Honey (PayPal)",
+            "rakuten" => "Rakuten (Ebates)",
+            "capital-one-shopping" => "Capital One Shopping",
+            _ => extensionId
+        };
+    }
+}

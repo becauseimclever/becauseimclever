@@ -3,17 +3,47 @@
 @using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Domain.Entities
 @using System.Net.Http.Json
+@implements IDisposable
 @layout AdminLayout
-@attribute [Authorize(Policy = "Admin")]
+@attribute [Authorize(Policy = "PostManagement")]
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Admin - @(IsEditMode ? "Edit Post" : "New Post")</PageTitle>
 
-<div class="post-editor">
+<div class="post-editor @(isFullscreen ? "fullscreen" : "")">
     <div class="editor-header">
-        <h1>@(IsEditMode ? "Edit Post" : "Create New Post")</h1>
-        <p class="editor-subtitle">@(IsEditMode ? $"Editing: {originalTitle}" : "Write a new blog post")</p>
+        <div class="editor-header-main">
+            <h1>@(IsEditMode ? "Edit Post" : "Create New Post")</h1>
+            <p class="editor-subtitle">@(IsEditMode ? $"Editing: {originalTitle}" : "Write a new blog post")</p>
+        </div>
+        <div class="editor-header-actions">
+            <button type="button" class="btn-icon" @onclick="ToggleFullscreen" title="@(isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen (F11)")">
+                @if (isFullscreen)
+                {
+                    <span class="icon">⊠</span>
+                }
+                else
+                {
+                    <span class="icon">⛶</span>
+                }
+            </button>
+        </div>
+        <div class="editor-header-status">
+            @if (hasUnsavedChanges)
+            {
+                <span class="unsaved-indicator">● Unsaved changes</span>
+            }
+            @if (isAutoSaving)
+            {
+                <span class="autosave-indicator">Saving...</span>
+            }
+            else if (lastAutoSaveTime.HasValue)
+            {
+                <span class="autosave-indicator saved">Saved @lastAutoSaveTime.Value.ToString("HH:mm")</span>
+            }
+        </div>
     </div>
 
     @if (errorMessage is not null)
@@ -54,8 +84,16 @@
                                 <button type="button" class="btn-link" @onclick="GenerateSlug">Generate from title</button>
                             }
                         </label>
-                        <InputText id="slug" @bind-Value="formModel.Slug" placeholder="url-friendly-slug" disabled="@IsEditMode" />
+                        <InputText id="slug" @bind-Value="formModel.Slug" placeholder="url-friendly-slug" disabled="@IsEditMode" @oninput="OnSlugChanged" class="@GetSlugInputClass()" />
                         <span class="form-hint">URL: /posts/@formModel.Slug</span>
+                        @if (!string.IsNullOrEmpty(slugValidationMessage))
+                        {
+                            <span class="@(slugIsValid ? "validation-success" : "validation-error")">@slugValidationMessage</span>
+                        }
+                        @if (isCheckingSlug)
+                        {
+                            <span class="slug-checking">Checking availability...</span>
+                        }
                         <ValidationMessage For="() => formModel.Slug" />
                     </div>
 
@@ -68,9 +106,13 @@
 
                     <!-- Content -->
                     <div class="form-group form-group-content">
-                        <label>Content (Markdown) <span class="required">*</span></label>
+                        <div class="content-label-row">
+                            <label>Content (Markdown) <span class="required">*</span></label>
+                            <span class="word-count">@WordCount words · @ReadingTime min read</span>
+                        </div>
                         <MarkdownEditor @bind-Value="formModel.Content"
                                         @bind-IsPreviewOnly="isPreviewOnly"
+                                        PostSlug="@(IsEditMode ? Slug : null)"
                                         Placeholder="Write your post in Markdown..." />
                         <ValidationMessage For="() => formModel.Content" />
                     </div>
@@ -92,6 +134,7 @@
                                     <span>@(IsEditMode ? "Update Post" : "Create Post")</span>
                                 }
                             </button>
+                            <button type="button" class="btn btn-secondary" @onclick="ShowPreview">Preview</button>
                             <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
                             @if (IsEditMode)
                             {
@@ -104,13 +147,34 @@
                     <div class="sidebar-card">
                         <h3>Status</h3>
                         <div class="form-group">
-                            <InputSelect @bind-Value="formModel.Status">
+                            <InputSelect @bind-Value="formModel.Status" @bind-Value:after="OnStatusChanged">
                                 <option value="@PostStatus.Draft">Draft</option>
                                 <option value="@PostStatus.Published">Published</option>
+                                <option value="@PostStatus.Scheduled">Scheduled</option>
                                 <option value="@PostStatus.Debug">Debug</option>
                             </InputSelect>
                         </div>
                     </div>
+
+                    @if (formModel.Status == PostStatus.Scheduled)
+                    {
+                        <!-- Scheduled Date Card -->
+                        <div class="sidebar-card scheduled-card">
+                            <h3>Schedule Publication</h3>
+                            <div class="form-group">
+                                <label for="scheduledDate">Publish Date</label>
+                                <InputDate Type="InputDateType.DateTimeLocal" id="scheduledDate" @bind-Value="formModel.ScheduledPublishDate" />
+                                <span class="form-hint">Post will be automatically published at this date and time.</span>
+                            </div>
+                            @if (formModel.ScheduledPublishDate.HasValue)
+                            {
+                                <div class="scheduled-info">
+                                    <span class="scheduled-icon">📅</span>
+                                    <span>Scheduled for @formModel.ScheduledPublishDate.Value.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+                                </div>
+                            }
+                        </div>
+                    }
 
                     <!-- Published Date Card -->
                     <div class="sidebar-card">
@@ -123,14 +187,32 @@
                     <!-- Tags Card -->
                     <div class="sidebar-card">
                         <h3>Tags</h3>
-                        <div class="form-group">
-                            <InputText @bind-Value="formModel.TagsInput" placeholder="tag1, tag2, tag3" />
+                        <div class="form-group tag-input-container">
+                            <InputText @bind-Value="formModel.TagsInput" 
+                                       placeholder="tag1, tag2, tag3" 
+                                       @oninput="OnTagInputChanged"
+                                       @onfocus="ShowTagSuggestions"
+                                       @onblur="OnTagInputBlur" />
                             <span class="form-hint">Comma-separated list of tags</span>
+                            @if (showTagSuggestions && filteredTags.Any())
+                            {
+                                <div class="tag-suggestions">
+                                    @foreach (var tag in filteredTags)
+                                    {
+                                        <button type="button" class="tag-suggestion" @onmousedown="() => AddTag(tag)" @onmousedown:preventDefault>
+                                            @tag
+                                        </button>
+                                    }
+                                </div>
+                            }
                         </div>
                         <div class="tags-preview">
                             @foreach (var tag in GetTags())
                             {
-                                <span class="tag">@tag</span>
+                                <span class="tag">
+                                    @tag
+                                    <button type="button" class="tag-remove" @onclick="() => RemoveTag(tag)">&times;</button>
+                                </span>
                             }
                         </div>
                     </div>
@@ -189,19 +271,121 @@
     </div>
 }
 
+@if (showPreview)
+{
+    <div class="preview-overlay" @onclick="ClosePreview">
+        <div class="preview-container" @onclick:stopPropagation>
+            <div class="preview-header">
+                <h2>Post Preview</h2>
+                <button type="button" class="btn-close" @onclick="ClosePreview">&times;</button>
+            </div>
+            <div class="preview-content">
+                <article class="blog-post-preview">
+                    <header class="post-header">
+                        <h1>@formModel.Title</h1>
+                        <div class="post-meta">
+                            <time>@formModel.PublishedDate.ToString("MMMM dd, yyyy")</time>
+                            <span class="reading-time">@ReadingTime min read</span>
+                        </div>
+                        @if (GetTags().Any())
+                        {
+                            <div class="post-tags">
+                                @foreach (var tag in GetTags())
+                                {
+                                    <span class="post-tag">@tag</span>
+                                }
+                            </div>
+                        }
+                    </header>
+                    <div class="post-summary">
+                        <p>@formModel.Summary</p>
+                    </div>
+                    <div class="post-body">
+                        @((MarkupString)RenderMarkdown(formModel.Content))
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     .post-editor {
         max-width: 1400px;
         margin: 0 auto;
+        transition: all 0.3s ease;
+    }
+
+    .post-editor.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-width: none;
+        margin: 0;
+        padding: 1rem;
+        background: var(--bg-color);
+        z-index: 9999;
+        overflow-y: auto;
+    }
+
+    .post-editor.fullscreen .form-grid {
+        grid-template-columns: 1fr;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .post-editor.fullscreen .form-sidebar {
+        display: none;
+    }
+
+    .post-editor.fullscreen .form-group-content {
+        min-height: calc(100vh - 300px);
     }
 
     .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
         margin-bottom: 2rem;
         border-bottom: 2px solid var(--border-color);
         padding-bottom: 1rem;
     }
 
-    .editor-header h1 {
+    .editor-header-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .btn-icon {
+        background: none;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+        background: var(--accent-color);
+        color: var(--bg-color);
+        border-color: var(--accent-color);
+    }
+
+    .btn-icon .icon {
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    .editor-header-main h1 {
         margin: 0 0 0.5rem 0;
         color: var(--text-color);
     }
@@ -209,6 +393,37 @@
     .editor-subtitle {
         color: var(--text-muted);
         margin: 0;
+    }
+
+    .editor-header-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+    }
+
+    .unsaved-indicator {
+        color: #ff9800;
+    }
+
+    .autosave-indicator {
+        color: var(--text-muted);
+    }
+
+    .autosave-indicator.saved {
+        color: #4caf50;
+    }
+
+    .content-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .word-count {
+        font-size: 0.8rem;
+        color: var(--text-muted);
     }
 
     .form-grid {
@@ -244,6 +459,27 @@
         color: var(--text-muted);
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 0.5rem;
+    }
+
+    .scheduled-card {
+        border-color: var(--accent-color);
+        background: rgba(var(--accent-color-rgb, 99, 102, 241), 0.05);
+    }
+
+    .scheduled-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: var(--bg-color);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: var(--text-color);
+        margin-top: 0.75rem;
+    }
+
+    .scheduled-icon {
+        font-size: 1.2rem;
     }
 
     .form-group {
@@ -374,6 +610,60 @@
         padding: 0.25rem 0.5rem;
         border-radius: 4px;
         font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .tag-remove {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0;
+        line-height: 1;
+        opacity: 0.7;
+    }
+
+    .tag-remove:hover {
+        opacity: 1;
+    }
+
+    .tag-input-container {
+        position: relative;
+    }
+
+    .tag-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 2px;
+    }
+
+    .tag-suggestion {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        background: none;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .tag-suggestion:hover {
+        background: var(--accent-color);
+        color: var(--bg-color);
     }
 
     .metadata-info {
@@ -470,9 +760,188 @@
         margin-top: 1.5rem;
     }
 
+    /* Preview Modal Styles */
+    .preview-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        z-index: 10000;
+        overflow-y: auto;
+        padding: 2rem;
+    }
+
+    .preview-container {
+        background: var(--bg-color);
+        border-radius: 12px;
+        max-width: 900px;
+        width: 100%;
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: var(--bg-color);
+        z-index: 1;
+    }
+
+    .preview-header h2 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 1.1rem;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0;
+        line-height: 1;
+    }
+
+    .btn-close:hover {
+        color: var(--text-color);
+    }
+
+    .preview-content {
+        padding: 2rem;
+    }
+
+    .blog-post-preview .post-header h1 {
+        font-size: 2.5rem;
+        margin: 0 0 1rem 0;
+        color: var(--text-color);
+        line-height: 1.2;
+    }
+
+    .blog-post-preview .post-meta {
+        display: flex;
+        gap: 1rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .blog-post-preview .post-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .blog-post-preview .post-tag {
+        background: var(--accent-color);
+        color: var(--bg-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+    }
+
+    .blog-post-preview .post-summary {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        border-left: 4px solid var(--accent-color);
+        padding-left: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .blog-post-preview .post-body {
+        line-height: 1.8;
+        color: var(--text-color);
+    }
+
+    .blog-post-preview .post-body h1,
+    .blog-post-preview .post-body h2,
+    .blog-post-preview .post-body h3 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+
+    .blog-post-preview .post-body p {
+        margin-bottom: 1rem;
+    }
+
+    .blog-post-preview .post-body code {
+        background: var(--code-bg, rgba(0, 0, 0, 0.1));
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+
+    .blog-post-preview .post-body pre {
+        background: var(--code-bg, #1e1e1e);
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+
+    .blog-post-preview .post-body pre code {
+        background: none;
+        padding: 0;
+    }
+
+    .blog-post-preview .post-body img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .blog-post-preview .post-body blockquote {
+        border-left: 4px solid var(--accent-color);
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
     .validation-message {
         color: #f44336;
         font-size: 0.85rem;
+    }
+
+    .validation-error {
+        color: #f44336;
+        font-size: 0.85rem;
+        display: block;
+    }
+
+    .validation-success {
+        color: #4caf50;
+        font-size: 0.85rem;
+        display: block;
+    }
+
+    .slug-checking {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-style: italic;
+        display: block;
+    }
+
+    .slug-input-valid {
+        border-color: #4caf50 !important;
+    }
+
+    .slug-input-invalid {
+        border-color: #f44336 !important;
     }
 
     @@media (max-width: 1024px) {
@@ -491,21 +960,59 @@
     public string? Slug { get; set; }
 
     private PostEditorModel formModel = new();
+    private PostEditorModel? originalFormState;
     private string? originalTitle;
     private bool isLoading = true;
     private bool isSaving;
     private bool isDeleting;
     private bool showDeleteConfirm;
     private bool isPreviewOnly;
+    private bool isAutoSaving;
+    private DateTime? lastAutoSaveTime;
+    private System.Threading.Timer? autoSaveTimer;
+    private const int AutoSaveIntervalMs = 30000; // 30 seconds
     private string? errorMessage;
 
+    // Slug validation state
+    private string? slugValidationMessage;
+    private bool slugIsValid;
+    private bool isCheckingSlug;
+    private System.Threading.CancellationTokenSource? slugCheckCts;
+    private const int SlugCheckDebounceMs = 500;
+
+    // Tag autocomplete state
+    private List<string> allTags = new();
+    private List<string> filteredTags = new();
+    private bool showTagSuggestions;
+
+    // Fullscreen mode
+    private bool isFullscreen;
+
+    // Preview mode
+    private bool showPreview;
+    private static readonly Markdig.MarkdownPipeline markdownPipeline = Markdig.MarkdownExtensions.UseAdvancedExtensions(new Markdig.MarkdownPipelineBuilder()).Build();
+
     private bool IsEditMode => !string.IsNullOrEmpty(Slug);
+
+    private bool hasUnsavedChanges => originalFormState is not null && !FormEquals(formModel, originalFormState);
+
+    private int WordCount => string.IsNullOrWhiteSpace(formModel.Content)
+        ? 0
+        : formModel.Content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+    private int ReadingTime => Math.Max(1, (int)Math.Ceiling(WordCount / 200.0)); // Average 200 words per minute
 
     protected override async Task OnInitializedAsync()
     {
         if (IsEditMode)
         {
             await LoadPost();
+            // Start auto-save timer for edit mode
+            autoSaveTimer = new System.Threading.Timer(
+                async _ => await InvokeAsync(AutoSaveAsync),
+                null,
+                AutoSaveIntervalMs,
+                AutoSaveIntervalMs);
         }
         else
         {
@@ -513,6 +1020,27 @@
             formModel.Status = PostStatus.Draft;
             isLoading = false;
         }
+
+        // Load all existing tags for autocomplete
+        await LoadAllTagsAsync();
+
+        // Capture original state for change detection (must be after LoadPost)
+        originalFormState = CloneFormModel(formModel);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register beforeunload handler for unsaved changes warning
+            await JS.InvokeVoidAsync("postEditor.registerBeforeUnload");
+
+            // Register keyboard shortcuts for fullscreen
+            await JS.InvokeVoidAsync("postEditor.registerFullscreenKeys", DotNetObjectReference.Create(this));
+        }
+
+        // Sync unsaved changes state to JavaScript
+        await JS.InvokeVoidAsync("postEditor.setUnsavedChanges", hasUnsavedChanges);
     }
 
     private async Task LoadPost()
@@ -538,6 +1066,7 @@
                     UpdatedAt = post.UpdatedAt,
                     CreatedBy = post.CreatedBy,
                     UpdatedBy = post.UpdatedBy,
+                    ScheduledPublishDate = post.ScheduledPublishDate?.LocalDateTime,
                 };
                 originalTitle = post.Title;
             }
@@ -562,6 +1091,7 @@
         if (!IsEditMode && string.IsNullOrEmpty(formModel.Slug))
         {
             GenerateSlug();
+            _ = ValidateSlugAsync(formModel.Slug);
         }
     }
 
@@ -582,6 +1112,178 @@
         formModel.Slug = new string(formModel.Slug
             .Where(c => char.IsLetterOrDigit(c) || c == '-')
             .ToArray());
+
+        // Trigger validation after generating slug
+        _ = ValidateSlugAsync(formModel.Slug);
+    }
+
+    private async Task OnSlugChanged(ChangeEventArgs e)
+    {
+        if (IsEditMode)
+        {
+            return;
+        }
+
+        var newSlug = e.Value?.ToString() ?? string.Empty;
+        formModel.Slug = newSlug;
+
+        await ValidateSlugAsync(newSlug);
+    }
+
+    private async Task ValidateSlugAsync(string slug)
+    {
+        // Cancel any pending validation
+        slugCheckCts?.Cancel();
+        slugCheckCts = new System.Threading.CancellationTokenSource();
+        var token = slugCheckCts.Token;
+
+        // Reset validation state
+        slugValidationMessage = null;
+        slugIsValid = false;
+        isCheckingSlug = false;
+
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return;
+        }
+
+        // Validate URL-safe format
+        var formatError = ValidateSlugFormat(slug);
+        if (formatError != null)
+        {
+            slugValidationMessage = formatError;
+            slugIsValid = false;
+            return;
+        }
+
+        // Debounce before checking availability
+        isCheckingSlug = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(SlugCheckDebounceMs, token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // Check uniqueness via API
+            var response = await Http.GetFromJsonAsync<SlugAvailabilityResult>($"api/admin/posts/check-slug/{slug}", token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (response != null)
+            {
+                if (response.Available)
+                {
+                    slugValidationMessage = "✓ Slug is available";
+                    slugIsValid = true;
+                }
+                else
+                {
+                    slugValidationMessage = "✗ Slug is already in use";
+                    slugIsValid = false;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancelled requests
+        }
+        catch (HttpRequestException)
+        {
+            // Silently fail - will be validated on submit
+            slugValidationMessage = null;
+        }
+        finally
+        {
+            isCheckingSlug = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string? ValidateSlugFormat(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return "Slug is required";
+        }
+
+        if (slug.Length < 3)
+        {
+            return "Slug must be at least 3 characters";
+        }
+
+        if (slug.Length > 200)
+        {
+            return "Slug must be 200 characters or less";
+        }
+
+        if (!slug.All(c => char.IsLetterOrDigit(c) || c == '-'))
+        {
+            return "Slug can only contain letters, numbers, and hyphens";
+        }
+
+        if (slug.StartsWith('-') || slug.EndsWith('-'))
+        {
+            return "Slug cannot start or end with a hyphen";
+        }
+
+        if (slug.Contains("--"))
+        {
+            return "Slug cannot contain consecutive hyphens";
+        }
+
+        return null;
+    }
+
+    private string GetSlugInputClass()
+    {
+        if (IsEditMode || string.IsNullOrWhiteSpace(formModel.Slug))
+        {
+            return string.Empty;
+        }
+
+        if (isCheckingSlug)
+        {
+            return string.Empty;
+        }
+
+        if (slugValidationMessage == null)
+        {
+            return string.Empty;
+        }
+
+        return slugIsValid ? "slug-input-valid" : "slug-input-invalid";
+    }
+
+    private void ToggleFullscreen()
+    {
+        isFullscreen = !isFullscreen;
+    }
+
+    /// <summary>
+    /// Called from JavaScript when F11 or Escape key is pressed.
+    /// </summary>
+    /// <param name="key">The key that was pressed.</param>
+    [JSInvokable]
+    public void HandleFullscreenKey(string key)
+    {
+        if (key == "F11")
+        {
+            isFullscreen = true;
+            StateHasChanged();
+        }
+        else if (key == "Escape" && isFullscreen)
+        {
+            isFullscreen = false;
+            StateHasChanged();
+        }
     }
 
     private IEnumerable<string> GetTags()
@@ -597,6 +1299,119 @@
             .Where(t => !string.IsNullOrWhiteSpace(t));
     }
 
+    private async Task LoadAllTagsAsync()
+    {
+        try
+        {
+            var tags = await Http.GetFromJsonAsync<List<string>>("api/admin/posts/tags");
+            allTags = tags ?? new List<string>();
+        }
+        catch
+        {
+            allTags = new List<string>();
+        }
+    }
+
+    private void OnTagInputChanged(ChangeEventArgs e)
+    {
+        formModel.TagsInput = e.Value?.ToString() ?? string.Empty;
+        UpdateTagSuggestions();
+    }
+
+    private void UpdateTagSuggestions()
+    {
+        var currentTags = GetTags().ToList();
+        var lastTagPart = GetLastTagPart();
+
+        if (string.IsNullOrWhiteSpace(lastTagPart))
+        {
+            // Show all unused tags
+            filteredTags = allTags
+                .Where(t => !currentTags.Contains(t, StringComparer.OrdinalIgnoreCase))
+                .Take(10)
+                .ToList();
+        }
+        else
+        {
+            // Filter by partial match
+            filteredTags = allTags
+                .Where(t => t.Contains(lastTagPart, StringComparison.OrdinalIgnoreCase))
+                .Where(t => !currentTags.Contains(t, StringComparer.OrdinalIgnoreCase))
+                .Take(10)
+                .ToList();
+        }
+    }
+
+    private string GetLastTagPart()
+    {
+        if (string.IsNullOrWhiteSpace(formModel.TagsInput))
+        {
+            return string.Empty;
+        }
+
+        var parts = formModel.TagsInput.Split(',');
+        return parts.Last().Trim();
+    }
+
+    private void ShowTagSuggestions()
+    {
+        showTagSuggestions = true;
+        UpdateTagSuggestions();
+    }
+
+    private void OnTagInputBlur()
+    {
+        // Delay hiding to allow click on suggestion to register
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            showTagSuggestions = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void AddTag(string tag)
+    {
+        var currentTags = GetTags().ToList();
+
+        if (currentTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (currentTags.Any())
+        {
+            formModel.TagsInput = string.Join(", ", currentTags) + ", " + tag;
+        }
+        else
+        {
+            formModel.TagsInput = tag;
+        }
+
+        UpdateTagSuggestions();
+    }
+
+    private void RemoveTag(string tag)
+    {
+        var currentTags = GetTags().ToList();
+        currentTags.RemoveAll(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase));
+        formModel.TagsInput = string.Join(", ", currentTags);
+    }
+
+    private void OnStatusChanged()
+    {
+        // When switching to Scheduled status, set a default scheduled date if not set
+        if (formModel.Status == PostStatus.Scheduled && !formModel.ScheduledPublishDate.HasValue)
+        {
+            formModel.ScheduledPublishDate = DateTime.Now.AddDays(1).Date.AddHours(9); // Tomorrow at 9 AM
+        }
+
+        // Clear scheduled date when switching away from Scheduled status
+        if (formModel.Status != PostStatus.Scheduled)
+        {
+            formModel.ScheduledPublishDate = null;
+        }
+    }
+
     private async Task HandleSubmit()
     {
         if (string.IsNullOrWhiteSpace(formModel.Title) ||
@@ -608,6 +1423,17 @@
             return;
         }
 
+        // Validate slug format for new posts
+        if (!IsEditMode)
+        {
+            var formatError = ValidateSlugFormat(formModel.Slug);
+            if (formatError != null)
+            {
+                errorMessage = formatError;
+                return;
+            }
+        }
+
         isSaving = true;
         errorMessage = null;
 
@@ -615,6 +1441,9 @@
         {
             var tags = GetTags().ToList();
             var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+            var scheduledDate = formModel.ScheduledPublishDate.HasValue
+                ? new DateTimeOffset(formModel.ScheduledPublishDate.Value, TimeSpan.Zero)
+                : (DateTimeOffset?)null;
 
             if (IsEditMode)
             {
@@ -624,7 +1453,8 @@
                     formModel.Content,
                     publishedDate,
                     formModel.Status,
-                    tags);
+                    tags,
+                    scheduledDate);
 
                 var response = await Http.PutAsJsonAsync($"api/admin/posts/{Slug}", request);
 
@@ -647,7 +1477,8 @@
                     formModel.Content,
                     publishedDate,
                     formModel.Status,
-                    tags);
+                    tags,
+                    scheduledDate);
 
                 var response = await Http.PostAsJsonAsync("api/admin/posts", request);
 
@@ -687,6 +1518,26 @@
         showDeleteConfirm = false;
     }
 
+    private void ShowPreview()
+    {
+        showPreview = true;
+    }
+
+    private void ClosePreview()
+    {
+        showPreview = false;
+    }
+
+    private static string RenderMarkdown(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            return string.Empty;
+        }
+
+        return Markdig.Markdown.ToHtml(markdown, markdownPipeline);
+    }
+
     private async Task DeletePost()
     {
         isDeleting = true;
@@ -718,6 +1569,88 @@
         }
     }
 
+    private async Task AutoSaveAsync()
+    {
+        // Only auto-save if there are unsaved changes and we're in edit mode
+        if (!IsEditMode || !hasUnsavedChanges || isSaving || isAutoSaving)
+        {
+            return;
+        }
+
+        isAutoSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var tags = GetTags().ToList();
+            var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+            var scheduledDate = formModel.ScheduledPublishDate.HasValue
+                ? new DateTimeOffset(formModel.ScheduledPublishDate.Value, TimeSpan.Zero)
+                : (DateTimeOffset?)null;
+
+            var request = new UpdatePostRequest(
+                formModel.Title,
+                formModel.Summary,
+                formModel.Content,
+                publishedDate,
+                formModel.Status,
+                tags,
+                scheduledDate);
+
+            var response = await Http.PutAsJsonAsync($"api/admin/posts/{Slug}", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                lastAutoSaveTime = DateTime.Now;
+                originalFormState = CloneFormModel(formModel);
+            }
+        }
+        catch
+        {
+            // Silently fail auto-save, user can still manually save
+        }
+        finally
+        {
+            isAutoSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private static PostEditorModel CloneFormModel(PostEditorModel model) => new()
+    {
+        Title = model.Title,
+        Slug = model.Slug,
+        Summary = model.Summary,
+        Content = model.Content,
+        PublishedDate = model.PublishedDate,
+        Status = model.Status,
+        TagsInput = model.TagsInput,
+        CreatedAt = model.CreatedAt,
+        UpdatedAt = model.UpdatedAt,
+        CreatedBy = model.CreatedBy,
+        UpdatedBy = model.UpdatedBy,
+        ScheduledPublishDate = model.ScheduledPublishDate,
+    };
+
+    private static bool FormEquals(PostEditorModel a, PostEditorModel b) =>
+        a.Title == b.Title &&
+        a.Slug == b.Slug &&
+        a.Summary == b.Summary &&
+        a.Content == b.Content &&
+        a.PublishedDate == b.PublishedDate &&
+        a.Status == b.Status &&
+        a.TagsInput == b.TagsInput &&
+        a.ScheduledPublishDate == b.ScheduledPublishDate;
+
+    public void Dispose()
+    {
+        autoSaveTimer?.Dispose();
+        slugCheckCts?.Cancel();
+        slugCheckCts?.Dispose();
+        _ = JS.InvokeVoidAsync("postEditor.unregisterBeforeUnload");
+        _ = JS.InvokeVoidAsync("postEditor.unregisterFullscreenKeys");
+    }
+
     private class PostEditorModel
     {
         public string Title { get; set; } = string.Empty;
@@ -731,5 +1664,6 @@
         public DateTime UpdatedAt { get; set; }
         public string? CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
+        public DateTime? ScheduledPublishDate { get; set; }
     }
 }

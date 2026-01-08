@@ -399,6 +399,31 @@ builder.Services.AddScoped<IAdminPostService, AdminPostService>();
 2. Add `DatabaseBlogService` with feature flag
 3. Test with production data copy
 
+### Automatic Migrations at Startup
+
+The application automatically applies pending Entity Framework migrations when starting up with a database connection configured. This ensures the database schema is always up-to-date without requiring manual intervention.
+
+**Implementation in Program.cs:**
+```csharp
+var app = builder.Build();
+
+// Apply database migrations if using database storage
+if (!string.IsNullOrEmpty(blogConnectionString))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+```
+
+**Benefits:**
+- No manual migration steps required during deployment
+- Ensures development and production databases stay in sync
+- Safe for containerized deployments where manual intervention isn't possible
+- Idempotent - only applies migrations that haven't been run yet
+
+**Note:** This approach is suitable for single-instance deployments. For high-availability scenarios with multiple instances, consider using a separate migration job or startup synchronization.
+
 ### Step 2: Data Migration
 
 1. Run migration tool against existing posts

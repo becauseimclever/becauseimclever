@@ -1,0 +1,108 @@
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Domain.Entities
+@inject IBrowserExtensionDetector ExtensionDetector
+@inject IBrowserFingerprintService FingerprintService
+@inject IClientExtensionTrackingService TrackingService
+@inject IFeatureToggleService FeatureToggle
+@inject IConsentService ConsentService
+@inject IJSRuntime JSRuntime
+
+@if (showBanner && detectedExtensions.Any())
+{
+    <div class="extension-warning-banner" role="alert">
+        <div class="warning-content">
+            <span class="warning-icon">⚠️</span>
+            <div class="warning-text">
+                <strong>Browser Extension Warning</strong>
+                @foreach (var extension in detectedExtensions)
+                {
+                    <p>@extension.Name: @extension.WarningMessage</p>
+                }
+            </div>
+            <button data-testid="dismiss-warning" class="dismiss-button" @onclick="DismissBanner">
+                ✕
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private List<DetectedExtension> detectedExtensions = new();
+    private bool showBanner = false;
+    private bool isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isInitialized)
+        {
+            isInitialized = true;
+            await CheckForExtensions();
+        }
+    }
+
+    private async Task CheckForExtensions()
+    {
+        try
+        {
+            // Check if feature is enabled
+            var isEnabled = await FeatureToggle.IsFeatureEnabledAsync("ExtensionTracking");
+            if (!isEnabled)
+            {
+                return;
+            }
+
+            // Check if user has consented to tracking
+            var hasConsented = await ConsentService.HasUserConsentedAsync();
+            if (!hasConsented)
+            {
+                return;
+            }
+
+            // Check if user previously dismissed the banner
+            var dismissed = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "extensionWarningDismissed");
+            if (dismissed == "true")
+            {
+                return;
+            }
+
+            // Detect extensions
+            var extensions = await ExtensionDetector.DetectExtensionsAsync();
+            detectedExtensions = extensions.Where(e => e.IsHarmful).ToList();
+
+            if (detectedExtensions.Any())
+            {
+                showBanner = true;
+                StateHasChanged();
+
+                // Track detected extensions
+                await TrackExtensionsAsync();
+            }
+        }
+        catch
+        {
+            // Silently fail - don't disrupt user experience
+        }
+    }
+
+    private async Task TrackExtensionsAsync()
+    {
+        try
+        {
+            var fingerprint = await FingerprintService.CollectFingerprintAsync();
+            var hash = fingerprint.ComputeHash();
+            var userAgent = await JSRuntime.InvokeAsync<string>("eval", "navigator.userAgent");
+            await TrackingService.TrackDetectedExtensionsAsync(hash, detectedExtensions, userAgent);
+        }
+        catch
+        {
+            // Silently fail - tracking should not disrupt user experience
+        }
+    }
+
+    private async Task DismissBanner()
+    {
+        showBanner = false;
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "extensionWarningDismissed", "true");
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,149 @@
+/* ==========================================================================
+   Dungeon Crawler Theme
+   Only CSS variable overrides - no component styles duplicated
+   ========================================================================== */
+
+[data-theme="dungeon"] {
+    /* Colors */
+    --color-bg: #1a1a1a;
+    --color-bg-secondary: #0a0a0a;
+    --color-text: #c8a864;
+    --color-text-muted: #8b7355;
+    --color-accent: #d4af37;
+    --color-border: #4a4a4a;
+
+    /* Typography */
+    --font-body: "Courier New", "Lucida Console", monospace;
+    --font-mono: "Courier New", "Lucida Console", monospace;
+
+    /* Borders & Shadows */
+    --card-shadow: none;
+    --radius: 0px;
+
+    /* Buttons */
+    --btn-bg: transparent;
+    --btn-color: var(--color-accent);
+    --btn-border: 1px solid var(--color-accent);
+
+    /* Cards */
+    --card-bg: var(--color-bg-secondary);
+    --card-hover-transform: none;
+    --card-hover-shadow: none;
+}
+
+/* Dungeon text prefixes */
+[data-theme="dungeon"] .logo::before {
+    content: "> ";
+}
+
+[data-theme="dungeon"] nav a::before {
+    content: "> ";
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+[data-theme="dungeon"] nav a:hover::before {
+    opacity: 1;
+}
+
+[data-theme="dungeon"] nav a:hover {
+    text-decoration: none;
+    color: var(--color-accent);
+}
+
+[data-theme="dungeon"] .hero h1::before {
+    content: "*** ";
+}
+
+[data-theme="dungeon"] .hero h1::after {
+    content: " ***";
+}
+
+[data-theme="dungeon"] h2::before {
+    content: ">> ";
+    color: var(--color-text-muted);
+}
+
+[data-theme="dungeon"] .tag {
+    border: 1px solid var(--color-text-muted);
+    background-color: transparent;
+}
+
+[data-theme="dungeon"] .tag::before {
+    content: "[";
+}
+
+[data-theme="dungeon"] .tag::after {
+    content: "]";
+}
+
+[data-theme="dungeon"] footer::before {
+    content: "─────────────────────────────────────────────────────────────────────────────────";
+    display: block;
+    color: var(--color-border);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+[data-theme="dungeon"] a:hover {
+    text-decoration: none;
+    background-color: var(--color-accent);
+    color: #000;
+    padding: 0 2px;
+}
+
+[data-theme="dungeon"] .card {
+    border: 1px solid var(--color-border);
+}
+
+[data-theme="dungeon"] .card::before {
+    content: "┌" attr(data-title) "─────────────────────┐";
+    display: block;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+[data-theme="dungeon"] .card:hover {
+    border-color: var(--color-accent);
+}
+
+[data-theme="dungeon"] .interest-card {
+    border: 1px solid var(--color-border);
+}
+
+[data-theme="dungeon"] .interest-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+[data-theme="dungeon"] .sidebar-widget {
+    border: 1px solid var(--color-border);
+}
+
+[data-theme="dungeon"] .sidebar-widget h3 {
+    border-bottom: 1px dashed var(--color-text-muted);
+}
+
+[data-theme="dungeon"] .sidebar-widget h3::before {
+    content: "=== ";
+}
+
+[data-theme="dungeon"] .sidebar-widget h3::after {
+    content: " ===";
+}
+
+[data-theme="dungeon"] .cta-button::before {
+    content: "> ";
+}
+
+[data-theme="dungeon"] .cta-button:hover {
+    background-color: var(--color-accent);
+    color: #000;
+}
+
+[data-theme="dungeon"] article.card img {
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+    border-radius: 0;
+}

@@ -1,0 +1,68 @@
+/* ==========================================================================
+   CSS Custom Properties (Variables)
+   All themeable values are defined here
+   ========================================================================== */
+
+:root {
+    /* ===== Colors ===== */
+    --color-bg: #1e1e1e;
+    --color-bg-secondary: #252526;
+    --color-text: #d4d4d4;
+    --color-text-muted: #a0a0a0;
+    --color-accent: #007acc;
+    --color-border: #3e3e42;
+
+    /* ===== Typography ===== */
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "Consolas", "Courier New", monospace;
+    --font-size-base: 1rem;
+    --line-height-base: 1.6;
+
+    /* ===== Spacing ===== */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+
+    /* ===== Borders & Shadows ===== */
+    --radius: 4px;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --card-shadow: var(--shadow-md);
+
+    /* ===== Layout ===== */
+    --header-height: 60px;
+    --max-content-width: 1200px;
+
+    /* ===== Transitions ===== */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+
+    /* ===== Button Styles ===== */
+    --btn-bg: var(--color-accent);
+    --btn-color: #ffffff;
+    --btn-border: none;
+    --btn-shadow: none;
+    --btn-hover-bg: var(--color-accent);
+    --btn-hover-transform: none;
+    --btn-active-bg: var(--color-accent);
+    --btn-active-transform: none;
+
+    /* ===== Card Styles ===== */
+    --card-bg: var(--color-bg-secondary);
+    --card-border: 1px solid var(--color-border);
+    --card-border-radius: var(--radius);
+    --card-hover-transform: translateY(-2px);
+    --card-hover-shadow: var(--card-shadow);
+
+    /* ===== Theme-Specific Extensions ===== */
+    /* These are additional variables that specific themes may override */
+    --theme-content-before: none;
+    --theme-content-after: none;
+    --theme-animation: none;
+}

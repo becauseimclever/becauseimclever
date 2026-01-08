@@ -45,12 +45,59 @@ public class AdminPostService : IAdminPostService
                 p.Tags,
                 p.Status,
                 p.UpdatedAt,
-                p.UpdatedBy))
+                p.UpdatedBy,
+                p.ScheduledPublishDate,
+                p.AuthorId,
+                p.AuthorName))
             .ToListAsync();
 
         this.logger.LogInformation("Retrieved {Count} posts for admin view.", posts.Count);
 
         return posts;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorId"/> is null.</exception>
+    public async Task<IEnumerable<AdminPostSummary>> GetPostsByAuthorAsync(string authorId)
+    {
+        ArgumentNullException.ThrowIfNull(authorId);
+
+        this.logger.LogDebug("Retrieving posts for author '{AuthorId}'.", authorId);
+
+        var posts = await this.context.Posts
+            .AsNoTracking()
+            .Where(p => p.AuthorId == authorId)
+            .OrderByDescending(p => p.PublishedDate)
+            .Select(p => new AdminPostSummary(
+                p.Slug,
+                p.Title,
+                p.Summary,
+                p.PublishedDate,
+                p.Tags,
+                p.Status,
+                p.UpdatedAt,
+                p.UpdatedBy,
+                p.ScheduledPublishDate,
+                p.AuthorId,
+                p.AuthorName))
+            .ToListAsync();
+
+        this.logger.LogInformation("Retrieved {Count} posts for author '{AuthorId}'.", posts.Count, authorId);
+
+        return posts;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> is null.</exception>
+    public async Task<BlogPost?> GetPostEntityAsync(string slug)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+
+        this.logger.LogDebug("Retrieving post entity '{Slug}'.", slug);
+
+        return await this.context.Posts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Slug == slug);
     }
 
     /// <inheritdoc/>
@@ -75,7 +122,10 @@ public class AdminPostService : IAdminPostService
                 p.CreatedAt,
                 p.UpdatedAt,
                 p.CreatedBy,
-                p.UpdatedBy))
+                p.UpdatedBy,
+                p.ScheduledPublishDate,
+                p.AuthorId,
+                p.AuthorName))
             .FirstOrDefaultAsync();
 
         if (post == null)
@@ -118,10 +168,13 @@ public class AdminPostService : IAdminPostService
             PublishedDate = request.PublishedDate,
             Status = request.Status,
             Tags = request.Tags.ToList(),
+            ScheduledPublishDate = request.ScheduledPublishDate,
             CreatedAt = now,
             UpdatedAt = now,
             CreatedBy = createdBy,
             UpdatedBy = createdBy,
+            AuthorId = createdBy,
+            AuthorName = createdBy,
         };
 
         this.context.Posts.Add(post);
@@ -155,6 +208,7 @@ public class AdminPostService : IAdminPostService
         post.PublishedDate = request.PublishedDate;
         post.Status = request.Status;
         post.Tags = request.Tags.ToList();
+        post.ScheduledPublishDate = request.ScheduledPublishDate;
         post.UpdatedAt = DateTime.UtcNow;
         post.UpdatedBy = updatedBy;
 
@@ -262,6 +316,60 @@ public class AdminPostService : IAdminPostService
             errors.Count);
 
         return new BatchStatusUpdateResult(allSuccess, successCount, errors);
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> is null.</exception>
+    public async Task<bool> SlugExistsAsync(string slug)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+
+        this.logger.LogDebug("Checking if slug '{Slug}' exists.", slug);
+
+        var exists = await this.context.Posts.AnyAsync(p => p.Slug == slug);
+
+        this.logger.LogDebug("Slug '{Slug}' exists: {Exists}.", slug, exists);
+
+        return exists;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<string>> GetAllTagsAsync()
+    {
+        this.logger.LogDebug("Retrieving all unique tags.");
+
+        var allTags = await this.context.Posts
+            .AsNoTracking()
+            .Select(p => p.Tags)
+            .ToListAsync();
+
+        var tags = allTags
+            .SelectMany(t => t)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
+
+        this.logger.LogDebug("Retrieved {Count} unique tags.", tags.Count);
+
+        return tags;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<BlogPost>> GetScheduledPostsReadyToPublishAsync(
+        DateTimeOffset currentTime,
+        CancellationToken cancellationToken = default)
+    {
+        this.logger.LogDebug("Retrieving scheduled posts ready for publishing (cutoff: {CurrentTime}).", currentTime);
+
+        var posts = await this.context.Posts
+            .Where(p => p.Status == PostStatus.Scheduled
+                && p.ScheduledPublishDate != null
+                && p.ScheduledPublishDate <= currentTime)
+            .ToListAsync(cancellationToken);
+
+        this.logger.LogDebug("Found {Count} scheduled post(s) ready for publishing.", posts.Count);
+
+        return posts;
     }
 
     private async Task<StatusUpdateResult> UpdateStatusInternalAsync(string slug, PostStatus newStatus, string updatedBy)

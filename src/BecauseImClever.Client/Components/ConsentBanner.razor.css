@@ -1,0 +1,68 @@
+.consent-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--neutral-fill-rest);
+    border-top: 2px solid var(--accent-fill-rest);
+    padding: 1.5rem;
+    z-index: 1000;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.consent-content {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.consent-content h3 {
+    margin: 0 0 1rem 0;
+    color: var(--accent-fill-rest);
+}
+
+.consent-content p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.privacy-note {
+    font-size: 0.9em;
+    color: var(--neutral-foreground-hint);
+    font-style: italic;
+}
+
+.consent-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.accept-btn,
+.decline-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.accept-btn {
+    background: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.accept-btn:hover {
+    background: var(--accent-fill-hover);
+}
+
+.decline-btn {
+    background: var(--neutral-fill-secondary-rest);
+    color: var(--neutral-foreground-rest);
+}
+
+.decline-btn:hover {
+    background: var(--neutral-fill-secondary-hover);
+}

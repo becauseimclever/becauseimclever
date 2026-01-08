@@ -208,6 +208,86 @@ public class DashboardServiceTests
         Assert.Equal(1, result.DebugPosts);
     }
 
+    /// <summary>
+    /// Verifies that GetStatsAsync returns correct scheduled count.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetStatsAsync_WithScheduledPosts_ReturnsCorrectScheduledCount()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        context.Posts.AddRange(
+            this.CreateTestPost("post-1", "Post 1", PostStatus.Published),
+            this.CreateTestPost("post-2", "Post 2", PostStatus.Scheduled),
+            this.CreateTestPost("post-3", "Post 3", PostStatus.Scheduled),
+            this.CreateTestPost("post-4", "Post 4", PostStatus.Draft));
+        await context.SaveChangesAsync();
+
+        var service = new DashboardService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetStatsAsync();
+
+        // Assert
+        Assert.Equal(2, result.ScheduledPosts);
+    }
+
+    /// <summary>
+    /// Verifies that GetStatsAsync returns zero scheduled count when no posts exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetStatsAsync_WhenNoPosts_ReturnsZeroScheduledCount()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new DashboardService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetStatsAsync();
+
+        // Assert
+        Assert.Equal(0, result.ScheduledPosts);
+    }
+
+    /// <summary>
+    /// Verifies that GetStatsAsync returns all correct counts including scheduled.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetStatsAsync_WithAllStatuses_ReturnsAllCorrectCountsIncludingScheduled()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        context.Posts.AddRange(
+            this.CreateTestPost("pub-1", "Published 1", PostStatus.Published),
+            this.CreateTestPost("pub-2", "Published 2", PostStatus.Published),
+            this.CreateTestPost("draft-1", "Draft 1", PostStatus.Draft),
+            this.CreateTestPost("debug-1", "Debug 1", PostStatus.Debug),
+            this.CreateTestPost("sched-1", "Scheduled 1", PostStatus.Scheduled),
+            this.CreateTestPost("sched-2", "Scheduled 2", PostStatus.Scheduled),
+            this.CreateTestPost("sched-3", "Scheduled 3", PostStatus.Scheduled));
+        await context.SaveChangesAsync();
+
+        var service = new DashboardService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetStatsAsync();
+
+        // Assert
+        Assert.Equal(7, result.TotalPosts);
+        Assert.Equal(2, result.PublishedPosts);
+        Assert.Equal(1, result.DraftPosts);
+        Assert.Equal(1, result.DebugPosts);
+        Assert.Equal(3, result.ScheduledPosts);
+    }
+
     private BlogDbContext CreateContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<BlogDbContext>()

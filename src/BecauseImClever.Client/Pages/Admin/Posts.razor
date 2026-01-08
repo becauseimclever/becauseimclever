@@ -3,7 +3,7 @@
 @using BecauseImClever.Domain.Entities
 @using System.Net.Http.Json
 @layout AdminLayout
-@attribute [Authorize(Policy = "Admin")]
+@attribute [Authorize(Policy = "PostManagement")]
 @inject HttpClient Http
 @inject NavigationManager Navigation
 

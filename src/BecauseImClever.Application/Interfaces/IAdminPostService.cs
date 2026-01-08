@@ -14,6 +14,20 @@ public interface IAdminPostService
     Task<IEnumerable<AdminPostSummary>> GetAllPostsAsync();
 
     /// <summary>
+    /// Gets blog posts by author with their admin details.
+    /// </summary>
+    /// <param name="authorId">The unique identifier of the author.</param>
+    /// <returns>A collection of admin post summaries for the specified author.</returns>
+    Task<IEnumerable<AdminPostSummary>> GetPostsByAuthorAsync(string authorId);
+
+    /// <summary>
+    /// Gets a single blog post entity for authorization checks.
+    /// </summary>
+    /// <param name="slug">The slug of the post to retrieve.</param>
+    /// <returns>The blog post entity if found; otherwise, null.</returns>
+    Task<BlogPost?> GetPostEntityAsync(string slug);
+
+    /// <summary>
     /// Gets a single blog post for editing.
     /// </summary>
     /// <param name="slug">The slug of the post to retrieve.</param>
@@ -61,4 +75,27 @@ public interface IAdminPostService
     /// <param name="updatedBy">The identifier of the user making the changes.</param>
     /// <returns>The result of the batch update operation.</returns>
     Task<BatchStatusUpdateResult> UpdateStatusesAsync(IEnumerable<StatusUpdate> updates, string updatedBy);
+
+    /// <summary>
+    /// Checks if a blog post with the specified slug already exists.
+    /// </summary>
+    /// <param name="slug">The slug to check.</param>
+    /// <returns>True if a post with the slug exists; otherwise, false.</returns>
+    Task<bool> SlugExistsAsync(string slug);
+
+    /// <summary>
+    /// Gets all unique tags used across all blog posts.
+    /// </summary>
+    /// <returns>A collection of unique tags sorted alphabetically.</returns>
+    Task<IEnumerable<string>> GetAllTagsAsync();
+
+    /// <summary>
+    /// Gets all scheduled posts that are ready to be published.
+    /// </summary>
+    /// <param name="currentTime">The current time to compare against scheduled dates.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of posts ready to be published.</returns>
+    Task<IEnumerable<BlogPost>> GetScheduledPostsReadyToPublishAsync(
+        DateTimeOffset currentTime,
+        CancellationToken cancellationToken = default);
 }

@@ -11,10 +11,12 @@ using BecauseImClever.Domain.Entities;
 /// <param name="PublishedDate">The updated publication date of the post.</param>
 /// <param name="Status">The updated status of the post.</param>
 /// <param name="Tags">The updated tags associated with the post.</param>
+/// <param name="ScheduledPublishDate">The optional scheduled publish date for future publication.</param>
 public record UpdatePostRequest(
     string Title,
     string Summary,
     string Content,
     DateTimeOffset PublishedDate,
     PostStatus Status,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    DateTimeOffset? ScheduledPublishDate = null);

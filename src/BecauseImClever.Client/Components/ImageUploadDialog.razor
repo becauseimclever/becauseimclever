@@ -1,0 +1,570 @@
+@using BecauseImClever.Application.Interfaces
+@using BecauseImClever.Client.Services
+@inject ClientPostImageService ImageService
+@inject IJSRuntime JS
+
+<div class="image-upload-dialog-overlay" @onclick="Close">
+    <div class="image-upload-dialog" @onclick:stopPropagation>
+        <div class="dialog-header">
+            <h3>Upload Image</h3>
+            <button type="button" class="dialog-close" @onclick="Close">&times;</button>
+        </div>
+
+        <div class="dialog-body">
+            @if (string.IsNullOrEmpty(PostSlug))
+            {
+                <div class="dialog-warning">
+                    <p>⚠️ Please save the post first before uploading images.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Upload Area -->
+                <div class="upload-area @(isDragOver ? "drag-over" : "")"
+                     @ondragenter="HandleDragEnter"
+                     @ondragleave="HandleDragLeave"
+                     @ondragover:preventDefault
+                     @ondrop="HandleDrop"
+                     @ondrop:preventDefault>
+                    @if (isUploading)
+                    {
+                        <div class="upload-progress">
+                            <div class="spinner"></div>
+                            <p>Uploading...</p>
+                        </div>
+                    }
+                    else if (previewUrl is not null)
+                    {
+                        <div class="upload-preview">
+                            <img src="@previewUrl" alt="Preview" />
+                            <button type="button" class="btn-remove-preview" @onclick="ClearPreview">&times;</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="upload-prompt">
+                            <span class="upload-icon">📷</span>
+                            <p>Drag & drop an image here</p>
+                            <p class="upload-hint">or</p>
+                            <label class="btn btn-secondary">
+                                Browse Files
+                                <InputFile OnChange="HandleFileSelected" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" style="display: none;" />
+                            </label>
+                            <p class="upload-limits">Max 5 MB • JPEG, PNG, GIF, WebP, SVG</p>
+                        </div>
+                    }
+                </div>
+
+                @if (errorMessage is not null)
+                {
+                    <div class="upload-error">
+                        <span>@errorMessage</span>
+                    </div>
+                }
+
+                <!-- Alt Text Input -->
+                <div class="form-group">
+                    <label for="altText">Alt Text (for accessibility)</label>
+                    <input type="text" id="altText" @bind="altText" placeholder="Describe the image..." />
+                </div>
+
+                <!-- Image Gallery -->
+                @if (images.Any())
+                {
+                    <div class="image-gallery">
+                        <h4>Existing Images</h4>
+                        <div class="gallery-grid">
+                            @foreach (var image in images)
+                            {
+                                <div class="gallery-item">
+                                    <img src="@image.Url" alt="@(image.AltText ?? image.Filename)" />
+                                    <div class="gallery-item-overlay">
+                                        <button type="button" class="btn-gallery-action" title="Insert" @onclick="() => InsertExistingImage(image)">📋</button>
+                                        <button type="button" class="btn-gallery-action btn-danger" title="Delete" @onclick="() => DeleteImage(image)">🗑️</button>
+                                    </div>
+                                    <span class="gallery-item-name">@image.Filename</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="dialog-footer">
+            <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
+            @if (!string.IsNullOrEmpty(PostSlug) && selectedFile is not null)
+            {
+                <button type="button" class="btn btn-primary" @onclick="UploadAndInsert" disabled="@isUploading">
+                    @(isUploading ? "Uploading..." : "Upload & Insert")
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .image-upload-dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .image-upload-dialog {
+        background: var(--bg-color);
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .dialog-header h3 {
+        margin: 0;
+        color: var(--text-color);
+    }
+
+    .dialog-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .dialog-close:hover {
+        color: var(--text-color);
+    }
+
+    .dialog-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .dialog-warning {
+        background: var(--warning-bg, #fff3cd);
+        color: var(--warning-text, #856404);
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.2s;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-area.drag-over {
+        border-color: var(--accent-color);
+        background: var(--bg-secondary);
+    }
+
+    .upload-prompt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+    }
+
+    .upload-prompt p {
+        margin: 0;
+        color: var(--text-muted);
+    }
+
+    .upload-hint {
+        font-size: 0.85rem;
+    }
+
+    .upload-limits {
+        font-size: 0.75rem;
+        margin-top: 0.5rem !important;
+    }
+
+    .upload-preview {
+        position: relative;
+        max-width: 100%;
+    }
+
+    .upload-preview img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+    }
+
+    .btn-remove-preview {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--danger-color, #dc3545);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .upload-progress {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .upload-error {
+        background: var(--danger-bg, #f8d7da);
+        color: var(--danger-text, #721c24);
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+    }
+
+    .form-group {
+        margin-top: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    .image-gallery {
+        margin-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+        padding-top: 1rem;
+    }
+
+    .image-gallery h4 {
+        margin: 0 0 1rem 0;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .gallery-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+    }
+
+    .gallery-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .gallery-item-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .gallery-item:hover .gallery-item-overlay {
+        opacity: 1;
+    }
+
+    .btn-gallery-action {
+        background: var(--bg-color);
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-gallery-action:hover {
+        background: var(--bg-secondary);
+    }
+
+    .btn-gallery-action.btn-danger:hover {
+        background: var(--danger-color, #dc3545);
+    }
+
+    .gallery-item-name {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 0.25rem;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 0.65rem;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .dialog-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+        background: var(--border-color);
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// The slug of the post to upload images for.
+    /// </summary>
+    [Parameter]
+    public string? PostSlug { get; set; }
+
+    /// <summary>
+    /// Callback when an image is inserted.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnImageInserted { get; set; }
+
+    /// <summary>
+    /// Callback when the dialog is closed.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private List<ImageSummary> images = new();
+    private IBrowserFile? selectedFile;
+    private string? previewUrl;
+    private string altText = string.Empty;
+    private string? errorMessage;
+    private bool isUploading;
+    private bool isDragOver;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(PostSlug))
+        {
+            await LoadImagesAsync();
+        }
+    }
+
+    private async Task LoadImagesAsync()
+    {
+        try
+        {
+            var result = await ImageService.GetImagesAsync(PostSlug!);
+            images = result.ToList();
+        }
+        catch
+        {
+            // Ignore errors loading gallery
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        errorMessage = null;
+        selectedFile = e.File;
+
+        if (selectedFile.Size > 5 * 1024 * 1024)
+        {
+            errorMessage = "File is too large. Maximum size is 5 MB.";
+            selectedFile = null;
+            return;
+        }
+
+        // Create preview URL
+        var buffer = new byte[selectedFile.Size];
+        await selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).ReadAsync(buffer);
+        previewUrl = $"data:{selectedFile.ContentType};base64,{Convert.ToBase64String(buffer)}";
+    }
+
+    private void HandleDragEnter()
+    {
+        isDragOver = true;
+    }
+
+    private void HandleDragLeave()
+    {
+        isDragOver = false;
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        isDragOver = false;
+        // Note: Blazor doesn't support getting files from drag events directly
+        // Users should use the file input for now
+    }
+
+    private void ClearPreview()
+    {
+        selectedFile = null;
+        previewUrl = null;
+        altText = string.Empty;
+        errorMessage = null;
+    }
+
+    private async Task UploadAndInsert()
+    {
+        if (selectedFile is null || string.IsNullOrEmpty(PostSlug))
+        {
+            return;
+        }
+
+        isUploading = true;
+        errorMessage = null;
+
+        try
+        {
+            using var stream = selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            var result = await ImageService.UploadImageAsync(
+                PostSlug,
+                stream,
+                selectedFile.Name,
+                selectedFile.ContentType,
+                string.IsNullOrWhiteSpace(altText) ? null : altText);
+
+            if (result.Success)
+            {
+                var markdown = $"![{(string.IsNullOrWhiteSpace(altText) ? selectedFile.Name : altText)}]({result.ImageUrl})";
+                await OnImageInserted.InvokeAsync(markdown);
+                await LoadImagesAsync();
+                ClearPreview();
+            }
+            else
+            {
+                errorMessage = result.Error ?? "Upload failed";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Upload failed: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task InsertExistingImage(ImageSummary image)
+    {
+        var markdown = $"![{image.AltText ?? image.Filename}]({image.Url})";
+        await OnImageInserted.InvokeAsync(markdown);
+    }
+
+    private async Task DeleteImage(ImageSummary image)
+    {
+        var result = await ImageService.DeleteImageAsync(PostSlug!, image.Filename);
+        if (result.Success)
+        {
+            await LoadImagesAsync();
+        }
+        else
+        {
+            errorMessage = result.Error ?? "Delete failed";
+        }
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

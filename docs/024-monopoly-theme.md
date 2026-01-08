@@ -1,5 +1,7 @@
 # 024 - Monopoly Theme
 
+## Status: ✅ Completed
+
 ## Feature Description
 Add a new "Monopoly" theme to the application, inspired by the classic board game.
 

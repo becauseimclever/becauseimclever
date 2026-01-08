@@ -1,5 +1,7 @@
 # 008: Clock Page & Dungeon Crawler Theme
 
+## Status: ✅ Completed
+
 ## Overview
 
 This document outlines the implementation plan for two new features:

@@ -7,8 +7,10 @@ namespace BecauseImClever.Application.Interfaces;
 /// <param name="PublishedPosts">The number of published posts.</param>
 /// <param name="DraftPosts">The number of draft posts.</param>
 /// <param name="DebugPosts">The number of debug posts.</param>
+/// <param name="ScheduledPosts">The number of scheduled posts.</param>
 public record DashboardStats(
     int TotalPosts,
     int PublishedPosts,
     int DraftPosts,
-    int DebugPosts);
+    int DebugPosts,
+    int ScheduledPosts);

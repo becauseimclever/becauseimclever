@@ -19,4 +19,9 @@ public enum PostStatus
     /// The post is for debugging/testing purposes and only visible in development environments.
     /// </summary>
     Debug = 2,
+
+    /// <summary>
+    /// The post is scheduled for future publication.
+    /// </summary>
+    Scheduled = 3,
 }
