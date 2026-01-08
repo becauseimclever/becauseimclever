@@ -3,8 +3,8 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--neutral-fill-rest);
-    border-top: 2px solid var(--accent-fill-rest);
+    background: var(--color-bg-secondary);
+    border-top: 2px solid var(--color-accent);
     padding: 1.5rem;
     z-index: 1000;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
@@ -18,7 +18,7 @@
 
 .consent-content h3 {
     margin: 0 0 1rem 0;
-    color: var(--accent-fill-rest);
+    color: var(--color-accent);
 }
 
 .consent-content p {
@@ -28,7 +28,7 @@
 
 .privacy-note {
     font-size: 0.9em;
-    color: var(--neutral-foreground-hint);
+    color: var(--color-text-muted);
     font-style: italic;
 }
 
@@ -50,19 +50,20 @@
 }
 
 .accept-btn {
-    background: var(--accent-fill-rest);
-    color: var(--foreground-on-accent-rest);
+    background: var(--color-accent);
+    color: #ffffff;
 }
 
 .accept-btn:hover {
-    background: var(--accent-fill-hover);
+    background: var(--color-accent);
+    filter: brightness(1.1);
 }
 
 .decline-btn {
-    background: var(--neutral-fill-secondary-rest);
-    color: var(--neutral-foreground-rest);
+    background: var(--color-bg);
+    color: var(--color-text);
 }
 
 .decline-btn:hover {
-    background: var(--neutral-fill-secondary-hover);
+    background: var(--color-bg-secondary);
 }

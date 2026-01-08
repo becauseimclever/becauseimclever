@@ -1,14 +1,14 @@
 .data-deletion-form {
     padding: 1.5rem;
-    background: var(--neutral-fill-rest);
-    border-radius: 8px;
-    border: 1px solid var(--neutral-stroke-rest);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
     max-width: 600px;
 }
 
 .data-deletion-form h3 {
     margin-top: 0;
-    color: var(--accent-fill-rest);
+    color: var(--color-accent);
 }
 
 .data-deletion-form p {
@@ -32,7 +32,7 @@
 }
 
 .processing {
-    color: var(--neutral-foreground-hint);
+    color: var(--color-text-muted);
     font-style: italic;
 }
 

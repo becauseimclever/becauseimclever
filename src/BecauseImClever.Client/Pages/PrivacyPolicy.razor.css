@@ -5,14 +5,14 @@
 }
 
 .privacy-policy h1 {
-    color: var(--accent-fill-rest);
-    border-bottom: 2px solid var(--accent-fill-rest);
+    color: var(--color-accent);
+    border-bottom: 2px solid var(--color-accent);
     padding-bottom: 0.5rem;
     margin-bottom: 1rem;
 }
 
 .last-updated {
-    color: var(--neutral-foreground-hint);
+    color: var(--color-text-muted);
     font-style: italic;
     margin-bottom: 2rem;
 }
@@ -22,7 +22,7 @@
 }
 
 .privacy-policy h2 {
-    color: var(--neutral-foreground-rest);
+    color: var(--color-text);
     margin-bottom: 1rem;
     font-size: 1.4rem;
 }
@@ -43,5 +43,5 @@
 }
 
 .privacy-policy strong {
-    color: var(--accent-fill-rest);
+    color: var(--color-accent);
 }
