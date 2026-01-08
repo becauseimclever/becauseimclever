@@ -65,9 +65,29 @@ Update all affected CSS files to use the project's standard CSS variables:
 | Action | File |
 |--------|------|
 | Modify | `src/BecauseImClever.Client/Components/ExtensionWarningBanner.razor.css` |
+| Modify | `src/BecauseImClever.Client/Components/ConsentBanner.razor` |
 | Modify | `src/BecauseImClever.Client/Components/ConsentBanner.razor.css` |
 | Modify | `src/BecauseImClever.Client/Components/DataDeletionForm.razor.css` |
 | Modify | `src/BecauseImClever.Client/Pages/PrivacyPolicy.razor.css` |
+| Modify | `src/BecauseImClever.Client/wwwroot/index.html` |
+
+## Additional Improvements
+
+### ConsentBanner Modal Redesign
+The ConsentBanner was redesigned from a simple bottom banner to a proper modal:
+- Full-screen overlay with semi-transparent backdrop
+- Centered modal card at the bottom of the viewport
+- Smooth slide-up animation on appearance
+- Lock icon for visual context
+- Improved typography and spacing
+- Mobile-responsive layout with stacked buttons on small screens
+- Theme-aware using `--color-*` CSS variables
+
+### Blazor CSS Isolation Fix
+Added missing `BecauseImClever.Client.styles.css` link to index.html to enable Blazor's scoped CSS isolation feature.
+
+### Prism.js SRI Hash Fix
+Removed outdated SRI integrity hashes from Prism.js component scripts that were causing console errors due to CDN content changes.
 
 ## Testing
 

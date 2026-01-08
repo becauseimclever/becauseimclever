@@ -3,20 +3,21 @@
 
 @if (showBanner)
 {
-    <div class="consent-banner">
-        <div class="consent-content">
-            <h3>Privacy & Extension Detection Consent</h3>
+    <div class="consent-overlay">
+        <div class="consent-modal">
+            <div class="consent-icon">🔒</div>
+            <h3>Privacy & Extension Detection</h3>
             <p>
-                We would like to detect browser extensions to help protect you from potentially harmful ones. 
+                We'd like to detect browser extensions to help protect you from potentially harmful ones. 
                 This information is collected anonymously and helps us provide security warnings.
             </p>
             <p class="privacy-note">
-                Your privacy matters to us. No personal data is stored, only hashed identifiers for analytics purposes.
-                <a href="/privacy">Read our full Privacy Policy</a>
+                Your privacy matters. No personal data is stored—only hashed identifiers for analytics.
+                <a href="/privacy">Read our Privacy Policy</a>
             </p>
             <div class="consent-actions">
-                <button class="accept-btn" @onclick="AcceptAsync">Accept</button>
                 <button class="decline-btn" @onclick="DeclineAsync">Decline</button>
+                <button class="accept-btn" @onclick="AcceptAsync">Accept</button>
             </div>
         </div>
     </div>
