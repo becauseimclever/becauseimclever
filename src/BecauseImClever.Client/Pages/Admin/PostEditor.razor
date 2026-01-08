@@ -1440,9 +1440,9 @@
         try
         {
             var tags = GetTags().ToList();
-            var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+            var publishedDate = new DateTimeOffset(DateTime.SpecifyKind(formModel.PublishedDate, DateTimeKind.Utc), TimeSpan.Zero);
             var scheduledDate = formModel.ScheduledPublishDate.HasValue
-                ? new DateTimeOffset(formModel.ScheduledPublishDate.Value, TimeSpan.Zero)
+                ? new DateTimeOffset(DateTime.SpecifyKind(formModel.ScheduledPublishDate.Value, DateTimeKind.Utc), TimeSpan.Zero)
                 : (DateTimeOffset?)null;
 
             if (IsEditMode)
@@ -1583,9 +1583,9 @@
         try
         {
             var tags = GetTags().ToList();
-            var publishedDate = new DateTimeOffset(formModel.PublishedDate, TimeSpan.Zero);
+            var publishedDate = new DateTimeOffset(DateTime.SpecifyKind(formModel.PublishedDate, DateTimeKind.Utc), TimeSpan.Zero);
             var scheduledDate = formModel.ScheduledPublishDate.HasValue
-                ? new DateTimeOffset(formModel.ScheduledPublishDate.Value, TimeSpan.Zero)
+                ? new DateTimeOffset(DateTime.SpecifyKind(formModel.ScheduledPublishDate.Value, DateTimeKind.Utc), TimeSpan.Zero)
                 : (DateTimeOffset?)null;
 
             var request = new UpdatePostRequest(
