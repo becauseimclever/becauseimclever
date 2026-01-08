@@ -100,9 +100,64 @@ New-Item -ItemType Directory -Path "src/BecauseImClever.Server/wwwroot/images/po
 - Use lowercase, hyphenated filenames: `feature-screenshot.png`
 - Always provide descriptive alt text for accessibility
 
+## Deployment
+
+The project includes an automated deployment script for production deployments on the Raspberry Pi host.
+
+### Prerequisites
+
+- Docker and docker compose installed
+- Existing `docker-compose.yml` and `.env` configured
+- Cloudflare API token with cache purge permissions (optional)
+
+### Environment Variables
+
+Add the following to your `.env` file on the deployment server:
+
+```bash
+# Required
+SITE_URL=https://becauseimclever.com
+
+# Optional (for Cloudflare cache purge)
+CLOUDFLARE_ZONE_ID=<your-zone-id>
+CLOUDFLARE_API_TOKEN=<your-api-token>
+
+# Optional (defaults to 60)
+HEALTH_CHECK_TIMEOUT=60
+```
+
+### Running Deployment
+
+```bash
+# Standard deployment
+./scripts/deploy.sh
+
+# Skip Cloudflare cache purge
+./scripts/deploy.sh --skip-cache-purge
+
+# Skip Docker image cleanup
+./scripts/deploy.sh --skip-cleanup
+
+# Preview what would happen (no changes made)
+./scripts/deploy.sh --dry-run
+
+# Show help
+./scripts/deploy.sh --help
+```
+
+### What the Script Does
+
+1. **Pre-flight checks**: Verifies Docker is running and configuration is valid
+2. **Pull image**: Runs `docker compose pull` to get the latest image
+3. **Restart container**: Runs `docker compose up -d` to start the new container
+4. **Health check**: Waits for the site to respond at `SITE_URL`
+5. **Cache purge**: Clears Cloudflare cache (if configured)
+6. **Cleanup**: Removes unused Docker images
+
 ## Documentation
 
 Feature specifications and architectural decisions are documented in the `docs/` folder.
 
 - [Feature 001: Root Website Setup](docs/001-root-website-setup.md)
 - [Feature 014: Blog Post Images](docs/014-blog-post-images.md)
+- [Feature 029: Automated Deployment](docs/029-automated-deployment.md)
