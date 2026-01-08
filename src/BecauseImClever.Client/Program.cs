@@ -21,6 +21,7 @@ builder.Services.AddScoped<IClientExtensionTrackingService, ClientExtensionTrack
 builder.Services.AddScoped<IExtensionStatisticsService, ClientExtensionStatisticsService>();
 builder.Services.AddScoped<IConsentService, ClientConsentService>();
 builder.Services.AddScoped<IDataDeletionService, ClientDataDeletionService>();
+builder.Services.AddScoped<IFeatureToggleService, ClientFeatureToggleService>();
 builder.Services.AddScoped<ClientPostImageService>();
 
 // Add authentication services
@@ -28,6 +29,14 @@ builder.Services.AddAuthorizationCore(options =>
 {
     options.AddPolicy("Admin", policy =>
         policy.RequireClaim("groups", "becauseimclever-admins"));
+
+    options.AddPolicy("GuestWriter", policy =>
+        policy.RequireClaim("groups", "becauseimclever-writers"));
+
+    options.AddPolicy("PostManagement", policy =>
+        policy.RequireAssertion(context =>
+            context.User.HasClaim("groups", "becauseimclever-admins") ||
+            context.User.HasClaim("groups", "becauseimclever-writers")));
 });
 builder.Services.AddScoped<HostAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>

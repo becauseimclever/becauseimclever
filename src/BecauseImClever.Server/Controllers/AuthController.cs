@@ -13,6 +13,7 @@ namespace BecauseImClever.Server.Controllers
     public class AuthController : Controller
     {
         private const string AdminGroupName = "becauseimclever-admins";
+        private const string GuestWriterGroupName = "becauseimclever-writers";
 
         /// <summary>
         /// Initiates the OpenID Connect login flow.
@@ -68,12 +69,15 @@ namespace BecauseImClever.Server.Controllers
             var claims = this.User.Claims.Select(c => new { c.Type, c.Value }).ToList();
             var groups = this.User.Claims.Where(c => c.Type == "groups").Select(c => c.Value).ToList();
             var isAdmin = groups.Contains(AdminGroupName);
+            var isGuestWriter = groups.Contains(GuestWriterGroupName);
 
             var userInfo = new
             {
                 Name = this.User.Identity?.Name ?? this.User.FindFirst(ClaimTypes.Name)?.Value,
                 Email = this.User.FindFirst(ClaimTypes.Email)?.Value,
                 IsAdmin = isAdmin,
+                IsGuestWriter = isGuestWriter,
+                CanManagePosts = isAdmin || isGuestWriter,
                 Claims = claims,
             };
 

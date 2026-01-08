@@ -1,5 +1,7 @@
 # 027 - Scheduled Post Auto-Publishing
 
+## Status: ✅ Completed
+
 ## Feature Description
 Enable blog posts to be scheduled for automatic publication at a future date and time. Posts with a future publish date will remain in draft/scheduled status until the specified time, at which point they will automatically become publicly visible.
 

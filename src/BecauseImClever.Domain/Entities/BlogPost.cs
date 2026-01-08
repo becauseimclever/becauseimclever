@@ -71,6 +71,18 @@ public class BlogPost
     public string? UpdatedBy { get; set; }
 
     /// <summary>
+    /// Gets or sets the unique identifier of the post's author.
+    /// Used for access control to determine post ownership.
+    /// </summary>
+    public string? AuthorId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the display name of the post's author.
+    /// Denormalized for performance in listings.
+    /// </summary>
+    public string? AuthorName { get; set; }
+
+    /// <summary>
     /// Gets or sets the collection of images associated with this blog post.
     /// </summary>
     public ICollection<PostImage> Images { get; set; } = new List<PostImage>();

@@ -1,5 +1,7 @@
 # Feature Spec 001: Root Website Setup
 
+## Status: ✅ Completed
+
 ## Overview
 Establish the core application structure for the "Because I'm Clever" blog and personal website. This includes the Blazor WebAssembly hosted solution and the testing infrastructure.
 

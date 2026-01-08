@@ -1,5 +1,7 @@
 # Docker Deployment via GitHub Actions
 
+## Status: ✅ Completed
+
 ## Overview
 
 This feature enables automated Docker container builds and publishing through GitHub Actions, targeting deployment to a Raspberry Pi-based Docker server. Local development remains unchanged—Docker is only used in the CI/CD pipeline.

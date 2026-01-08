@@ -46,12 +46,58 @@ public class AdminPostService : IAdminPostService
                 p.Status,
                 p.UpdatedAt,
                 p.UpdatedBy,
-                p.ScheduledPublishDate))
+                p.ScheduledPublishDate,
+                p.AuthorId,
+                p.AuthorName))
             .ToListAsync();
 
         this.logger.LogInformation("Retrieved {Count} posts for admin view.", posts.Count);
 
         return posts;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="authorId"/> is null.</exception>
+    public async Task<IEnumerable<AdminPostSummary>> GetPostsByAuthorAsync(string authorId)
+    {
+        ArgumentNullException.ThrowIfNull(authorId);
+
+        this.logger.LogDebug("Retrieving posts for author '{AuthorId}'.", authorId);
+
+        var posts = await this.context.Posts
+            .AsNoTracking()
+            .Where(p => p.AuthorId == authorId)
+            .OrderByDescending(p => p.PublishedDate)
+            .Select(p => new AdminPostSummary(
+                p.Slug,
+                p.Title,
+                p.Summary,
+                p.PublishedDate,
+                p.Tags,
+                p.Status,
+                p.UpdatedAt,
+                p.UpdatedBy,
+                p.ScheduledPublishDate,
+                p.AuthorId,
+                p.AuthorName))
+            .ToListAsync();
+
+        this.logger.LogInformation("Retrieved {Count} posts for author '{AuthorId}'.", posts.Count, authorId);
+
+        return posts;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="slug"/> is null.</exception>
+    public async Task<BlogPost?> GetPostEntityAsync(string slug)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+
+        this.logger.LogDebug("Retrieving post entity '{Slug}'.", slug);
+
+        return await this.context.Posts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Slug == slug);
     }
 
     /// <inheritdoc/>
@@ -77,7 +123,9 @@ public class AdminPostService : IAdminPostService
                 p.UpdatedAt,
                 p.CreatedBy,
                 p.UpdatedBy,
-                p.ScheduledPublishDate))
+                p.ScheduledPublishDate,
+                p.AuthorId,
+                p.AuthorName))
             .FirstOrDefaultAsync();
 
         if (post == null)
@@ -125,6 +173,8 @@ public class AdminPostService : IAdminPostService
             UpdatedAt = now,
             CreatedBy = createdBy,
             UpdatedBy = createdBy,
+            AuthorId = createdBy,
+            AuthorName = createdBy,
         };
 
         this.context.Posts.Add(post);

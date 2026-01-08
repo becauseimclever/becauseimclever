@@ -1,5 +1,7 @@
 # 025 - Browser Extension Detection
 
+## Status: ✅ Completed
+
 ## Feature Description
 
 Implement a system to detect specific browser extensions installed by visitors and display warnings for potentially harmful or controversial extensions. The initial focus is on warning users about the Honey browser extension.

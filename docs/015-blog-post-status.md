@@ -1,5 +1,7 @@
 # 015 - Blog Post Status (Draft, Published, Debug)
 
+## Status: ✅ Completed
+
 ## Feature Description
 
 Add a status field to blog posts that controls their visibility on the website. This allows content to be managed without needing to exclude files from deployment.

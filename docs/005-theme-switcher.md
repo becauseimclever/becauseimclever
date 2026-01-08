@@ -1,5 +1,7 @@
 # Feature Spec 005: Theme Switcher and Terminal Theme
 
+## Status: ✅ Completed
+
 ## Overview
 Introduce a theme switching mechanism to allow users to toggle between the existing "VS Code Dark" theme and a new "Retro Terminal" (Fallout Pipboy style) theme.
 

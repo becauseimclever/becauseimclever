@@ -1,5 +1,7 @@
 # 014: Blog Post Image Embedding
 
+## Status: ✅ Completed
+
 ## Overview
 
 This document outlines the implementation plan for embedding images in blog posts. Since blog posts are written in Markdown and stored within the repository, we need a consistent approach for storing, referencing, and serving images alongside post content.

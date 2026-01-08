@@ -14,6 +14,20 @@ public interface IAdminPostService
     Task<IEnumerable<AdminPostSummary>> GetAllPostsAsync();
 
     /// <summary>
+    /// Gets blog posts by author with their admin details.
+    /// </summary>
+    /// <param name="authorId">The unique identifier of the author.</param>
+    /// <returns>A collection of admin post summaries for the specified author.</returns>
+    Task<IEnumerable<AdminPostSummary>> GetPostsByAuthorAsync(string authorId);
+
+    /// <summary>
+    /// Gets a single blog post entity for authorization checks.
+    /// </summary>
+    /// <param name="slug">The slug of the post to retrieve.</param>
+    /// <returns>The blog post entity if found; otherwise, null.</returns>
+    Task<BlogPost?> GetPostEntityAsync(string slug);
+
+    /// <summary>
     /// Gets a single blog post for editing.
     /// </summary>
     /// <param name="slug">The slug of the post to retrieve.</param>

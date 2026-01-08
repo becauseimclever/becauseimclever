@@ -14,6 +14,8 @@ using BecauseImClever.Domain.Entities;
 /// <param name="UpdatedAt">When the post was last updated.</param>
 /// <param name="UpdatedBy">Who last updated the post.</param>
 /// <param name="ScheduledPublishDate">The optional scheduled publish date for future publication.</param>
+/// <param name="AuthorId">The unique identifier of the post author.</param>
+/// <param name="AuthorName">The display name of the post author.</param>
 public record AdminPostSummary(
     string Slug,
     string Title,
@@ -23,4 +25,6 @@ public record AdminPostSummary(
     PostStatus Status,
     DateTime UpdatedAt,
     string? UpdatedBy,
-    DateTimeOffset? ScheduledPublishDate = null);
+    DateTimeOffset? ScheduledPublishDate = null,
+    string? AuthorId = null,
+    string? AuthorName = null);

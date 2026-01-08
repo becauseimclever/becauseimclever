@@ -1,5 +1,7 @@
 # Feature Spec 011: UI Bug Fixes and Improvements
 
+## Status: ✅ Completed
+
 ## Overview
 
 Address several UI issues to improve the overall user experience, including a theme dropdown bug, missing home navigation link, and a distracting focus outline on page load.

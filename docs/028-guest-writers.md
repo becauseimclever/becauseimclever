@@ -1,5 +1,61 @@
 # 028 - Guest Writers
 
+## Status: � In Progress
+
+## Implementation Progress
+
+### ✅ Completed
+1. **Domain Layer**
+   - Added `AuthorId` and `AuthorName` properties to `BlogPost` entity
+
+2. **Infrastructure Layer**
+   - Created EF Core migration (`AddAuthorColumns`) for author columns
+   - Added index on `author_id` column for efficient querying
+   - Implemented `IPostAuthorizationService` interface and `PostAuthorizationService`
+   - Updated `BlogPostConfiguration` for new column mappings
+   - Added `GetPostsByAuthorAsync` and `GetPostEntityAsync` to `AdminPostService`
+   - Updated all projections to include author information
+
+3. **Application Layer**
+   - Added `IPostAuthorizationService` interface with `CanViewPost`, `CanEditPost`, `CanDeletePost` methods
+   - Updated `IAdminPostService` with author-based filtering methods
+   - Updated DTOs (`AdminPostSummary`, `PostForEdit`) with author fields
+
+4. **Server Layer**
+   - Added `GuestWriter` authorization policy
+   - Added `PostManagement` authorization policy (Admin OR GuestWriter)
+   - Updated `AdminPostsController` with ownership checks
+   - Updated `AuthController` to expose `IsGuestWriter` and `CanManagePosts` claims
+   - Registered `IPostAuthorizationService` in dependency injection
+
+5. **Client Layer**
+   - Added `GuestWriter` and `PostManagement` authorization policies
+   - Updated `AdminLayout.razor` with conditional navigation for guest writers
+   - Updated `Posts.razor` and `PostEditor.razor` to use `PostManagement` policy
+   - Updated `HostAuthenticationStateProvider` to handle `IsGuestWriter` claim
+
+6. **Testing**
+   - Added 15 unit tests for `PostAuthorizationService`
+   - Updated `AdminPostsControllerTests` for new authorization flow
+   - All 673 unit tests passing
+
+### 🔲 Pending
+1. **E2E Testing**
+   - Guest writer login flow
+   - Post CRUD operations as guest writer
+   - Verify admin features are inaccessible
+
+2. **Documentation**
+   - Update API documentation
+
+### ✅ Authentik Configuration (Completed)
+- Created `becauseimclever-writers` group in Authentik
+- Group claim mapping configured
+
+### ✅ Database Migration
+- `AddAuthorColumns` migration created
+- Will execute automatically on production deployment (migrations run on app startup)
+
 ## Overview
 
 Add support for guest writers who can login and manage their own blog posts without access to other administrative features. This enables collaborative content creation while maintaining security boundaries around sensitive admin functionality.

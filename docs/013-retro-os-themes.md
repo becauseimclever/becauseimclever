@@ -1,5 +1,7 @@
 # 013: Retro Operating System Themes
 
+## Status: ✅ Completed
+
 ## Overview
 
 This document outlines the implementation plan for three new themes inspired by classic and modern operating systems:

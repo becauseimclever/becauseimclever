@@ -1,5 +1,7 @@
 # Feature Spec 004: Dark Developer Theme and Content Expansion
 
+## Status: ✅ Completed
+
 ## Overview
 Revamp the visual identity of the website to reflect a "developer-centric" aesthetic, specifically mimicking the Visual Studio Code Default Dark theme. Additionally, expand the mock content to better evaluate the look and feel of the new theme with realistic data volume.
 

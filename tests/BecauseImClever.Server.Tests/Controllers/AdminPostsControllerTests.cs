@@ -15,6 +15,7 @@ public class AdminPostsControllerTests
 {
     private readonly Mock<IAdminPostService> mockAdminPostService;
     private readonly Mock<IPostImageService> mockPostImageService;
+    private readonly Mock<IPostAuthorizationService> mockPostAuthorizationService;
     private readonly AdminPostsController controller;
 
     /// <summary>
@@ -24,8 +25,22 @@ public class AdminPostsControllerTests
     {
         this.mockAdminPostService = new Mock<IAdminPostService>();
         this.mockPostImageService = new Mock<IPostImageService>();
-        this.controller = new AdminPostsController(this.mockAdminPostService.Object, this.mockPostImageService.Object);
-        this.SetupUserContext("admin@test.com");
+        this.mockPostAuthorizationService = new Mock<IPostAuthorizationService>();
+
+        // Default setup: authorize all operations
+        this.mockPostAuthorizationService.Setup(s => s.CanViewPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(true);
+        this.mockPostAuthorizationService.Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(true);
+        this.mockPostAuthorizationService.Setup(s => s.CanDeletePost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(true);
+
+        // Default setup: return a test BlogPost entity for authorization checks
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync(It.IsAny<string>()))
+            .ReturnsAsync((string slug) => this.CreateTestBlogPost(slug));
+
+        this.controller = new AdminPostsController(
+            this.mockAdminPostService.Object,
+            this.mockPostImageService.Object,
+            this.mockPostAuthorizationService.Object);
+        this.SetupUserContext("admin@test.com", isAdmin: true);
     }
 
     /// <summary>
@@ -35,7 +50,10 @@ public class AdminPostsControllerTests
     public void Constructor_WithNullAdminPostService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(null!, this.mockPostImageService.Object));
+        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(
+            null!,
+            this.mockPostImageService.Object,
+            this.mockPostAuthorizationService.Object));
         Assert.Equal("adminPostService", exception.ParamName);
     }
 
@@ -46,8 +64,25 @@ public class AdminPostsControllerTests
     public void Constructor_WithNullPostImageService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(this.mockAdminPostService.Object, null!));
+        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(
+            this.mockAdminPostService.Object,
+            null!,
+            this.mockPostAuthorizationService.Object));
         Assert.Equal("postImageService", exception.ParamName);
+    }
+
+    /// <summary>
+    /// Verifies that the constructor throws when postAuthorizationService is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullPostAuthorizationService_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new AdminPostsController(
+            this.mockAdminPostService.Object,
+            this.mockPostImageService.Object,
+            null!));
+        Assert.Equal("postAuthorizationService", exception.ParamName);
     }
 
     /// <summary>
@@ -121,9 +156,7 @@ public class AdminPostsControllerTests
     {
         // Arrange
         var request = new UpdateStatusRequest(PostStatus.Published);
-        this.mockAdminPostService
-            .Setup(s => s.UpdateStatusAsync("non-existent", PostStatus.Published, "admin@test.com"))
-            .ReturnsAsync(new StatusUpdateResult(false, "Post not found"));
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
 
         // Act
         var result = await this.controller.UpdateStatus("non-existent", request);
@@ -143,7 +176,7 @@ public class AdminPostsControllerTests
     public async Task UpdateStatus_UsesCorrectUserIdentifier()
     {
         // Arrange
-        this.SetupUserContext("different-admin@test.com");
+        this.SetupUserContext("different-admin@test.com", isAdmin: true);
         var request = new UpdateStatusRequest(PostStatus.Draft);
         this.mockAdminPostService
             .Setup(s => s.UpdateStatusAsync("test-post", PostStatus.Draft, "different-admin@test.com"))
@@ -274,6 +307,7 @@ public class AdminPostsControllerTests
     public async Task GetPostForEdit_WhenPostNotFound_ReturnsNotFound()
     {
         // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
         this.mockAdminPostService.Setup(s => s.GetPostForEditAsync("non-existent")).ReturnsAsync((PostForEdit?)null);
 
         // Act
@@ -385,9 +419,7 @@ public class AdminPostsControllerTests
             DateTimeOffset.UtcNow,
             PostStatus.Draft,
             new List<string>());
-        this.mockAdminPostService
-            .Setup(s => s.UpdatePostAsync("non-existent", request, "admin@test.com"))
-            .ReturnsAsync(new UpdatePostResult(false, "Post not found"));
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
 
         // Act
         var result = await this.controller.UpdatePost("non-existent", request);
@@ -427,9 +459,7 @@ public class AdminPostsControllerTests
     public async Task DeletePost_WhenPostNotFound_ReturnsNotFound()
     {
         // Arrange
-        this.mockAdminPostService
-            .Setup(s => s.DeletePostAsync("non-existent", "admin@test.com"))
-            .ReturnsAsync(new DeletePostResult(false, "Post not found"));
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
 
         // Act
         var result = await this.controller.DeletePost("non-existent");
@@ -654,12 +684,23 @@ public class AdminPostsControllerTests
         Assert.Empty(tags);
     }
 
-    private void SetupUserContext(string userName)
+    private void SetupUserContext(string userName, bool isAdmin = false, bool isGuestWriter = false)
     {
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, userName),
         };
+
+        if (isAdmin)
+        {
+            claims.Add(new Claim("groups", "becauseimclever-admins"));
+        }
+
+        if (isGuestWriter)
+        {
+            claims.Add(new Claim("groups", "becauseimclever-writers"));
+        }
+
         var identity = new ClaimsIdentity(claims, "Test");
         var claimsPrincipal = new ClaimsPrincipal(identity);
 
@@ -669,6 +710,26 @@ public class AdminPostsControllerTests
             {
                 User = claimsPrincipal,
             },
+        };
+    }
+
+    private BlogPost CreateTestBlogPost(string slug, string? authorId = null)
+    {
+        return new BlogPost
+        {
+            Slug = slug,
+            Title = "Test Post",
+            Summary = "Test Summary",
+            Content = "Test Content",
+            PublishedDate = DateTimeOffset.UtcNow,
+            Tags = new List<string> { "test" },
+            Status = PostStatus.Draft,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = "test@test.com",
+            UpdatedBy = "test@test.com",
+            AuthorId = authorId ?? "admin@test.com",
+            AuthorName = "Test Author",
         };
     }
 }
