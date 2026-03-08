@@ -221,6 +221,65 @@ public class DatabaseBlogServiceTests
     }
 
     /// <summary>
+    /// Verifies that GetPostsAsync only returns posts with Published status.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsAsync_WithMixedStatuses_ReturnsOnlyPublishedPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = CreateContext(dbName);
+
+        var publishedPost = CreateTestPost("published-post", "Published Post", DateTime.UtcNow, PostStatus.Published);
+        var scheduledPost = CreateTestPost("scheduled-post", "Scheduled Post", DateTime.UtcNow, PostStatus.Scheduled);
+        var draftPost = CreateTestPost("draft-post", "Draft Post", DateTime.UtcNow, PostStatus.Draft);
+
+        context.Posts.AddRange(publishedPost, scheduledPost, draftPost);
+        await context.SaveChangesAsync();
+
+        var service = new DatabaseBlogService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsAsync()).ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("published-post", result[0].Slug);
+    }
+
+    /// <summary>
+    /// Verifies that paginated GetPostsAsync only returns posts with Published status.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsAsync_WithPaginationAndMixedStatuses_ReturnsOnlyPublishedPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = CreateContext(dbName);
+
+        for (int i = 1; i <= 3; i++)
+        {
+            context.Posts.Add(CreateTestPost($"published-{i}", $"Published {i}", DateTime.UtcNow.AddDays(-i), PostStatus.Published));
+        }
+
+        context.Posts.Add(CreateTestPost("scheduled-post", "Scheduled Post", DateTime.UtcNow, PostStatus.Scheduled));
+        context.Posts.Add(CreateTestPost("draft-post", "Draft Post", DateTime.UtcNow, PostStatus.Draft));
+
+        await context.SaveChangesAsync();
+
+        var service = new DatabaseBlogService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsAsync(page: 1, pageSize: 10)).ToList();
+
+        // Assert
+        Assert.Equal(3, result.Count);
+        Assert.All(result, post => Assert.Equal(PostStatus.Published, post.Status));
+    }
+
+    /// <summary>
     /// Creates an in-memory database context for testing.
     /// </summary>
     /// <param name="databaseName">The unique database name for test isolation.</param>

@@ -264,6 +264,11 @@ public class AdminPostService : IAdminPostService
         post.UpdatedAt = DateTime.UtcNow;
         post.UpdatedBy = updatedBy;
 
+        if (newStatus == PostStatus.Published)
+        {
+            post.PublishedDate = DateTimeOffset.UtcNow;
+        }
+
         await this.context.SaveChangesAsync();
 
         this.logger.LogInformation(
@@ -383,6 +388,11 @@ public class AdminPostService : IAdminPostService
         post.Status = newStatus;
         post.UpdatedAt = DateTime.UtcNow;
         post.UpdatedBy = updatedBy;
+
+        if (newStatus == PostStatus.Published)
+        {
+            post.PublishedDate = DateTimeOffset.UtcNow;
+        }
 
         await this.context.SaveChangesAsync();
 

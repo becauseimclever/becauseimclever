@@ -273,6 +273,94 @@ public class AdminPostServiceTests
     }
 
     /// <summary>
+    /// Verifies that UpdateStatusAsync updates PublishedDate when status changes to Published.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatusAsync_WhenChangingToPublished_UpdatesPublishedDate()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var originalPublishedDate = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var post = this.CreateTestPost("test-post", "Test Post", originalPublishedDate.DateTime, PostStatus.Draft);
+        post.PublishedDate = originalPublishedDate;
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+        var beforeUpdate = DateTimeOffset.UtcNow;
+
+        // Act
+        await service.UpdateStatusAsync("test-post", PostStatus.Published, "admin@test.com");
+
+        // Assert
+        var updatedPost = await context.Posts.FirstAsync(p => p.Slug == "test-post");
+        Assert.True(updatedPost.PublishedDate >= beforeUpdate);
+    }
+
+    /// <summary>
+    /// Verifies that UpdateStatusAsync does not update PublishedDate when status changes to non-Published.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatusAsync_WhenChangingToDraft_DoesNotUpdatePublishedDate()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var originalPublishedDate = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var post = this.CreateTestPost("test-post", "Test Post", originalPublishedDate.DateTime, PostStatus.Published);
+        post.PublishedDate = originalPublishedDate;
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        await service.UpdateStatusAsync("test-post", PostStatus.Draft, "admin@test.com");
+
+        // Assert
+        var updatedPost = await context.Posts.FirstAsync(p => p.Slug == "test-post");
+        Assert.Equal(originalPublishedDate, updatedPost.PublishedDate);
+    }
+
+    /// <summary>
+    /// Verifies that UpdateStatusesAsync updates PublishedDate when batch-publishing posts.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatusesAsync_WhenChangingToPublished_UpdatesPublishedDate()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var originalPublishedDate = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var post = this.CreateTestPost("test-post", "Test Post", originalPublishedDate.DateTime, PostStatus.Draft);
+        post.PublishedDate = originalPublishedDate;
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+        var beforeUpdate = DateTimeOffset.UtcNow;
+
+        var updates = new List<StatusUpdate>
+        {
+            new StatusUpdate("test-post", PostStatus.Published),
+        };
+
+        // Act
+        await service.UpdateStatusesAsync(updates, "admin@test.com");
+
+        // Assert
+        var updatedPost = await context.Posts.FirstAsync(p => p.Slug == "test-post");
+        Assert.True(updatedPost.PublishedDate >= beforeUpdate);
+    }
+
+    /// <summary>
     /// Verifies that UpdateStatusAsync throws when slug is null.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
