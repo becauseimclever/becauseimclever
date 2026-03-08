@@ -4,3 +4,91 @@ GET {{BecauseImClever.Server_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# ===== Authentication =====
+
+GET {{BecauseImClever.Server_HostAddress}}/auth/user
+Accept: application/json
+
+###
+
+# ===== Admin Posts (requires PostManagement policy) =====
+
+GET {{BecauseImClever.Server_HostAddress}}/api/admin/posts
+Accept: application/json
+
+###
+
+GET {{BecauseImClever.Server_HostAddress}}/api/admin/posts/my-first-post
+Accept: application/json
+
+###
+
+POST {{BecauseImClever.Server_HostAddress}}/api/admin/posts
+Content-Type: application/json
+
+{
+  "title": "My New Post",
+  "content": "# Hello World\n\nThis is a new post.",
+  "tags": ["general"]
+}
+
+###
+
+PUT {{BecauseImClever.Server_HostAddress}}/api/admin/posts/my-new-post
+Content-Type: application/json
+
+{
+  "title": "My Updated Post",
+  "content": "# Hello World\n\nThis is an updated post.",
+  "tags": ["general", "update"]
+}
+
+###
+
+DELETE {{BecauseImClever.Server_HostAddress}}/api/admin/posts/my-new-post
+Accept: application/json
+
+###
+
+PATCH {{BecauseImClever.Server_HostAddress}}/api/admin/posts/my-new-post/status
+Content-Type: application/json
+
+{
+  "status": "Published"
+}
+
+###
+
+# ===== Admin-Only: Batch Status Update =====
+
+POST {{BecauseImClever.Server_HostAddress}}/api/admin/posts/status/batch
+Content-Type: application/json
+
+{
+  "updates": [
+    { "slug": "post-one", "status": "Published" },
+    { "slug": "post-two", "status": "Draft" }
+  ]
+}
+
+###
+
+# ===== Slug & Tags =====
+
+GET {{BecauseImClever.Server_HostAddress}}/api/admin/posts/check-slug/my-new-post
+Accept: application/json
+
+###
+
+GET {{BecauseImClever.Server_HostAddress}}/api/admin/posts/tags
+Accept: application/json
+
+###
+
+# ===== Post Images =====
+
+GET {{BecauseImClever.Server_HostAddress}}/api/admin/posts/my-first-post/images
+Accept: application/json
+
+###
