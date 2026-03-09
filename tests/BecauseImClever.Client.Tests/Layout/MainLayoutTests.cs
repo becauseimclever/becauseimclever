@@ -220,4 +220,23 @@ public class MainLayoutTests : BunitContext
         mockThemeService.Verify(s => s.GetCurrentThemeAsync(), Times.Once());
         mockThemeService.Verify(s => s.SetThemeAsync(Theme.Retro), Times.Once());
     }
+
+    [Fact]
+    public void MainLayout_RendersExperimentsNavLink()
+    {
+        // Arrange
+        var mockThemeService = new Mock<IThemeService>();
+        mockThemeService.Setup(s => s.GetAvailableThemes()).Returns(Theme.All);
+        mockThemeService.Setup(s => s.GetCurrentThemeAsync()).ReturnsAsync(Theme.VsCode);
+        mockThemeService.Setup(s => s.SetThemeAsync(It.IsAny<Theme>())).Returns(Task.CompletedTask);
+
+        this.Services.AddSingleton(mockThemeService.Object);
+
+        // Act
+        var cut = this.Render<MainLayout>();
+
+        // Assert
+        Assert.Contains("Experiments", cut.Markup);
+        Assert.Contains("experiments/escape-room", cut.Markup);
+    }
 }

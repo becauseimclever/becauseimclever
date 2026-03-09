@@ -1,0 +1,105 @@
+::deep .bob-window {
+    max-width: 800px;
+    margin: var(--spacing-xl) auto;
+    border: 3px solid #000080;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #888, 6px 6px 12px rgba(0, 0, 0, 0.3);
+    background: #c0c0c0;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    overflow: hidden;
+}
+
+::deep .bob-title-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    user-select: none;
+}
+
+::deep .bob-title-icon {
+    font-size: 1.1rem;
+}
+
+::deep .bob-title-buttons {
+    margin-left: auto;
+    display: flex;
+    gap: 2px;
+}
+
+::deep .bob-title-buttons span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #000;
+    cursor: default;
+    line-height: 1;
+}
+
+::deep .bob-content {
+    padding: var(--spacing-xl);
+    background: #ffffcc;
+    min-height: 300px;
+    text-align: center;
+}
+
+::deep .bob-content h1 {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    color: #000080;
+    font-size: 1.8rem;
+    margin-bottom: var(--spacing-md);
+}
+
+::deep .bob-intro {
+    font-size: 1.1rem;
+    color: #333;
+    max-width: 500px;
+    margin: 0 auto var(--spacing-lg);
+    line-height: 1.6;
+}
+
+::deep .bob-start-area {
+    margin-top: var(--spacing-lg);
+}
+
+::deep .bob-btn {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 8px 32px;
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    cursor: pointer;
+    color: #000;
+}
+
+::deep .bob-btn:hover:not(:disabled) {
+    background: #d0d0d0;
+}
+
+::deep .bob-btn:active:not(:disabled) {
+    border-style: inset;
+}
+
+::deep .bob-btn:disabled {
+    color: #888;
+    cursor: default;
+}
+
+::deep .bob-status-bar {
+    padding: 4px 8px;
+    background: #c0c0c0;
+    border-top: 2px groove #fff;
+    font-size: 0.8rem;
+    color: #333;
+}
