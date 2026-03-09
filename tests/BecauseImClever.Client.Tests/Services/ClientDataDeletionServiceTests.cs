@@ -130,4 +130,72 @@ public class ClientDataDeletionServiceTests
         Assert.True(result.Success);
         Assert.Equal(0, result.DeletedRecords);
     }
+
+    /// <summary>
+    /// Tests that DeleteMyDataAsync returns failure when response is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DeleteMyDataAsync_WhenResponseIsNull_ReturnsFailureResult()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("null"),
+            });
+
+        var httpClient = new HttpClient(handlerMock.Object)
+        {
+            BaseAddress = new System.Uri("https://localhost/"),
+        };
+
+        var service = new ClientDataDeletionService(httpClient);
+
+        // Act
+        var result = await service.DeleteMyDataAsync("test-hash");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("Unexpected response", result.Message);
+    }
+
+    /// <summary>
+    /// Tests that DeleteMyDataAsync returns failure when exception is thrown.
+    /// </summary>
+    /// <returns>A task representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DeleteMyDataAsync_WhenExceptionThrown_ReturnsFailureResult()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        var httpClient = new HttpClient(handlerMock.Object)
+        {
+            BaseAddress = new System.Uri("https://localhost/"),
+        };
+
+        var service = new ClientDataDeletionService(httpClient);
+
+        // Act
+        var result = await service.DeleteMyDataAsync("test-hash");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("error occurred", result.Message);
+    }
 }

@@ -23,6 +23,7 @@ builder.Services.AddScoped<IConsentService, ClientConsentService>();
 builder.Services.AddScoped<IDataDeletionService, ClientDataDeletionService>();
 builder.Services.AddScoped<IFeatureToggleService, ClientFeatureToggleService>();
 builder.Services.AddScoped<ClientPostImageService>();
+builder.Services.AddScoped<IClientSpellCheckService, ClientSpellCheckService>();
 
 // Add authentication services
 builder.Services.AddAuthorizationCore(options =>

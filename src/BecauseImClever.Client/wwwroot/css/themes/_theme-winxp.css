@@ -20,7 +20,7 @@
     --xp-border-dark: #003c74;
 
     /* Typography */
-    --font-body: "Tahoma", "Segoe UI", sans-serif;
+    --font-body: "Tahoma", "Segoe UI", "Noto Sans JP", sans-serif;
     --font-mono: "Lucida Console", monospace;
 
     /* Borders & Shadows */

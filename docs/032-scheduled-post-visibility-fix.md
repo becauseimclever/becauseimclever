@@ -1,6 +1,6 @@
 # 032 - Scheduled Post Visibility and Published Date Fix
 
-## Status: ✅ Complete
+## Status: ✅ Completed
 
 ## Feature Description
 

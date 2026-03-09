@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+
+# Copy pre-built publish output
+COPY publish/ .
+
+# Use the built-in non-root user
+USER $APP_UID
+
+# Expose port
+EXPOSE 8580
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8580
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Start the application
+ENTRYPOINT ["dotnet", "BecauseImClever.Server.dll"]

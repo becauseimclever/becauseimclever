@@ -684,6 +684,288 @@ public class AdminPostsControllerTests
         Assert.Empty(tags);
     }
 
+    /// <summary>
+    /// Verifies that GetAllPosts returns only author's posts for non-admin user.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllPosts_WhenNotAdmin_ReturnsOnlyAuthorPosts()
+    {
+        // Arrange
+        this.SetupUserContext("guest@test.com", isAdmin: false, isGuestWriter: true);
+        var expectedPosts = new List<AdminPostSummary>
+        {
+            new AdminPostSummary("post-1", "Post 1", "Summary 1", DateTimeOffset.UtcNow, new[] { "tag1" }, PostStatus.Draft, DateTime.UtcNow, null),
+        };
+        this.mockAdminPostService.Setup(s => s.GetPostsByAuthorAsync("guest@test.com")).ReturnsAsync(expectedPosts);
+
+        // Act
+        var result = await this.controller.GetAllPosts();
+
+        // Assert
+        Assert.Single(result);
+        this.mockAdminPostService.Verify(s => s.GetPostsByAuthorAsync("guest@test.com"), Times.Once);
+        this.mockAdminPostService.Verify(s => s.GetAllPostsAsync(), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostForEdit returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostForEdit_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanViewPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+
+        // Act
+        var result = await this.controller.GetPostForEdit("test-post");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UpdatePost returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdatePost_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+        var request = new UpdatePostRequest("Title", "Summary", "Content", DateTimeOffset.UtcNow, PostStatus.Draft, new List<string>());
+
+        // Act
+        var result = await this.controller.UpdatePost("test-post", request);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that DeletePost returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeletePost_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanDeletePost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+
+        // Act
+        var result = await this.controller.DeletePost("test-post");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UpdateStatus returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatus_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+        var request = new UpdateStatusRequest(PostStatus.Published);
+
+        // Act
+        var result = await this.controller.UpdateStatus("test-post", request);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that GetImages returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetImages_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanViewPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+
+        // Act
+        var result = await this.controller.GetImages("test-post");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that GetImages returns NotFound when post doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetImages_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
+
+        // Act
+        var result = await this.controller.GetImages("non-existent");
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(1024);
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, null);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns NotFound when post doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(1024);
+
+        // Act
+        var result = await this.controller.UploadImage("non-existent", fileMock.Object, null);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(notFoundResult.Value);
+        Assert.False(uploadResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns BadRequest when file is empty.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WithEmptyFile_ReturnsBadRequest()
+    {
+        // Arrange
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(0);
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, null);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(badRequestResult.Value);
+        Assert.Contains("No file", uploadResult.Error);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns BadRequest when service returns failure.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenServiceFails_ReturnsBadRequest()
+    {
+        // Arrange
+        var fileContent = new byte[] { 1, 2, 3, 4 };
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(fileContent.Length);
+        fileMock.Setup(f => f.ContentType).Returns("image/png");
+        fileMock.Setup(f => f.FileName).Returns("test.png");
+        fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+            .Callback<Stream, CancellationToken>((stream, _) => stream.Write(fileContent));
+
+        this.mockPostImageService.Setup(s => s.ValidateImage("image/png", fileContent.Length)).Returns((string?)null);
+        this.mockPostImageService
+            .Setup(s => s.UploadImageAsync(It.IsAny<UploadImageRequest>(), "admin@test.com"))
+            .ReturnsAsync(UploadImageResult.Failed("Storage error"));
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, null);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(badRequestResult.Value);
+        Assert.False(uploadResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteImage returns Forbid when user is not authorized.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteImage_WhenNotAuthorized_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService.Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>())).Returns(false);
+
+        // Act
+        var result = await this.controller.DeleteImage("test-post", "test.png");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteImage returns NotFound when post doesn't exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteImage_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
+
+        // Act
+        var result = await this.controller.DeleteImage("non-existent", "test.png");
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var deleteResult = Assert.IsType<DeleteImageResult>(notFoundResult.Value);
+        Assert.False(deleteResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that CreatePost uses 'unknown' when user identity name is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task CreatePost_WhenUserNameIsNull_UsesUnknown()
+    {
+        // Arrange
+        this.SetupUserContext(isAdmin: true);
+        var request = new CreatePostRequest(
+            "New Post",
+            "new-post",
+            "Summary",
+            "Content",
+            DateTimeOffset.UtcNow,
+            PostStatus.Draft,
+            new List<string>());
+        this.mockAdminPostService
+            .Setup(s => s.CreatePostAsync(request, "unknown"))
+            .ReturnsAsync(new CreatePostResult(true, "new-post", null));
+
+        // Act
+        var result = await this.controller.CreatePost(request);
+
+        // Assert
+        this.mockAdminPostService.Verify(s => s.CreatePostAsync(request, "unknown"), Times.Once);
+    }
+
     private void SetupUserContext(string userName, bool isAdmin = false, bool isGuestWriter = false)
     {
         var claims = new List<Claim>
@@ -699,6 +981,27 @@ public class AdminPostsControllerTests
         if (isGuestWriter)
         {
             claims.Add(new Claim("groups", "becauseimclever-writers"));
+        }
+
+        var identity = new ClaimsIdentity(claims, "Test");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        this.controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal,
+            },
+        };
+    }
+
+    private void SetupUserContext(bool isAdmin = false)
+    {
+        var claims = new List<Claim>();
+
+        if (isAdmin)
+        {
+            claims.Add(new Claim("groups", "becauseimclever-admins"));
         }
 
         var identity = new ClaimsIdentity(claims, "Test");

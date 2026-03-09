@@ -13,7 +13,7 @@
     --color-border: #000000;
 
     /* Typography */
-    --font-body: "Chicago", "Geneva", sans-serif;
+    --font-body: "Chicago", "Geneva", "Noto Sans JP", sans-serif;
     --font-mono: "Monaco", "Courier New", monospace;
 
     /* Borders & Shadows */

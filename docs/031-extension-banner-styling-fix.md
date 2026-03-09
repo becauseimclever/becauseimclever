@@ -1,4 +1,4 @@
-# 031: Fluent UI CSS Variable Cleanup
+# 031 - Fluent UI CSS Variable Cleanup
 
 ## Status: ✅ Completed
 

@@ -13,7 +13,7 @@
     --color-border: #008f11;
 
     /* Typography */
-    --font-body: "Courier New", Courier, monospace;
+    --font-body: "Courier New", Courier, "Noto Sans JP", monospace;
     --font-mono: "Courier New", Courier, monospace;
 
     /* Borders & Shadows */

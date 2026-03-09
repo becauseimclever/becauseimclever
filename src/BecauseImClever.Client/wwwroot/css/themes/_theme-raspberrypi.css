@@ -16,7 +16,7 @@
     --rpi-accent-light: #e23a6a;
 
     /* Typography */
-    --font-body: "Roboto", "Noto Sans", "Segoe UI", sans-serif;
+    --font-body: "Roboto", "Noto Sans", "Segoe UI", "Noto Sans JP", sans-serif;
     --font-mono: "Source Code Pro", "DejaVu Sans Mono", monospace;
 
     /* Borders & Shadows */

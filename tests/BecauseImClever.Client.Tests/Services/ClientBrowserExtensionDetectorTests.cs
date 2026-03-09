@@ -110,6 +110,157 @@ public class ClientBrowserExtensionDetectorTests : TestContext
     }
 
     /// <summary>
+    /// Verifies that the constructor throws when jsRuntime is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullJsRuntime_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new ClientBrowserExtensionDetector(null!));
+        Assert.Equal("jsRuntime", exception.ParamName);
+    }
+
+    /// <summary>
+    /// Verifies that DetectExtensionsAsync returns empty when JSON is not an array.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DetectExtensionsAsync_WhenJsonIsNotArray_ReturnsEmptyCollection()
+    {
+        // Arrange
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>("{}");
+
+        this.jsRuntimeMock
+            .Setup(x => x.InvokeAsync<JsonElement>("detectBrowserExtensions", It.IsAny<object[]>()))
+            .ReturnsAsync(jsonElement);
+
+        var service = new ClientBrowserExtensionDetector(this.jsRuntimeMock.Object);
+
+        // Act
+        var result = await service.DetectExtensionsAsync();
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// Verifies that DetectExtensionsAsync handles extensions without warningMessage.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DetectExtensionsAsync_WhenNoWarningMessage_ReturnsNullWarning()
+    {
+        // Arrange
+        var extensions = new[]
+        {
+            new { id = "ext1", name = "Extension 1", isHarmful = false },
+        };
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(extensions));
+
+        this.jsRuntimeMock
+            .Setup(x => x.InvokeAsync<JsonElement>("detectBrowserExtensions", It.IsAny<object[]>()))
+            .ReturnsAsync(jsonElement);
+
+        var service = new ClientBrowserExtensionDetector(this.jsRuntimeMock.Object);
+
+        // Act
+        var result = await service.DetectExtensionsAsync();
+
+        // Assert
+        var ext = result.First();
+        Assert.Equal("ext1", ext.Id);
+        Assert.False(ext.IsHarmful);
+        Assert.Null(ext.WarningMessage);
+    }
+
+    /// <summary>
+    /// Verifies that GetKnownHarmfulExtensions uses IJSInProcessRuntime synchronously.
+    /// </summary>
+    [Fact]
+    public void GetKnownHarmfulExtensions_WithInProcessRuntime_UsesSynchronousInvoke()
+    {
+        // Arrange
+        var extensions = new[]
+        {
+            new { id = "honey", name = "Honey", isHarmful = true, warningMessage = "Warning" },
+        };
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(extensions));
+
+        var inProcessMock = new Mock<IJSInProcessRuntime>();
+        inProcessMock
+            .Setup(x => x.Invoke<JsonElement>("getKnownHarmfulExtensions", It.IsAny<object[]>()))
+            .Returns(jsonElement);
+
+        var service = new ClientBrowserExtensionDetector(inProcessMock.Object);
+
+        // Act
+        var result = service.GetKnownHarmfulExtensions();
+
+        // Assert
+        Assert.Single(result);
+        inProcessMock.Verify(
+            x => x.Invoke<JsonElement>("getKnownHarmfulExtensions", It.IsAny<object[]>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that GetKnownHarmfulExtensions returns empty when IJSInProcessRuntime throws.
+    /// </summary>
+    [Fact]
+    public void GetKnownHarmfulExtensions_WhenInProcessRuntimeThrows_FallsBackToAsync()
+    {
+        // Arrange
+        var extensions = new[]
+        {
+            new { id = "honey", name = "Honey", isHarmful = true, warningMessage = "Warning" },
+        };
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(extensions));
+
+        var inProcessMock = new Mock<IJSInProcessRuntime>();
+        inProcessMock
+            .Setup(x => x.Invoke<JsonElement>("getKnownHarmfulExtensions", It.IsAny<object[]>()))
+            .Throws(new InvalidOperationException("Not available"));
+
+        // Set up the async fallback
+        inProcessMock.As<IJSRuntime>()
+            .Setup(x => x.InvokeAsync<JsonElement>("getKnownHarmfulExtensions", It.IsAny<object[]>()))
+            .ReturnsAsync(jsonElement);
+
+        var service = new ClientBrowserExtensionDetector(inProcessMock.Object);
+
+        // Act
+        var result = service.GetKnownHarmfulExtensions();
+
+        // Assert
+        Assert.Single(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetKnownHarmfulExtensions returns empty when all attempts fail.
+    /// </summary>
+    [Fact]
+    public void GetKnownHarmfulExtensions_WhenAllAttemptsFail_ReturnsEmpty()
+    {
+        // Arrange
+        var inProcessMock = new Mock<IJSInProcessRuntime>();
+        inProcessMock
+            .Setup(x => x.Invoke<JsonElement>("getKnownHarmfulExtensions", It.IsAny<object[]>()))
+            .Throws(new InvalidOperationException("Not available"));
+
+        inProcessMock.As<IJSRuntime>()
+            .Setup(x => x.InvokeAsync<JsonElement>("getKnownHarmfulExtensions", It.IsAny<object[]>()))
+            .ThrowsAsync(new JSException("JS error"));
+
+        var service = new ClientBrowserExtensionDetector(inProcessMock.Object);
+
+        // Act
+        var result = service.GetKnownHarmfulExtensions();
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
     /// Verifies that GetKnownHarmfulExtensions calls the correct JavaScript function.
     /// </summary>
     [Fact]

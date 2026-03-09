@@ -158,6 +158,126 @@ public class HostAuthenticationStateProviderTests
     }
 
     [Fact]
+    public async Task GetAuthenticationStateAsync_WhenGuestWriter_SetsWriterGroupClaim()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "guest",
+            Email = "guest@example.com",
+            IsAdmin = false,
+            IsGuestWriter = true,
+            Claims = Array.Empty<object>(),
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert
+        Assert.Equal("becauseimclever-writers", state.User.FindFirst("groups")?.Value);
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WhenNameIsNull_DoesNotAddNameClaim()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = (string?)null,
+            Email = "test@example.com",
+            IsAdmin = false,
+            Claims = Array.Empty<object>(),
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert
+        Assert.True(state.User.Identity?.IsAuthenticated);
+        Assert.Null(state.User.FindFirst(ClaimTypes.Name));
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WhenEmailIsEmpty_DoesNotAddEmailClaim()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "testuser",
+            Email = string.Empty,
+            IsAdmin = false,
+            Claims = Array.Empty<object>(),
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert
+        Assert.True(state.User.Identity?.IsAuthenticated);
+        Assert.Null(state.User.FindFirst(ClaimTypes.Email));
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WithAdditionalClaims_AddsThemToIdentity()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "testuser",
+            Email = "test@example.com",
+            IsAdmin = false,
+            Claims = new[]
+            {
+                new { Type = "sub", Value = "12345" },
+                new { Type = "preferred_username", Value = "testuser" },
+            },
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert
+        Assert.Equal("12345", state.User.FindFirst("sub")?.Value);
+        Assert.Equal("testuser", state.User.FindFirst("preferred_username")?.Value);
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WithDuplicateClaimTypes_DoesNotDuplicate()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "testuser",
+            Email = "test@example.com",
+            IsAdmin = true,
+            Claims = new[]
+            {
+                new { Type = ClaimTypes.Name, Value = "duplicate-name" },
+                new { Type = ClaimTypes.Email, Value = "duplicate@example.com" },
+                new { Type = "groups", Value = "some-group" },
+            },
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert - Should only have the claims we added explicitly, not duplicates
+        var nameClaims = state.User.FindAll(ClaimTypes.Name).ToList();
+        Assert.Single(nameClaims);
+        Assert.Equal("testuser", nameClaims[0].Value);
+    }
+
+    [Fact]
     public async Task GetAuthenticationStateAsync_WhenNullResponse_ReturnsUnauthenticatedState()
     {
         // Arrange
@@ -169,6 +289,29 @@ public class HostAuthenticationStateProviderTests
 
         // Assert
         Assert.False(state.User.Identity?.IsAuthenticated);
+    }
+
+    [Fact]
+    public async Task NotifyAuthenticationStateChanged_RaisesAuthenticationStateChangedEvent()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "testuser",
+            Email = "test@example.com",
+            IsAdmin = false,
+            Claims = Array.Empty<object>(),
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+        var eventRaised = false;
+        provider.AuthenticationStateChanged += _ => eventRaised = true;
+
+        // Act
+        provider.NotifyAuthenticationStateChanged();
+
+        // Assert
+        Assert.True(eventRaised);
     }
 
     [Fact]

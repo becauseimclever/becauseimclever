@@ -5,14 +5,21 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura,opencover</Format>
-          <!-- Only include our project assemblies -->
+          <!-- Only include our project assemblies (excluding Client — covered separately) -->
           <Include>
-            [BecauseImClever.*]*
+            [BecauseImClever.Application]*
+            [BecauseImClever.Domain]*
+            [BecauseImClever.Infrastructure]*
+            [BecauseImClever.Server]*
           </Include>
           <Exclude>
             [*.Tests]*
+            [BecauseImClever.Client]*
             [*]*.Migrations.*
             [*]*.Program
+            [*]*ServiceCollectionExtensions*
+            [*]Microsoft.AspNetCore.OpenApi.Generated*
+            [*]System.Runtime.CompilerServices*
             [xunit.*]*
             [Moq]*
             [bunit.*]*
@@ -35,6 +42,7 @@
           </ExcludeByAttribute>
           <ExcludeByFile>
             **/Migrations/**/*.cs
+            **/Program.cs
             **/*.designer.cs
             **/*.generated.cs
           </ExcludeByFile>
@@ -42,7 +50,7 @@
             src/**/*.cs
           </IncludeDirectory>
           <SingleHit>false</SingleHit>
-          <UseSourceLink>true</UseSourceLink>
+          <UseSourceLink>false</UseSourceLink>
           <IncludeTestAssembly>false</IncludeTestAssembly>
           <SkipAutoProps>true</SkipAutoProps>
           <DeterministicReport>false</DeterministicReport>

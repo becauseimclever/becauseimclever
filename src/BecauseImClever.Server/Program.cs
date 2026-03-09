@@ -32,6 +32,8 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddScoped<IPostImageService, PostImageService>();
     builder.Services.AddScoped<IPostAuthorizationService, PostAuthorizationService>();
 
+    builder.Services.AddScoped<ISpellCheckService, SpellCheckService>();
+
     // Register scheduled post publisher background service
     builder.Services.AddHostedService<ScheduledPostPublisherService>();
 }
@@ -42,6 +44,9 @@ else
 }
 
 builder.Services.AddHttpClient<IProjectService, GitHubProjectService>();
+
+// Configure spell check settings
+builder.Services.Configure<SpellCheckOptions>(builder.Configuration.GetSection(SpellCheckOptions.SectionName));
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection(EmailSettings.SectionName));

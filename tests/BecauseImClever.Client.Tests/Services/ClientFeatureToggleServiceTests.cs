@@ -129,6 +129,33 @@ public class ClientFeatureToggleServiceTests
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// Tests that GetFeatureSettingsAsync returns null when exception is thrown.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetFeatureSettingsAsync_WhenExceptionThrown_ReturnsNull()
+    {
+        // Arrange
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("https://test.com/") };
+        var service = new ClientFeatureToggleService(httpClient);
+
+        // Act
+        var result = await service.GetFeatureSettingsAsync("ExtensionDetection");
+
+        // Assert
+        Assert.Null(result);
+    }
+
     [Fact]
     public async Task SetFeatureEnabledAsync_CallsCorrectEndpoint()
     {

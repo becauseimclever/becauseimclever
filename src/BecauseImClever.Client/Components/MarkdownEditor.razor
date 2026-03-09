@@ -1,7 +1,10 @@
 @using Markdig
+@using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Client.Services
+@using BecauseImClever.Domain.Entities
 @inject IJSRuntime JS
 @inject ClientPostImageService ImageService
+@inject IClientSpellCheckService SpellCheckService
 @implements IAsyncDisposable
 
 <div class="markdown-editor @(IsPreviewOnly ? "preview-only" : "split-view")">
@@ -76,6 +79,22 @@
             </div>
             <div class="toolbar-spacer"></div>
             <div class="toolbar-group">
+                <button type="button" class="toolbar-btn @(isCheckingSpelling ? "active" : "")" title="Check Spelling" @onclick="CheckSpelling" disabled="@isCheckingSpelling">
+                    @if (isCheckingSpelling)
+                    {
+                        <span class="spell-spinner"></span>
+                    }
+                    else if (misspelledCount > 0)
+                    {
+                        <span class="spell-badge">🔤 @misspelledCount</span>
+                    }
+                    else
+                    {
+                        <span>🔤</span>
+                    }
+                </button>
+            </div>
+            <div class="toolbar-group">
                 <button type="button" class="toolbar-btn @(IsPreviewOnly ? "active" : "")" title="Toggle Preview" @onclick="TogglePreview">
                     👁️
                 </button>
@@ -102,13 +121,17 @@
                         <span>Uploading image...</span>
                     </div>
                 }
+                <SpellCheckOverlay MisspelledWords="@spellCheckResults"
+                                   Content="@Value"
+                                   OverlayId="@OverlayId"
+                                   OnWordClicked="HandleSpellWordClick" />
                 <textarea id="@TextAreaId"
                           class="editor-textarea"
                           value="@Value"
                           @oninput="OnValueChanged"
                           @onkeydown="HandleKeyDown"
                           placeholder="@Placeholder"
-                          spellcheck="true"></textarea>
+                          spellcheck="false"></textarea>
             </div>
         }
 
@@ -133,6 +156,14 @@
     <ImageUploadDialog PostSlug="@PostSlug"
                        OnImageInserted="HandleImageInserted"
                        OnClose="CloseImageUploadDialog" />
+}
+
+@if (selectedSpellResult is not null)
+{
+    <SpellSuggestionPopup Word="@selectedSpellResult.Word"
+                          Suggestions="@selectedSpellResult.Suggestions"
+                          OnReplace="HandleSpellReplace"
+                          OnClose="CloseSpellPopup" />
 }
 
 <style>
@@ -217,6 +248,25 @@
     .code-block-icon {
         font-family: monospace;
         font-size: 0.8rem;
+    }
+
+    .spell-badge {
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    .spell-spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid var(--border-color);
+        border-top-color: var(--accent-color);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .editor-content {
@@ -543,7 +593,15 @@
     private bool showImageUploadDialog;
     private bool isDraggingFile;
     private bool isUploadingImage;
+    private bool isCheckingSpelling;
+    private int misspelledCount;
+    private List<SpellCheckResult> spellCheckResults = [];
+    private SpellCheckResult? selectedSpellResult;
     private DotNetObjectReference<MarkdownEditor>? dotNetRef;
+    private CancellationTokenSource? spellCheckDebounce;
+    private bool scrollSyncRegistered;
+
+    private string OverlayId => $"{TextAreaId}-overlay";
 
     private static string RenderMarkdown(string markdown)
     {
@@ -587,6 +645,9 @@
     /// <returns>A task representing the async operation.</returns>
     public async ValueTask DisposeAsync()
     {
+        spellCheckDebounce?.Cancel();
+        spellCheckDebounce?.Dispose();
+
         if (dotNetRef is not null)
         {
             try
@@ -599,6 +660,18 @@
             }
 
             dotNetRef.Dispose();
+        }
+
+        if (scrollSyncRegistered)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("markdownEditor.unregisterScrollSync", TextAreaId);
+            }
+            catch
+            {
+                // Ignore disposal errors
+            }
         }
     }
 
@@ -689,6 +762,7 @@
     {
         Value = e.Value?.ToString() ?? string.Empty;
         await ValueChanged.InvokeAsync(Value);
+        DebouncedSpellCheck();
     }
 
     private async Task TogglePreview()
@@ -721,6 +795,105 @@
         await JS.InvokeVoidAsync("markdownEditor.setSelection", TextAreaId, newCursorPos, newCursorPos);
 
         showImageUploadDialog = false;
+    }
+
+    private async Task CheckSpelling()
+    {
+        if (isCheckingSpelling || string.IsNullOrWhiteSpace(Value))
+        {
+            return;
+        }
+
+        isCheckingSpelling = true;
+        misspelledCount = 0;
+        spellCheckResults = [];
+        selectedSpellResult = null;
+        StateHasChanged();
+
+        try
+        {
+            var results = await SpellCheckService.CheckMarkdownAsync(Value);
+            spellCheckResults = results.Where(r => !r.IsCorrect).ToList();
+            misspelledCount = spellCheckResults.Count;
+
+            if (spellCheckResults.Count > 0 && !scrollSyncRegistered)
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("markdownEditor.syncOverlayScroll", TextAreaId, OverlayId);
+                    scrollSyncRegistered = true;
+                }
+                catch
+                {
+                    // Ignore JS interop errors
+                }
+            }
+        }
+        catch
+        {
+            // Silently fail - spell check is not critical
+        }
+        finally
+        {
+            isCheckingSpelling = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void DebouncedSpellCheck()
+    {
+        spellCheckDebounce?.Cancel();
+        spellCheckDebounce = new CancellationTokenSource();
+        var token = spellCheckDebounce.Token;
+
+        try
+        {
+            await Task.Delay(500, token);
+            if (!token.IsCancellationRequested)
+            {
+                await InvokeAsync(async () =>
+                {
+                    await CheckSpelling();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Expected when debouncing - user typed again before delay elapsed
+        }
+    }
+
+    private void HandleSpellWordClick(SpellCheckResult result)
+    {
+        selectedSpellResult = result;
+    }
+
+    private async Task HandleSpellReplace(string replacement)
+    {
+        if (selectedSpellResult is null)
+        {
+            return;
+        }
+
+        var word = selectedSpellResult.Word;
+        selectedSpellResult = null;
+
+        // Replace all occurrences of the misspelled word
+        Value = System.Text.RegularExpressions.Regex.Replace(
+            Value,
+            @"\b" + System.Text.RegularExpressions.Regex.Escape(word) + @"\b",
+            replacement);
+
+        await ValueChanged.InvokeAsync(Value);
+
+        // Re-run spell check to update overlay
+        await CheckSpelling();
+    }
+
+    private void CloseSpellPopup()
+    {
+        selectedSpellResult = null;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)

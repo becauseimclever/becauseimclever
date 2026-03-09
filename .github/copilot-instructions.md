@@ -52,11 +52,13 @@ Format: `MAJOR.MINOR.PATCH`
 ### Rules
 1. **Feature Documentation Required**: Before implementing any new feature, bug fix, or enhancement, create a feature document in the `docs/` folder.
 2. **Naming Convention**: Feature documents should follow the pattern `XXX-feature-name.md` where `XXX` is a sequential number (e.g., `015-user-authentication.md`).
-3. **Document Content**: Each feature document should include:
+3. **Vertical Slice Approach**: Each feature document must describe the work as a vertical slice — covering all affected layers (Domain, Application, Infrastructure, Server, Client) in a single cohesive document rather than treating layers in isolation. Each vertical slice should be independently shippable, delivering end-to-end functionality that can be deployed on its own without depending on incomplete work in other slices.
+4. **Document Content**: Each feature document should include:
    - Feature description and goals
    - Technical approach
-   - Affected components/layers
+   - Vertical slice breakdown: what changes in each affected layer (Domain entities/value objects, Application services/DTOs, Infrastructure implementations, Server endpoints, Client UI components)
    - Any relevant design decisions
+   - Current status (planned, in-progress, completed)
 
 ### Exceptions
 The following types of changes do NOT require feature documentation:
@@ -67,7 +69,8 @@ The following types of changes do NOT require feature documentation:
 ### Workflow
 1. Create or reference a feature document before starting work.
 2. Link commits and PRs to the feature document when applicable.
-3. Update the feature document as implementation progresses if needed.
+3. **Keep the feature document up to date throughout implementation** — update it whenever the approach changes, new decisions are made, or tasks are completed. The document must always reflect the current state of the feature.
+4. When a feature is complete, ensure the document accurately describes what was delivered, including any deviations from the original plan.
 
 ---
 

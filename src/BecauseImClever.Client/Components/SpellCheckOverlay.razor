@@ -1,0 +1,120 @@
+@using System.Text.RegularExpressions
+@using BecauseImClever.Domain.Entities
+
+<div class="spell-check-overlay" id="@OverlayId">
+    @foreach (var segment in GetSegments())
+    {
+        if (segment.Result is not null)
+        {
+            <span class="spell-highlight" @onclick="() => HandleWordClick(segment.Result)">@segment.Text</span>
+        }
+        else
+        {
+            @segment.Text
+        }
+    }
+</div>
+
+<style>
+    .spell-check-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 1rem;
+        pointer-events: none;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow: hidden;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: transparent;
+    }
+
+    .spell-highlight {
+        border-bottom: 2px dotted #3b82f6;
+        pointer-events: auto;
+        cursor: pointer;
+        color: transparent;
+        position: relative;
+    }
+
+    .spell-highlight:hover {
+        background: rgba(59, 130, 246, 0.1);
+    }
+</style>
+
+@code {
+    private static readonly Regex WordBoundaryRegex = new(@"\b[a-zA-Z']+\b", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Gets or sets the misspelled word results to highlight.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<SpellCheckResult> MisspelledWords { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the raw text content to render the overlay for.
+    /// </summary>
+    [Parameter]
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the overlay element id for JS interop (scroll sync).
+    /// </summary>
+    [Parameter]
+    public string OverlayId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Event callback when a highlighted word is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback<SpellCheckResult> OnWordClicked { get; set; }
+
+    private async Task HandleWordClick(SpellCheckResult result)
+    {
+        await OnWordClicked.InvokeAsync(result);
+    }
+
+    private List<OverlaySegment> GetSegments()
+    {
+        var segments = new List<OverlaySegment>();
+
+        if (string.IsNullOrEmpty(Content) || MisspelledWords.Count == 0)
+        {
+            return segments;
+        }
+
+        var misspelledLookup = new Dictionary<string, SpellCheckResult>(StringComparer.OrdinalIgnoreCase);
+        foreach (var result in MisspelledWords)
+        {
+            misspelledLookup.TryAdd(result.Word, result);
+        }
+
+        int lastEnd = 0;
+        foreach (Match match in WordBoundaryRegex.Matches(Content))
+        {
+            if (misspelledLookup.TryGetValue(match.Value, out var result))
+            {
+                if (match.Index > lastEnd)
+                {
+                    segments.Add(new OverlaySegment(Content[lastEnd..match.Index], null));
+                }
+
+                segments.Add(new OverlaySegment(match.Value, result));
+                lastEnd = match.Index + match.Length;
+            }
+        }
+
+        if (lastEnd < Content.Length)
+        {
+            segments.Add(new OverlaySegment(Content[lastEnd..], null));
+        }
+
+        return segments;
+    }
+
+    private record OverlaySegment(string Text, SpellCheckResult? Result);
+}

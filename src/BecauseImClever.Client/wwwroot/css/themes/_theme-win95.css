@@ -13,7 +13,7 @@
     --color-border: #dfdfdf;
 
     /* Typography */
-    --font-body: "MS Sans Serif", "Segoe UI", sans-serif;
+    --font-body: "MS Sans Serif", "Segoe UI", "Noto Sans JP", sans-serif;
     --font-mono: "Courier New", monospace;
 
     /* Borders & Shadows */

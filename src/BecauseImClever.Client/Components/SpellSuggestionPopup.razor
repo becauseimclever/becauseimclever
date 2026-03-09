@@ -1,0 +1,204 @@
+@using BecauseImClever.Application.Interfaces
+@inject IClientSpellCheckService SpellCheckService
+
+<div class="spell-popup-overlay" @onclick="Close">
+    <div class="spell-popup" @onclick:stopPropagation>
+        <div class="spell-popup-header">
+            <span class="spell-popup-word">@Word</span>
+            <button type="button" class="spell-popup-close" @onclick="Close">&times;</button>
+        </div>
+
+        <div class="spell-popup-body">
+            @if (Suggestions.Count == 0)
+            {
+                <p class="spell-popup-no-suggestions">No suggestions</p>
+            }
+            else
+            {
+                <div class="spell-popup-suggestions">
+                    @foreach (var suggestion in Suggestions)
+                    {
+                        <button type="button"
+                                class="spell-suggestion-btn"
+                                @onclick="() => SelectSuggestion(suggestion)">
+                            @suggestion
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="spell-popup-footer">
+            <button type="button" class="spell-popup-action" title="Add to Dictionary" @onclick="AddToDictionary">
+                📖 Add to Dictionary
+            </button>
+            <button type="button" class="spell-popup-action" title="Ignore All" @onclick="IgnoreAll">
+                🚫 Ignore All
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .spell-popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+    }
+
+    .spell-popup {
+        position: absolute;
+        min-width: 200px;
+        max-width: 300px;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        overflow: hidden;
+    }
+
+    .spell-popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .spell-popup-word {
+        font-weight: 600;
+        color: #dc3545;
+        font-style: italic;
+    }
+
+    .spell-popup-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0;
+        line-height: 1;
+    }
+
+    .spell-popup-close:hover {
+        color: var(--text-color);
+    }
+
+    .spell-popup-body {
+        padding: 0.5rem;
+    }
+
+    .spell-popup-no-suggestions {
+        color: var(--text-muted);
+        font-style: italic;
+        text-align: center;
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+    }
+
+    .spell-popup-suggestions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .spell-suggestion-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.375rem 0.5rem;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-color);
+        font-size: 0.875rem;
+    }
+
+    .spell-suggestion-btn:hover {
+        background: var(--bg-secondary);
+        color: var(--accent-color);
+    }
+
+    .spell-popup-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        padding: 0.375rem 0.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .spell-popup-action {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        width: 100%;
+        text-align: left;
+        padding: 0.375rem 0.5rem;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    .spell-popup-action:hover {
+        background: var(--bg-secondary);
+        color: var(--text-color);
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// Gets or sets the misspelled word.
+    /// </summary>
+    [Parameter]
+    public string Word { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the list of suggestions.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<string> Suggestions { get; set; } = [];
+
+    /// <summary>
+    /// Event callback when a suggestion is selected for replacement.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnReplace { get; set; }
+
+    /// <summary>
+    /// Event callback when the popup should be closed.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task SelectSuggestion(string suggestion)
+    {
+        await OnReplace.InvokeAsync(suggestion);
+    }
+
+    private async Task AddToDictionary()
+    {
+        await SpellCheckService.AddToDictionaryAsync(Word);
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task IgnoreAll()
+    {
+        SpellCheckService.IgnoreWord(Word);
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

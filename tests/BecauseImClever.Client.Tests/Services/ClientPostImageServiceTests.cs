@@ -213,6 +213,92 @@ public class ClientPostImageServiceTests
     }
 
     /// <summary>
+    /// UploadImageAsync should return failure when success response returns null result.
+    /// </summary>
+    [Fact]
+    public async Task UploadImageAsync_WhenSuccessResponseReturnsNull_ReturnsFailure()
+    {
+        // Arrange
+        var postSlug = "test-post";
+
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, "null", isPlainText: false);
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://test/") };
+        var service = new ClientPostImageService(httpClient);
+
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        // Act
+        var result = await service.UploadImageAsync(postSlug, stream, "test.png", "image/png");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("Failed to parse response", result.Error);
+    }
+
+    /// <summary>
+    /// UploadImageAsync should return failure when success response is invalid JSON.
+    /// </summary>
+    [Fact]
+    public async Task UploadImageAsync_WhenSuccessResponseIsInvalidJson_ReturnsFailure()
+    {
+        // Arrange
+        var postSlug = "test-post";
+
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, "not-json", isPlainText: true);
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://test/") };
+        var service = new ClientPostImageService(httpClient);
+
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        // Act
+        var result = await service.UploadImageAsync(postSlug, stream, "test.png", "image/png");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("Failed to parse response", result.Error);
+    }
+
+    /// <summary>
+    /// GetImagesAsync should return empty when response body cannot be parsed.
+    /// </summary>
+    [Fact]
+    public async Task GetImagesAsync_WhenResponseCannotBeParsed_ReturnsEmpty()
+    {
+        // Arrange
+        var postSlug = "test-post";
+
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, "not-json", isPlainText: true);
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://test/") };
+        var service = new ClientPostImageService(httpClient);
+
+        // Act
+        var result = await service.GetImagesAsync(postSlug);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// GetImagesAsync should return empty when response returns null.
+    /// </summary>
+    [Fact]
+    public async Task GetImagesAsync_WhenResponseReturnsNull_ReturnsEmpty()
+    {
+        // Arrange
+        var postSlug = "test-post";
+
+        var handler = new MockHttpMessageHandler(HttpStatusCode.OK, "null", isPlainText: false);
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://test/") };
+        var service = new ClientPostImageService(httpClient);
+
+        // Act
+        var result = await service.GetImagesAsync(postSlug);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
     /// Mock HTTP message handler for testing.
     /// </summary>
     private class MockHttpMessageHandler : HttpMessageHandler

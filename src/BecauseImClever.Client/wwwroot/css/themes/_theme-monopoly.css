@@ -16,7 +16,7 @@
     --monopoly-orange: #F7941D;
 
     /* Typography */
-    --font-body: "Verdana", "Geneva", sans-serif;
+    --font-body: "Verdana", "Geneva", "Noto Sans JP", sans-serif;
     --font-mono: "Courier New", monospace;
 
     /* Borders & Shadows */

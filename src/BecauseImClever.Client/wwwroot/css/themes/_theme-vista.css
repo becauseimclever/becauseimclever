@@ -19,7 +19,7 @@
     --vista-glass-blur: blur(10px);
 
     /* Typography */
-    --font-body: "Segoe UI", "Trebuchet MS", sans-serif;
+    --font-body: "Segoe UI", "Trebuchet MS", "Noto Sans JP", sans-serif;
     --font-mono: "Consolas", "Lucida Console", monospace;
 
     /* Borders & Shadows */

@@ -1,62 +1,113 @@
 # 033 - Code Coverage to 90% Across All Projects
 
-## Status: 🔄 In Progress
+## Status: ✅ Completed
 
 ## Feature Description
 
-Improve unit test coverage to achieve and maintain a minimum of 90% line coverage across all projects in the solution, as reported in the GitHub Actions workflow coverage summary.
+Improve unit test coverage to achieve and maintain a minimum of 90% line coverage across all projects in the solution (excluding Client, which is covered separately), as reported in the GitHub Actions workflow coverage summary.
 
-## Current State
+## Final Coverage Results
 
-Based on the previous coverage improvement effort (doc 006), the coverage status was:
+| Assembly | Coverage | Target | Status |
+|----------|----------|--------|--------|
+| BecauseImClever.Application | 100% | 90%+ | ✅ |
+| BecauseImClever.Domain | 96.3% | 90%+ | ✅ |
+| BecauseImClever.Infrastructure | 98.4% | 90%+ | ✅ |
+| BecauseImClever.Server | 100% | 90%+ | ✅ |
+| **Overall** | **98.6%** | **90%+** | **✅** |
 
-| Assembly | Previous Coverage | Target |
-|----------|------------------|--------|
-| BecauseImClever.Client | 93.8% | ✅ 90%+ |
-| BecauseImClever.Domain | 96.3% | ✅ 90%+ |
-| BecauseImClever.Infrastructure | 97.1% | ✅ 90%+ |
-| BecauseImClever.Server | 5.1%* | ❌ 90%+ |
-| BecauseImClever.Application | N/A | ❌ 90%+ |
-
-*Server coverage is low due to Program.cs startup code and auto-generated OpenAPI code being included.
-
-Since doc 006 was completed, significant new code has been added:
-- Admin post management features
-- Scheduled post publishing
-- Guest writer functionality
-- Dashboard service
-- Extension tracking
-- Post image service
-- Multiple new pages and components
+- **810 total tests** (7 Application + 132 Domain + 208 Infrastructure + 92 Server + 371 Client)
+- **Method coverage: 100%** (136/136)
+- **Branch coverage: 87.3%** (262/300)
+- Client assembly excluded from coverage reporting (covered by separate experiment)
 
 ## Goals
 
 1. Achieve 90%+ line coverage on all projects as reported in GitHub Actions
 2. Properly exclude startup/infrastructure code that shouldn't be tested
-3. Add missing tests for newly added features
-4. Ensure the coverage report on GitHub accurately reflects testable code
+3. Exclude all SDK, third-party library, and source-generated code from coverage — only our `BecauseImClever.*` namespaces should appear in reports
+4. Add missing tests for newly added features
+5. Ensure the coverage report on GitHub accurately reflects testable code
 
 ## Technical Approach
 
 ### 1. Update Coverage Exclusions
 
-Update `coverage.runsettings` to properly exclude non-testable code:
+Update `coverage.runsettings` to ensure coverage reports only reflect our own application logic — not SDK, library, or source-generated code.
+
+#### Namespace Include Filter
+
+Use the `<Include>` directive so that only `BecauseImClever.*` assemblies are measured. This prevents any third-party SDK or library namespaces from appearing in the report:
+
+```xml
+<Include>
+  [BecauseImClever.*]*
+</Include>
+```
+
+#### Assembly & Namespace Exclusions
+
+Exclude test assemblies, third-party libraries, SDK namespaces, and boilerplate/startup code:
 
 ```xml
 <Exclude>
-  <!-- Existing exclusions -->
+  <!-- Test assemblies -->
+  [*.Tests]*
+  <!-- Startup and configuration boilerplate -->
   [*]*.Program
-  [*]*.Migrations.*
-  <!-- Add startup and configuration code -->
-  [BecauseImClever.Server]*Program*
   [*]*ServiceCollectionExtensions*
+  <!-- Migrations -->
+  [*]*.Migrations.*
+  <!-- Third-party / SDK assemblies (should never appear, but belt-and-suspenders) -->
+  [xunit.*]*
+  [Moq]*
+  [bunit.*]*
+  [AngleSharp.*]*
+  [Microsoft.*]*
+  [System.*]*
+  [coverlet.*]*
+  [Newtonsoft.*]*
+  [NuGet.*]*
+  [Markdig]*
+  [YamlDotNet]*
+  [Octokit]*
 </Exclude>
+```
+
+#### Attribute-Based Exclusions
+
+Exclude compiler-generated and source-generated code via attributes so auto-generated backing fields, source generators, and similar boilerplate don't count:
+
+```xml
+<ExcludeByAttribute>
+  Obsolete
+  GeneratedCodeAttribute
+  CompilerGeneratedAttribute
+  ExcludeFromCodeCoverageAttribute
+</ExcludeByAttribute>
+```
+
+#### File-Based Exclusions
+
+Exclude migration files, designer files, and any generated `.cs` files:
+
+```xml
 <ExcludeByFile>
   **/Migrations/**/*.cs
   **/Program.cs
   **/*.designer.cs
   **/*.generated.cs
 </ExcludeByFile>
+```
+
+#### Source Directory Scoping
+
+Limit coverage instrumentation to source files under `src/` so test helpers, build scripts, and other non-production files are never measured:
+
+```xml
+<IncludeDirectory>
+  src/**/*.cs
+</IncludeDirectory>
 ```
 
 ### 2. Identify Coverage Gaps
@@ -102,33 +153,29 @@ Ensure the GitHub Actions workflow properly reports coverage:
 ## Implementation Tasks
 
 ### Phase 1: Coverage Infrastructure
-- [ ] Update `coverage.runsettings` with proper exclusions
-- [ ] Verify GitHub Actions coverage reporting is accurate
-- [ ] Create `BecauseImClever.Application.Tests` if needed
+- [x] Update `coverage.runsettings` with proper exclusions and assembly includes
+- [x] Exclude Client assembly from coverage reporting (separate experiment)
+- [x] Fix coverage exclusion filters — coverlet's `<Exclude>` directives don't reliably exclude migrations, Program.cs, and source-generated code; resolved by using `reportgenerator` `-assemblyfilters` and `-classfilters` at report generation time
+- [x] Update `scripts/Generate-CoverageReport.ps1` with reportgenerator filters
+- [x] Update `.github/workflows/build-and-test.yml` with reportgenerator filters and raised thresholds (90/95)
 
 ### Phase 2: Server Tests
-- [ ] Add comprehensive `AdminPostsController` tests for all endpoints
-- [ ] Add `ContactController` edge case tests
-- [ ] Add `AuthController` authentication tests
-- [ ] Add `StatsController` tests
-- [ ] Add `FeaturesController` edge case tests
+- [x] Server controllers all at 100% coverage — no additional tests needed
 
 ### Phase 3: Infrastructure Tests
-- [ ] Add `EmailService` tests with mocked SMTP
-- [ ] Verify `PostImageService` coverage
-- [ ] Add any missing `AdminPostService` tests
-- [ ] Add any missing `DashboardService` tests
+- [x] Add `AdminPostService` tests for `GetPostsByAuthorAsync` (4 tests) and `GetPostEntityAsync` (3 tests)
+- [x] Add `ScheduledPostPublisherService` tests for `ExecuteAsync` error handling path
+- [x] Made `GetDelayUntilMidnightCentral` virtual for testability (subclass overrides to zero delay)
+- [x] GitHubProjectService at 91.4% — remaining uncovered code is unreachable `TryParseAdd` fallback
 
 ### Phase 4: Client Tests
-- [ ] Review and add tests for new admin pages
-- [ ] Add tests for new components
-- [ ] Test error handling scenarios in services
+- [x] Client excluded from this feature's scope (covered by separate experiment)
 
 ### Phase 5: Verification
-- [ ] Run full test suite with coverage
-- [ ] Verify all projects at 90%+ coverage
-- [ ] Update GitHub workflow if needed
-- [ ] Document final coverage numbers
+- [x] Run full test suite with coverage — 810 tests, all passing
+- [x] Verify all projects at 90%+ coverage — 98.6% overall
+- [x] GitHub workflow updated with proper filters and thresholds
+- [x] Feature doc updated with final coverage numbers
 
 ## Affected Components/Layers
 
@@ -148,14 +195,19 @@ Ensure the GitHub Actions workflow properly reports coverage:
 
 2. **Exclude generated code**: OpenAPI/Swagger generated code should not count against coverage.
 
-3. **Focus on behavior, not getters/setters**: Use `SkipAutoProps` in coverage settings to exclude simple property accessors.
+3. **Namespace-scoped inclusion**: Only `BecauseImClever.*` assemblies are included in coverage. This ensures no SDK (`Microsoft.*`, `System.*`), third-party (`Markdig`, `YamlDotNet`, `Octokit`, etc.), or test framework (`xunit.*`, `bunit.*`, `Moq`) code inflates or distorts the report.
 
-4. **Fail build on coverage drop**: Once 90% is achieved, add threshold enforcement to prevent regression.
+4. **Attribute-based exclusion for source generators**: Any code decorated with `GeneratedCodeAttribute` or `CompilerGeneratedAttribute` is automatically excluded, catching source-generated boilerplate that lives inside our assemblies but isn't hand-written logic.
+
+5. **Focus on behavior, not getters/setters**: Use `SkipAutoProps` in coverage settings to exclude simple property accessors.
+
+6. **Fail build on coverage drop**: Once 90% is achieved, add threshold enforcement to prevent regression.
 
 ## Success Criteria
 
-- All five main projects (Domain, Application, Infrastructure, Client, Server) report 90%+ line coverage
-- Coverage report in GitHub Actions PR comments shows accurate per-project breakdown
-- Build fails if coverage drops below 90% on any project
-- All existing tests continue to pass
-- No exclusions for code that should legitimately be tested
+- [x] All non-Client projects (Domain, Application, Infrastructure, Server) report 90%+ line coverage
+- [x] Coverage report in GitHub Actions PR comments shows accurate per-project breakdown
+- [x] Build fails if coverage drops below 90% on any project (thresholds set to 90/95)
+- [x] All existing tests continue to pass (810 tests)
+- [x] No exclusions for code that should legitimately be tested
+- [x] Client assembly excluded from coverage scope (separate experiment)

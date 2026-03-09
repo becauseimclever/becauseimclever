@@ -5,6 +5,7 @@
 @inject IThemeService ThemeService
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Http
 
 <div class="layout-container">
     <!-- Header -->
@@ -77,7 +78,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2025 BecauseImClever. Built with .NET 10 & Blazor.</p>
+        <p>&copy; 2025 BecauseImClever. Built with .NET 10 & Blazor.@if (!string.IsNullOrEmpty(appVersion)) { <text> | v@appVersion</text> }</p>
     </footer>
 </div>
 
@@ -87,6 +88,7 @@
     private string currentPath = string.Empty;
     private bool isAdmin;
     private bool isGuestWriter;
+    private string? appVersion;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,6 +97,16 @@
         await ThemeService.SetThemeAsync(currentTheme);
         currentPath = new Uri(Navigation.Uri).AbsolutePath;
         Navigation.LocationChanged += OnLocationChanged;
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<VersionInfo>("api/version");
+            appVersion = response?.Version;
+        }
+        catch (HttpRequestException)
+        {
+            // Version display is non-critical; silently ignore failures
+        }
 
         // Get user roles
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -130,6 +142,8 @@
         currentTheme = Theme.FromKey(selectedKey);
         await ThemeService.SetThemeAsync(currentTheme);
     }
+
+    private record VersionInfo(string Version);
 
     public void Dispose()
     {

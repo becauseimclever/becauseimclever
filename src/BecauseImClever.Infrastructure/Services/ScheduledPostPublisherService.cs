@@ -38,7 +38,7 @@ public class ScheduledPostPublisherService : BackgroundService
     /// Gets the delay until the next midnight in US Central time.
     /// </summary>
     /// <returns>The time span until the next midnight Central.</returns>
-    public static TimeSpan GetDelayUntilMidnightCentral()
+    public virtual TimeSpan GetDelayUntilMidnightCentral()
     {
         var utcNow = DateTimeOffset.UtcNow;
         var centralNow = TimeZoneInfo.ConvertTime(utcNow, CentralTimeZone);
@@ -98,7 +98,7 @@ public class ScheduledPostPublisherService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = GetDelayUntilMidnightCentral();
+            var delay = this.GetDelayUntilMidnightCentral();
             this.logger.LogInformation(
                 "Next scheduled post check at midnight Central in {Hours:F1} hours.",
                 delay.TotalHours);

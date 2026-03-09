@@ -27,4 +27,8 @@
     <ProjectReference Include="..\..\src\BecauseImClever.Infrastructure\BecauseImClever.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Dictionaries\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

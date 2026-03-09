@@ -1,7 +1,9 @@
 namespace BecauseImClever.Client.Tests.Components;
 
+using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
+using BecauseImClever.Domain.Entities;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +25,10 @@ public class MarkdownEditorTests : BunitContext
         var mockHttpClient = new HttpClient();
         var imageService = new ClientPostImageService(mockHttpClient);
         this.Services.AddSingleton(imageService);
+
+        // Register mock IClientSpellCheckService
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        this.Services.AddSingleton(mockSpellCheck.Object);
     }
 
     /// <summary>
@@ -483,7 +489,7 @@ public class MarkdownEditorTests : BunitContext
     }
 
     /// <summary>
-    /// Verifies that the textarea has spellcheck enabled.
+    /// Verifies that the textarea has browser spellcheck disabled for custom spell checking.
     /// </summary>
     [Fact]
     public void MarkdownEditor_Textarea_HasSpellcheck()
@@ -493,7 +499,7 @@ public class MarkdownEditorTests : BunitContext
 
         // Assert
         var textarea = cut.Find(".editor-textarea");
-        Assert.Equal("true", textarea.GetAttribute("spellcheck"));
+        Assert.Equal("false", textarea.GetAttribute("spellcheck"));
     }
 
     /// <summary>
@@ -613,5 +619,449 @@ public class MarkdownEditorTests : BunitContext
         Assert.Contains("<pre>", cut.Markup);
         Assert.Contains("<code>", cut.Markup);
         Assert.Contains("plain code", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that the upload image button appears when PostSlug is set.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WhenPostSlugSet_ShowsUploadButton()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Assert
+        var uploadButton = cut.Find("button[title='Upload Image']");
+        Assert.NotNull(uploadButton);
+    }
+
+    /// <summary>
+    /// Verifies that the upload image button is hidden when PostSlug is null.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WhenPostSlugNull_HidesUploadButton()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var uploadButtons = cut.FindAll("button[title='Upload Image']");
+        Assert.Empty(uploadButtons);
+    }
+
+    /// <summary>
+    /// Verifies that clicking upload button opens the image upload dialog.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_ClickUploadButton_OpensImageDialog()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Act
+        var uploadButton = cut.Find("button[title='Upload Image']");
+        uploadButton.Click();
+
+        // Assert - ImageUploadDialog should be rendered
+        Assert.Contains("image-upload-dialog", cut.Markup.ToLower());
+    }
+
+    /// <summary>
+    /// Verifies that non-Ctrl key presses are ignored.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_NonCtrlKey_IsIgnored()
+    {
+        // Arrange
+        var value = string.Empty;
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, value)
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, v => value = v)));
+
+        // Act
+        var textarea = cut.Find(".editor-textarea");
+        textarea.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "b", CtrlKey = false });
+
+        // Assert - value should not change
+        Assert.Equal(string.Empty, value);
+    }
+
+    /// <summary>
+    /// Verifies that unrecognized Ctrl+key combination is ignored.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_UnrecognizedCtrlKey_IsIgnored()
+    {
+        // Arrange
+        var value = string.Empty;
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, value)
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, v => value = v)));
+
+        // Act
+        var textarea = cut.Find(".editor-textarea");
+        textarea.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "z", CtrlKey = true });
+
+        // Assert - Undo goes through JS, so value should not change from InsertFormatting
+        Assert.Equal(string.Empty, value);
+    }
+
+    /// <summary>
+    /// Verifies OnDragStateChanged JSInvokable method sets drag state.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_OnDragStateChanged_ShowsDragOverlay()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Act
+        cut.InvokeAsync(() =>
+        {
+            var component = cut.Instance;
+            component.OnDragStateChanged(true);
+        });
+
+        // Assert
+        Assert.Contains("drag-over", cut.Markup);
+        Assert.Contains("Drop image to upload", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies OnDragStateChanged(false) removes drag overlay.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_OnDragStateChanged_False_RemovesDragOverlay()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Show drag overlay first
+        cut.InvokeAsync(() => cut.Instance.OnDragStateChanged(true));
+
+        // Act
+        cut.InvokeAsync(() => cut.Instance.OnDragStateChanged(false));
+
+        // Assert - the drag overlay text should be removed
+        Assert.DoesNotContain("Drop image to upload", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies OnImageReceived with null PostSlug does nothing.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_OnImageReceived_WithNullPostSlug_DoesNothing()
+    {
+        // Arrange
+        var value = "original";
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, value)
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, v => value = v)));
+
+        // Act
+        cut.InvokeAsync(() => cut.Instance.OnImageReceived("base64data", "test.png", "image/png"));
+
+        // Assert - value should not change
+        Assert.Equal("original", value);
+    }
+
+    /// <summary>
+    /// Verifies that undo button triggers JS interop call.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_UndoButton_InvokesJSInterop()
+    {
+        // Arrange
+        var undoInvocation = this.JSInterop.Setup<object>("markdownEditor.undo", _ => true);
+        var cut = this.Render<MarkdownEditor>();
+
+        // Act
+        var undoButton = cut.Find("button[title='Undo (Ctrl+Z)']");
+        undoButton.Click();
+
+        // Assert - JS interop was called
+        Assert.Single(this.JSInterop.Invocations, i => i.Identifier == "markdownEditor.undo");
+    }
+
+    /// <summary>
+    /// Verifies that redo button triggers JS interop call.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_RedoButton_InvokesJSInterop()
+    {
+        // Arrange
+        var redoInvocation = this.JSInterop.Setup<object>("markdownEditor.redo", _ => true);
+        var cut = this.Render<MarkdownEditor>();
+
+        // Act
+        var redoButton = cut.Find("button[title='Redo (Ctrl+Y)']");
+        redoButton.Click();
+
+        // Assert - JS interop was called
+        Assert.Single(this.JSInterop.Invocations, i => i.Identifier == "markdownEditor.redo");
+    }
+
+    /// <summary>
+    /// Verifies that RenderMarkdown handles invalid markdown gracefully.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WithContent_RendersPreview()
+    {
+        // Arrange & Act - tables should render
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "| Col1 | Col2 |\n|------|------|\n| A | B |"));
+
+        // Assert
+        Assert.Contains("<table", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that check spelling button is present in the toolbar.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_CheckSpellingButton_IsPresent()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var button = cut.Find("button[title='Check Spelling']");
+        Assert.NotNull(button);
+    }
+
+    /// <summary>
+    /// Verifies that the spell check overlay is present in the editor pane.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_SpellCheckOverlay_IsPresent()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var overlay = cut.Find(".spell-check-overlay");
+        Assert.NotNull(overlay);
+    }
+
+    /// <summary>
+    /// Verifies that clicking check spelling with markdown content uses CheckMarkdownAsync.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_CheckSpelling_UsesCheckMarkdownAsync()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>
+            {
+                new("wrld", false, ["world"]),
+            });
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "Hello wrld"));
+
+        // Act
+        var spellButton = cut.Find("button[title='Check Spelling']");
+        await cut.InvokeAsync(() => spellButton.Click());
+
+        // Assert
+        mockSpellCheck.Verify(s => s.CheckMarkdownAsync("Hello wrld", "en-US"), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that after spell check, overlay shows highlights for misspelled words.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_AfterSpellCheck_ShowsOverlayHighlights()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>
+            {
+                new("wrld", false, ["world"]),
+            });
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "Hello wrld"));
+
+        // Act
+        var spellButton = cut.Find("button[title='Check Spelling']");
+        await cut.InvokeAsync(() => spellButton.Click());
+
+        // Assert
+        var highlights = cut.FindAll(".spell-highlight");
+        Assert.NotEmpty(highlights);
+    }
+
+    /// <summary>
+    /// Verifies that clicking a highlighted word opens the suggestion popup.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_ClickHighlightedWord_OpensSuggestionPopup()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>
+            {
+                new("wrld", false, ["world"]),
+            });
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "Hello wrld"));
+
+        var spellButton = cut.Find("button[title='Check Spelling']");
+        await cut.InvokeAsync(() => spellButton.Click());
+
+        // Act
+        var highlight = cut.Find(".spell-highlight");
+        highlight.Click();
+
+        // Assert
+        var popup = cut.Find(".spell-popup");
+        Assert.NotNull(popup);
+    }
+
+    /// <summary>
+    /// Verifies that the spell check overlay syncs scroll with the textarea via JS interop.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_AfterSpellCheck_RegistersScrollSync()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>
+            {
+                new("wrld", false, ["world"]),
+            });
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "Hello wrld"));
+
+        // Act
+        var spellButton = cut.Find("button[title='Check Spelling']");
+        await cut.InvokeAsync(() => spellButton.Click());
+
+        // Assert - scroll sync should be called via JS interop
+        var invocations = this.JSInterop.Invocations
+            .Where(i => i.Identifier == "markdownEditor.syncOverlayScroll")
+            .ToList();
+        Assert.Single(invocations);
+    }
+
+    /// <summary>
+    /// Verifies that debounced spell check fires after typing stops.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_AfterTyping_DebouncedSpellCheckFires()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>());
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, string.Empty));
+
+        // Act - simulate typing
+        var textarea = cut.Find("textarea");
+        await cut.InvokeAsync(() => textarea.Input(new ChangeEventArgs { Value = "Hello wrld" }));
+
+        // Assert - wait for debounce and verify spell check was called
+        cut.WaitForAssertion(
+            () => mockSpellCheck.Verify(
+                s => s.CheckMarkdownAsync("Hello wrld", "en-US"),
+                Times.Once),
+            timeout: TimeSpan.FromSeconds(3));
+    }
+
+    /// <summary>
+    /// Verifies that rapid typing resets the debounce timer.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_RapidTyping_DebounceResetsTimer()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>());
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, string.Empty));
+
+        // Act - simulate rapid typing (multiple inputs)
+        var textarea = cut.Find("textarea");
+        await cut.InvokeAsync(() => textarea.Input(new ChangeEventArgs { Value = "H" }));
+        await cut.InvokeAsync(() => textarea.Input(new ChangeEventArgs { Value = "He" }));
+        await cut.InvokeAsync(() => textarea.Input(new ChangeEventArgs { Value = "Hello" }));
+
+        // Assert - only one spell check after debounce, using the final value
+        cut.WaitForAssertion(
+            () => mockSpellCheck.Verify(
+                s => s.CheckMarkdownAsync("Hello", "en-US"),
+                Times.Once),
+            timeout: TimeSpan.FromSeconds(3));
+
+        // Should not have been called with intermediate values
+        mockSpellCheck.Verify(s => s.CheckMarkdownAsync("H", "en-US"), Times.Never);
+        mockSpellCheck.Verify(s => s.CheckMarkdownAsync("He", "en-US"), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that dispose cleans up scroll sync handlers.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MarkdownEditor_Dispose_UnregistersScrollSync()
+    {
+        // Arrange
+        var mockSpellCheck = new Mock<IClientSpellCheckService>();
+        mockSpellCheck.Setup(s => s.CheckMarkdownAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<SpellCheckResult>
+            {
+                new("wrld", false, ["world"]),
+            });
+
+        this.Services.AddSingleton(mockSpellCheck.Object);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "Hello wrld"));
+
+        // Trigger spell check to register scroll sync
+        var spellButton = cut.Find("button[title='Check Spelling']");
+        await cut.InvokeAsync(() => spellButton.Click());
+
+        // Act - explicitly invoke DisposeAsync
+        await cut.InvokeAsync(async () => await ((IAsyncDisposable)cut.Instance).DisposeAsync());
+
+        // Assert - unregister scroll sync should have been called
+        var invocations = this.JSInterop.Invocations
+            .Where(i => i.Identifier == "markdownEditor.unregisterScrollSync")
+            .ToList();
+        Assert.Single(invocations);
     }
 }

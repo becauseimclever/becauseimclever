@@ -1279,6 +1279,174 @@ public class AdminPostServiceTests
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync returns posts for the specified author.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithMatchingPosts_ReturnsAuthorPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var authorPost = this.CreateTestPost("author-post", "Author Post", DateTime.UtcNow);
+        authorPost.AuthorId = "author@test.com";
+        authorPost.AuthorName = "Test Author";
+
+        var otherPost = this.CreateTestPost("other-post", "Other Post", DateTime.UtcNow);
+        otherPost.AuthorId = "other@test.com";
+
+        context.Posts.AddRange(authorPost, otherPost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsByAuthorAsync("author@test.com")).ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("author-post", result[0].Slug);
+        Assert.Equal("author@test.com", result[0].AuthorId);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync returns empty when no posts match author.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithNoMatchingPosts_ReturnsEmpty()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var post = this.CreateTestPost("some-post", "Some Post", DateTime.UtcNow);
+        post.AuthorId = "other@test.com";
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetPostsByAuthorAsync("nonexistent@test.com");
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync returns posts ordered by published date descending.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithMultiplePosts_ReturnsOrderedByPublishedDateDescending()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var oldPost = this.CreateTestPost("old", "Old Post", DateTime.UtcNow.AddDays(-10));
+        oldPost.AuthorId = "author@test.com";
+
+        var newPost = this.CreateTestPost("new", "New Post", DateTime.UtcNow);
+        newPost.AuthorId = "author@test.com";
+
+        context.Posts.AddRange(oldPost, newPost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsByAuthorAsync("author@test.com")).ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Equal("new", result[0].Slug);
+        Assert.Equal("old", result[1].Slug);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync throws when authorId is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithNullAuthorId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            service.GetPostsByAuthorAsync(null!));
+    }
+
+    /// <summary>
+    /// Verifies that GetPostEntityAsync returns the blog post entity when found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostEntityAsync_WhenPostExists_ReturnsBlogPost()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var post = this.CreateTestPost("test-post", "Test Post", DateTime.UtcNow, PostStatus.Draft);
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetPostEntityAsync("test-post");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("test-post", result.Slug);
+        Assert.Equal("Test Post", result.Title);
+        Assert.Equal(PostStatus.Draft, result.Status);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostEntityAsync returns null when post not found.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostEntityAsync_WhenPostNotFound_ReturnsNull()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetPostEntityAsync("non-existent");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostEntityAsync throws when slug is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostEntityAsync_WithNullSlug_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            service.GetPostEntityAsync(null!));
+    }
+
     private BlogDbContext CreateContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<BlogDbContext>()

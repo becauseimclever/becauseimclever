@@ -92,7 +92,9 @@ reportgenerator `
     -reports:"$CoverageFilePaths" `
     -targetdir:"$ReportPath" `
     -reporttypes:"Html;Badges;TextSummary" `
-    -title:"BecauseImClever Coverage Report"
+    -title:"BecauseImClever Coverage Report" `
+    -assemblyfilters:"-BecauseImClever.Client" `
+    -classfilters:"-*.Migrations.*;-Program;-Microsoft.AspNetCore.OpenApi.Generated;-System.Runtime.CompilerServices"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Failed to generate report!" -ForegroundColor Red

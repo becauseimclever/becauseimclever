@@ -13,7 +13,7 @@
     --color-border: #a0a0a0;
 
     /* Typography */
-    --font-body: "Geneva", "Lucida Grande", "Segoe UI", sans-serif;
+    --font-body: "Geneva", "Lucida Grande", "Segoe UI", "Noto Sans JP", sans-serif;
     --font-mono: "Monaco", "Courier New", monospace;
 
     /* Borders & Shadows */

@@ -13,7 +13,7 @@
     --color-border: #4a4a4a;
 
     /* Typography */
-    --font-body: "Courier New", "Lucida Console", monospace;
+    --font-body: "Courier New", "Lucida Console", "Noto Sans JP", monospace;
     --font-mono: "Courier New", "Lucida Console", monospace;
 
     /* Borders & Shadows */
