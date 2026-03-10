@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="800" height="350">
+  <!-- Sky -->
+  <rect x="0" y="0" width="800" height="150" fill="#87CEEB"/>
+  <!-- Clouds -->
+  <g opacity="0.8">
+    <ellipse cx="120" cy="40" rx="50" ry="20" fill="white"/>
+    <ellipse cx="150" cy="35" rx="40" ry="18" fill="white"/>
+    <ellipse cx="90" cy="38" rx="35" ry="15" fill="white"/>
+    <ellipse cx="500" cy="55" rx="60" ry="22" fill="white"/>
+    <ellipse cx="540" cy="48" rx="45" ry="18" fill="white"/>
+    <ellipse cx="470" cy="50" rx="40" ry="16" fill="white"/>
+    <ellipse cx="700" cy="30" rx="35" ry="14" fill="white"/>
+    <ellipse cx="730" cy="26" rx="30" ry="12" fill="white"/>
+  </g>
+  <!-- Sun -->
+  <circle cx="680" cy="50" r="30" fill="#FFD700" opacity="0.9"/>
+  <g opacity="0.4">
+    <line x1="680" y1="10" x2="680" y2="0" stroke="#FFD700" stroke-width="3"/>
+    <line x1="710" y1="25" x2="720" y2="18" stroke="#FFD700" stroke-width="3"/>
+    <line x1="715" y1="55" x2="725" y2="55" stroke="#FFD700" stroke-width="3"/>
+    <line x1="650" y1="25" x2="640" y2="18" stroke="#FFD700" stroke-width="3"/>
+    <line x1="645" y1="55" x2="635" y2="55" stroke="#FFD700" stroke-width="3"/>
+  </g>
+  <!-- Ground / lawn -->
+  <rect x="0" y="150" width="800" height="200" fill="#4CAF50"/>
+  <rect x="0" y="150" width="800" height="10" fill="#388E3C"/>
+  <!-- Garden path -->
+  <path d="M350,350 Q360,300 380,250 Q400,200 400,160" fill="none" stroke="#D2B48C" stroke-width="40" opacity="0.7"/>
+  <path d="M350,350 Q360,300 380,250 Q400,200 400,160" fill="none" stroke="#C4A57B" stroke-width="36" opacity="0.5"/>
+  <!-- Path stones -->
+  <g opacity="0.3">
+    <ellipse cx="370" cy="300" rx="12" ry="6" fill="#8B8682" transform="rotate(10,370,300)"/>
+    <ellipse cx="380" cy="270" rx="10" ry="5" fill="#8B8682" transform="rotate(-5,380,270)"/>
+    <ellipse cx="390" cy="240" rx="11" ry="5" fill="#8B8682" transform="rotate(8,390,240)"/>
+    <ellipse cx="395" cy="210" rx="10" ry="5" fill="#8B8682"/>
+    <ellipse cx="398" cy="180" rx="9" ry="4" fill="#8B8682" transform="rotate(-3,398,180)"/>
+  </g>
+  <!-- Hedge maze entrance (left) -->
+  <g transform="translate(30,120)">
+    <!-- Back hedge wall -->
+    <rect x="0" y="0" width="200" height="80" rx="10" fill="#2E7D32"/>
+    <rect x="0" y="0" width="200" height="80" rx="10" fill="url(#hedgeTexture)" opacity="0.3"/>
+    <!-- Maze opening -->
+    <rect x="70" y="30" width="60" height="50" fill="#1B5E20"/>
+    <!-- Top arch -->
+    <path d="M70,35 Q100,10 130,35" fill="#2E7D32"/>
+    <!-- Left hedge column -->
+    <rect x="0" y="0" width="70" height="80" rx="8" fill="#388E3C"/>
+    <!-- Right hedge column -->
+    <rect x="130" y="0" width="70" height="80" rx="8" fill="#388E3C"/>
+    <!-- Hedge leaf details -->
+    <g opacity="0.5">
+      <circle cx="25" cy="20" r="8" fill="#43A047"/>
+      <circle cx="45" cy="40" r="7" fill="#43A047"/>
+      <circle cx="20" cy="55" r="9" fill="#43A047"/>
+      <circle cx="50" cy="65" r="6" fill="#43A047"/>
+      <circle cx="155" cy="20" r="8" fill="#43A047"/>
+      <circle cx="175" cy="40" r="7" fill="#43A047"/>
+      <circle cx="160" cy="55" r="9" fill="#43A047"/>
+      <circle cx="180" cy="65" r="6" fill="#43A047"/>
+    </g>
+    <!-- "MAZE" text above -->
+    <rect x="55" y="-15" width="90" height="18" rx="3" fill="#5C4033"/>
+    <text x="100" y="-2" font-family="serif" font-size="12" fill="#DAA520" text-anchor="middle">LABYRINTH</text>
+  </g>
+  <!-- Stone fountain (center) -->
+  <g transform="translate(340,150)">
+    <!-- Base -->
+    <ellipse cx="60" cy="90" rx="60" ry="15" fill="#808080" stroke="#696969" stroke-width="2"/>
+    <ellipse cx="60" cy="85" rx="55" ry="13" fill="#A9A9A9"/>
+    <!-- Water in basin -->
+    <ellipse cx="60" cy="82" rx="48" ry="10" fill="#4682B4" opacity="0.5"/>
+    <!-- Pedestal -->
+    <rect x="45" y="40" width="30" height="45" fill="#A9A9A9" stroke="#808080" stroke-width="1"/>
+    <!-- Upper bowl -->
+    <ellipse cx="60" cy="42" rx="35" ry="10" fill="#A9A9A9" stroke="#808080" stroke-width="1"/>
+    <ellipse cx="60" cy="39" rx="30" ry="8" fill="#B0C4DE"/>
+    <!-- Water in upper bowl -->
+    <ellipse cx="60" cy="38" rx="25" ry="6" fill="#4682B4" opacity="0.4"/>
+    <!-- Water jet -->
+    <line x1="60" y1="38" x2="60" y2="15" stroke="#87CEEB" stroke-width="2" opacity="0.6"/>
+    <!-- Water droplets -->
+    <circle cx="55" cy="50" r="2" fill="#87CEEB" opacity="0.4"/>
+    <circle cx="65" cy="55" r="1.5" fill="#87CEEB" opacity="0.4"/>
+    <circle cx="50" cy="60" r="2" fill="#87CEEB" opacity="0.3"/>
+    <circle cx="70" cy="65" r="1.5" fill="#87CEEB" opacity="0.3"/>
+    <!-- Splash lines -->
+    <path d="M50,38 Q45,30 42,38" fill="none" stroke="#87CEEB" stroke-width="1" opacity="0.5"/>
+    <path d="M70,38 Q75,30 78,38" fill="none" stroke="#87CEEB" stroke-width="1" opacity="0.5"/>
+  </g>
+  <!-- Garden bench (right) -->
+  <g transform="translate(580,200)">
+    <!-- Bench seat -->
+    <rect x="0" y="20" width="140" height="10" rx="2" fill="#8B4513" stroke="#6B3410" stroke-width="2"/>
+    <!-- Back rest -->
+    <rect x="5" y="0" width="130" height="5" rx="2" fill="#8B4513"/>
+    <rect x="5" y="8" width="130" height="5" rx="2" fill="#8B4513"/>
+    <rect x="5" y="16" width="130" height="5" rx="2" fill="#8B4513"/>
+    <!-- Vertical slats connecting back rest -->
+    <rect x="10" y="0" width="4" height="20" fill="#6B3410"/>
+    <rect x="68" y="0" width="4" height="20" fill="#6B3410"/>
+    <rect x="126" y="0" width="4" height="20" fill="#6B3410"/>
+    <!-- Legs -->
+    <rect x="10" y="30" width="6" height="25" fill="#8B4513"/>
+    <rect x="124" y="30" width="6" height="25" fill="#8B4513"/>
+    <!-- Armrests -->
+    <rect x="0" y="15" width="12" height="5" rx="1" fill="#6B3410"/>
+    <rect x="128" y="15" width="12" height="5" rx="1" fill="#6B3410"/>
+  </g>
+  <!-- Flowers scattered -->
+  <g>
+    <!-- Flower cluster 1 -->
+    <circle cx="280" cy="200" r="5" fill="#FF69B4"/>
+    <circle cx="290" cy="195" r="4" fill="#FF1493"/>
+    <circle cx="275" cy="195" r="3" fill="#FFB6C1"/>
+    <line x1="280" y1="205" x2="280" y2="215" stroke="#228B22" stroke-width="2"/>
+    <line x1="290" y1="199" x2="290" y2="212" stroke="#228B22" stroke-width="2"/>
+    <!-- Flower cluster 2 -->
+    <circle cx="500" cy="230" r="5" fill="#FFD700"/>
+    <circle cx="510" cy="225" r="4" fill="#FFA500"/>
+    <circle cx="495" cy="228" r="3" fill="#FFE4B5"/>
+    <line x1="500" y1="235" x2="500" y2="245" stroke="#228B22" stroke-width="2"/>
+    <line x1="510" y1="229" x2="510" y2="242" stroke="#228B22" stroke-width="2"/>
+    <!-- Flower cluster 3 -->
+    <circle cx="150" cy="260" r="4" fill="#9370DB"/>
+    <circle cx="160" cy="255" r="5" fill="#8A2BE2"/>
+    <circle cx="145" cy="257" r="3" fill="#DDA0DD"/>
+    <line x1="150" y1="264" x2="150" y2="275" stroke="#228B22" stroke-width="2"/>
+    <line x1="160" y1="260" x2="160" y2="273" stroke="#228B22" stroke-width="2"/>
+    <!-- Butterfly -->
+    <path d="M620,140 Q610,130 615,120 Q620,130 620,140" fill="#FF69B4" opacity="0.7"/>
+    <path d="M620,140 Q630,130 625,120 Q620,130 620,140" fill="#FFB6C1" opacity="0.7"/>
+    <line x1="620" y1="140" x2="620" y2="145" stroke="#333" stroke-width="1"/>
+  </g>
+  <!-- Trees in background -->
+  <g transform="translate(0,70)">
+    <rect x="770" y="20" width="15" height="60" fill="#5C4033"/>
+    <circle cx="777" cy="10" r="30" fill="#2E7D32"/>
+    <circle cx="760" cy="25" r="20" fill="#388E3C"/>
+    <circle cx="795" cy="25" r="20" fill="#388E3C"/>
+  </g>
+  <defs>
+    <pattern id="hedgeTexture" width="10" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="5" r="4" fill="#2E7D32"/>
+    </pattern>
+  </defs>
+</svg>

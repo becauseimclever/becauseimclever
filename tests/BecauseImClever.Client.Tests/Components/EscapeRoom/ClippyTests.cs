@@ -115,13 +115,14 @@ public class ClippyTests : BunitContext
     }
 
     [Fact]
-    public void Clippy_RendersClippyEmoji()
+    public void Clippy_RendersClippySvgImage()
     {
         // Arrange & Act
         var cut = this.Render<Clippy>(parameters => parameters
             .Add(p => p.Pose, ClippyPose.Idle));
 
-        // Assert — the paperclip emoji is Clippy's representation
-        Assert.Contains("\U0001F4CE", cut.Markup);
+        // Assert — Clippy is represented by an SVG image
+        var img = cut.Find("img.clippy-icon");
+        Assert.Equal("images/escape-room/clippy.svg", img.GetAttribute("src"));
     }
 }

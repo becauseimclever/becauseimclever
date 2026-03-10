@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="800" height="350">
+  <!-- Floor - stone -->
+  <rect x="0" y="260" width="800" height="90" fill="#708090"/>
+  <g opacity="0.3">
+    <rect x="5" y="265" width="80" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="90" y="265" width="60" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="155" y="265" width="90" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="250" y="265" width="70" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="325" y="265" width="85" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="415" y="265" width="75" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="495" y="265" width="90" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="590" y="265" width="65" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="660" y="265" width="80" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="745" y="265" width="55" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="30" y="310" width="70" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="105" y="310" width="85" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="195" y="310" width="60" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="260" y="310" width="90" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="355" y="310" width="75" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="435" y="310" width="80" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="520" y="310" width="70" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="595" y="310" width="85" height="40" rx="2" fill="#778899" stroke="#5F6F7F" stroke-width="1"/>
+    <rect x="685" y="310" width="60" height="40" rx="2" fill="#6E7E8E" stroke="#5F6F7F" stroke-width="1"/>
+  </g>
+  <!-- Walls - stone dungeon style -->
+  <rect x="0" y="0" width="800" height="260" fill="#808B96"/>
+  <!-- Stone block pattern on walls -->
+  <g opacity="0.2">
+    <rect x="0" y="5" width="120" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="125" y="5" width="100" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="230" y="5" width="130" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="365" y="5" width="110" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="480" y="5" width="140" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="625" y="5" width="90" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="720" y="5" width="80" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="60" y="60" width="110" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="175" y="60" width="130" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="310" y="60" width="100" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="415" y="60" width="120" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="540" y="60" width="110" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+    <rect x="655" y="60" width="145" height="50" rx="3" fill="none" stroke="#5F6B78" stroke-width="2"/>
+  </g>
+  <!-- Large exit door (center) -->
+  <g transform="translate(250,20)">
+    <!-- Door frame -->
+    <rect x="0" y="0" width="300" height="240" rx="5" fill="#5C4033" stroke="#3E2723" stroke-width="5"/>
+    <!-- Door arch -->
+    <path d="M10,30 L10,220 L140,220 L140,30 Q75,0 10,30" fill="#8B4513" stroke="#6B3410" stroke-width="3"/>
+    <path d="M160,30 L160,220 L290,220 L290,30 Q225,0 160,30" fill="#8B4513" stroke="#6B3410" stroke-width="3"/>
+    <!-- Door panels -->
+    <rect x="25" y="50" width="110" height="70" rx="3" fill="#6B3410" stroke="#5C3410" stroke-width="1"/>
+    <rect x="25" y="135" width="110" height="70" rx="3" fill="#6B3410" stroke="#5C3410" stroke-width="1"/>
+    <rect x="175" y="50" width="100" height="70" rx="3" fill="#6B3410" stroke="#5C3410" stroke-width="1"/>
+    <rect x="175" y="135" width="100" height="70" rx="3" fill="#6B3410" stroke="#5C3410" stroke-width="1"/>
+    <!-- Door split line -->
+    <line x1="150" y1="15" x2="150" y2="220" stroke="#3E2723" stroke-width="3"/>
+    <!-- Door handles -->
+    <circle cx="135" cy="135" r="8" fill="#DAA520" stroke="#B8860B" stroke-width="2"/>
+    <circle cx="135" cy="135" r="3" fill="#B8860B"/>
+    <circle cx="165" cy="135" r="8" fill="#DAA520" stroke="#B8860B" stroke-width="2"/>
+    <circle cx="165" cy="135" r="3" fill="#B8860B"/>
+    <!-- Keyhole -->
+    <ellipse cx="150" cy="155" rx="5" ry="7" fill="#1a1a1a"/>
+    <rect x="148" y="158" width="4" height="8" fill="#1a1a1a"/>
+  </g>
+  <!-- Combination lock (on door) -->
+  <g transform="translate(340,170)">
+    <!-- Lock body -->
+    <rect x="0" y="0" width="120" height="70" rx="5" fill="#2a2a2a" stroke="#444" stroke-width="2"/>
+    <!-- Combination dials -->
+    <g>
+      <!-- Dial 1 -->
+      <rect x="10" y="15" width="22" height="40" rx="3" fill="#333" stroke="#555" stroke-width="1"/>
+      <text x="21" y="42" font-family="monospace" font-size="20" fill="#0F0" text-anchor="middle">0</text>
+      <!-- Dial 2 -->
+      <rect x="36" y="15" width="22" height="40" rx="3" fill="#333" stroke="#555" stroke-width="1"/>
+      <text x="47" y="42" font-family="monospace" font-size="20" fill="#0F0" text-anchor="middle">0</text>
+      <!-- Dial 3 -->
+      <rect x="62" y="15" width="22" height="40" rx="3" fill="#333" stroke="#555" stroke-width="1"/>
+      <text x="73" y="42" font-family="monospace" font-size="20" fill="#0F0" text-anchor="middle">0</text>
+      <!-- Dial 4 -->
+      <rect x="88" y="15" width="22" height="40" rx="3" fill="#333" stroke="#555" stroke-width="1"/>
+      <text x="99" y="42" font-family="monospace" font-size="20" fill="#0F0" text-anchor="middle">0</text>
+    </g>
+    <!-- Lock indicator light -->
+    <circle cx="60" cy="60" r="4" fill="#FF0000"/>
+    <!-- Label -->
+    <text x="60" y="10" font-family="monospace" font-size="7" fill="#888" text-anchor="middle">ENTER CODE</text>
+  </g>
+  <!-- Torch left -->
+  <g transform="translate(80,60)">
+    <rect x="0" y="20" width="12" height="40" fill="#5C4033"/>
+    <rect x="-2" y="55" width="16" height="6" rx="2" fill="#8B4513"/>
+    <!-- Flame -->
+    <path d="M0,20 Q-5,5 6,0 Q17,5 12,20" fill="#FF6600" opacity="0.8"/>
+    <path d="M3,20 Q1,10 6,5 Q11,10 9,20" fill="#FFD700" opacity="0.7"/>
+    <!-- Glow -->
+    <circle cx="6" cy="15" r="20" fill="#FFA500" opacity="0.1"/>
+  </g>
+  <!-- Torch right -->
+  <g transform="translate(700,60)">
+    <rect x="0" y="20" width="12" height="40" fill="#5C4033"/>
+    <rect x="-2" y="55" width="16" height="6" rx="2" fill="#8B4513"/>
+    <path d="M0,20 Q-5,5 6,0 Q17,5 12,20" fill="#FF6600" opacity="0.8"/>
+    <path d="M3,20 Q1,10 6,5 Q11,10 9,20" fill="#FFD700" opacity="0.7"/>
+    <circle cx="6" cy="15" r="20" fill="#FFA500" opacity="0.1"/>
+  </g>
+  <!-- Chain decorations on walls -->
+  <g opacity="0.5">
+    <!-- Left chain -->
+    <ellipse cx="30" cy="150" rx="6" ry="8" fill="none" stroke="#888" stroke-width="2"/>
+    <ellipse cx="30" cy="164" rx="6" ry="8" fill="none" stroke="#888" stroke-width="2"/>
+    <ellipse cx="30" cy="178" rx="6" ry="8" fill="none" stroke="#888" stroke-width="2"/>
+    <!-- Right chain -->
+    <ellipse cx="770" cy="150" rx="6" ry="8" fill="none" stroke="#888" stroke-width="2"/>
+    <ellipse cx="770" cy="164" rx="6" ry="8" fill="none" stroke="#888" stroke-width="2"/>
+    <ellipse cx="770" cy="178" rx="6" ry="8" fill="none" stroke="#888" stroke-width="2"/>
+  </g>
+  <!-- "EXIT" sign above door -->
+  <g transform="translate(340,0)">
+    <rect x="0" y="2" width="120" height="25" rx="3" fill="#8B0000" stroke="#660000" stroke-width="2"/>
+    <text x="60" y="20" font-family="sans-serif" font-size="16" font-weight="bold" fill="#FFD700" text-anchor="middle">EXIT</text>
+  </g>
+</svg>

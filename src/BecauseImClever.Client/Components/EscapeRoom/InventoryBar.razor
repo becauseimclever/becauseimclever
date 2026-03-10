@@ -20,7 +20,7 @@
                 <button class="inventory-item @(isSelected ? "selected" : "")"
                         title="@item.Name"
                         @onclick="() => State.SelectItem(itemId)">
-                    <span class="item-icon">@item.Icon</span>
+                    <img class="item-icon" src="@item.Icon" alt="@item.Name" />
                 </button>
             }
         }

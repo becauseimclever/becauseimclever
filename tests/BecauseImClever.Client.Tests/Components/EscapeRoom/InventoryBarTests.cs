@@ -46,7 +46,8 @@ public class InventoryBarTests : BunitContext
         var cut = this.Render<InventoryBar>();
 
         // Assert
-        Assert.Contains("🗝️", cut.Markup);
+        var img = cut.Find("img.item-icon");
+        Assert.Equal("images/escape-room/brass-key.svg", img.GetAttribute("src"));
     }
 
     [Fact]
@@ -61,8 +62,10 @@ public class InventoryBarTests : BunitContext
         var cut = this.Render<InventoryBar>();
 
         // Assert
-        Assert.Contains("🗝️", cut.Markup);
-        Assert.Contains("🌿", cut.Markup);
+        var images = cut.FindAll("img.item-icon");
+        Assert.Equal(2, images.Count);
+        Assert.Equal("images/escape-room/brass-key.svg", images[0].GetAttribute("src"));
+        Assert.Equal("images/escape-room/garden-key.svg", images[1].GetAttribute("src"));
     }
 
     [Fact]
@@ -133,13 +136,14 @@ public class InventoryBarTests : BunitContext
         // Arrange
         this.state.StartNewGame(seed: 42);
         var cut = this.Render<InventoryBar>();
-        Assert.DoesNotContain("🗝️", cut.Markup);
+        Assert.Empty(cut.FindAll("img.item-icon"));
 
         // Act
         this.state.AddItem("brass-key");
 
         // Assert
-        Assert.Contains("🗝️", cut.Markup);
+        var img = cut.Find("img.item-icon");
+        Assert.Equal("images/escape-room/brass-key.svg", img.GetAttribute("src"));
     }
 
     [Fact]
@@ -149,12 +153,12 @@ public class InventoryBarTests : BunitContext
         this.state.StartNewGame(seed: 42);
         this.state.AddItem("brass-key");
         var cut = this.Render<InventoryBar>();
-        Assert.Contains("🗝️", cut.Markup);
+        Assert.NotEmpty(cut.FindAll("img.item-icon"));
 
         // Act
         this.state.UseItem("brass-key");
 
         // Assert
-        Assert.DoesNotContain("🗝️", cut.Markup);
+        Assert.Empty(cut.FindAll("img.item-icon"));
     }
 }

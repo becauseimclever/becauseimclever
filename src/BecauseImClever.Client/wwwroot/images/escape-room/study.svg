@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="800" height="350">
+  <!-- Floor - dark carpet -->
+  <rect x="0" y="260" width="800" height="90" fill="#5C4033"/>
+  <rect x="40" y="270" width="720" height="70" fill="#6B4226" opacity="0.5" rx="3"/>
+  <!-- Wall -->
+  <rect x="0" y="0" width="800" height="260" fill="#d4c4a8"/>
+  <!-- Crown molding -->
+  <rect x="0" y="0" width="800" height="6" fill="#8B6914"/>
+  <!-- Baseboard -->
+  <rect x="0" y="254" width="800" height="6" fill="#8B6914"/>
+  <!-- Fireplace (right side) -->
+  <g transform="translate(560,80)">
+    <!-- Mantel -->
+    <rect x="-15" y="0" width="230" height="12" rx="3" fill="#8B6914" stroke="#6B4914" stroke-width="2"/>
+    <!-- Fireplace surround -->
+    <rect x="0" y="12" width="200" height="168" fill="#A0522D" stroke="#8B4513" stroke-width="3"/>
+    <!-- Fireplace opening -->
+    <path d="M20,30 L20,170 L180,170 L180,30 Q100,10 20,30" fill="#1a1a1a"/>
+    <!-- Fire glow -->
+    <ellipse cx="100" cy="165" rx="60" ry="20" fill="#FF4500" opacity="0.3"/>
+    <!-- Fire logs -->
+    <rect x="50" y="150" width="100" height="14" rx="4" fill="#5C4033" transform="rotate(-5,100,157)"/>
+    <rect x="60" y="145" width="80" height="12" rx="4" fill="#6B4226" transform="rotate(8,100,151)"/>
+    <!-- Flames -->
+    <path d="M75,150 Q80,120 90,135 Q95,105 105,130 Q110,110 115,140 Q125,120 125,150" fill="#FF6600" opacity="0.7"/>
+    <path d="M85,150 Q90,130 100,140 Q105,120 110,145" fill="#FFD700" opacity="0.6"/>
+    <!-- Brick pattern around opening -->
+    <g opacity="0.3">
+      <rect x="5" y="30" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="5" y="42" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="5" y="54" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="5" y="66" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="181" y="30" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="181" y="42" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="181" y="54" width="14" height="8" rx="1" fill="#CD5C5C"/>
+      <rect x="181" y="66" width="14" height="8" rx="1" fill="#CD5C5C"/>
+    </g>
+    <!-- Items on mantel -->
+    <!-- Clock -->
+    <circle cx="60" cy="-5" r="14" fill="#DAA520" stroke="#B8860B" stroke-width="2"/>
+    <circle cx="60" cy="-5" r="11" fill="#FFFFF0"/>
+    <line x1="60" y1="-5" x2="60" y2="-13" stroke="#333" stroke-width="1.5"/>
+    <line x1="60" y1="-5" x2="66" y2="-2" stroke="#333" stroke-width="1"/>
+    <!-- Candlestick -->
+    <rect x="140" y="-20" width="6" height="18" fill="#DAA520"/>
+    <rect x="136" y="-2" width="14" height="4" rx="1" fill="#DAA520"/>
+    <ellipse cx="143" cy="-22" rx="3" ry="5" fill="#FFA500"/>
+  </g>
+  <!-- Chalkboard (center-left wall) -->
+  <g transform="translate(200,20)">
+    <rect x="0" y="0" width="280" height="170" rx="3" fill="#5C4033" stroke="#4a3020" stroke-width="4"/>
+    <rect x="12" y="12" width="256" height="146" fill="#2F4F4F"/>
+    <!-- Chalk writing -->
+    <g opacity="0.8" fill="none" stroke="#e8e8d0" stroke-width="1.5">
+      <!-- Math equations -->
+      <text x="30" y="45" font-family="serif" font-size="16" fill="#e8e8d0" stroke="none">E = mc²</text>
+      <text x="30" y="75" font-family="serif" font-size="14" fill="#e8e8d0" stroke="none">∑ f(x) = ?</text>
+      <!-- Diagram - triangle -->
+      <polygon points="180,35 220,85 140,85" stroke-width="1.5"/>
+      <text x="170" y="70" font-family="serif" font-size="11" fill="#e8e8d0" stroke="none">A</text>
+      <text x="215" y="95" font-family="serif" font-size="11" fill="#e8e8d0" stroke="none">B</text>
+      <text x="130" y="95" font-family="serif" font-size="11" fill="#e8e8d0" stroke="none">C</text>
+    </g>
+    <!-- More chalk marks -->
+    <g opacity="0.5">
+      <line x1="30" y1="100" x2="120" y2="100" stroke="#d0d0c0" stroke-width="1"/>
+      <line x1="30" y1="115" x2="100" y2="115" stroke="#d0d0c0" stroke-width="1"/>
+      <line x1="30" y1="130" x2="130" y2="130" stroke="#d0d0c0" stroke-width="1"/>
+      <line x1="160" y1="110" x2="240" y2="110" stroke="#d0d0c0" stroke-width="1"/>
+      <line x1="160" y1="125" x2="230" y2="125" stroke="#d0d0c0" stroke-width="1"/>
+      <line x1="160" y1="140" x2="245" y2="140" stroke="#d0d0c0" stroke-width="1"/>
+    </g>
+    <!-- Chalk tray -->
+    <rect x="40" y="162" width="200" height="8" rx="2" fill="#5C4033"/>
+    <!-- Chalks -->
+    <rect x="60" y="158" width="30" height="5" rx="2" fill="#FFFFF0"/>
+    <rect x="100" y="158" width="25" height="5" rx="2" fill="#FFD700"/>
+    <rect x="140" y="158" width="20" height="5" rx="2" fill="#87CEEB"/>
+  </g>
+  <!-- Writing desk (left side) -->
+  <g transform="translate(20,195)">
+    <!-- Desk surface -->
+    <rect x="0" y="0" width="160" height="10" rx="2" fill="#654321" stroke="#4a3020" stroke-width="2"/>
+    <!-- Desk legs and front panel -->
+    <rect x="5" y="10" width="150" height="55" fill="#5C4033" stroke="#4a3020" stroke-width="1"/>
+    <!-- Drawers -->
+    <rect x="15" y="18" width="55" height="18" rx="2" fill="#654321" stroke="#4a3020" stroke-width="1"/>
+    <circle cx="42" cy="27" r="3" fill="#DAA520"/>
+    <rect x="15" y="42" width="55" height="18" rx="2" fill="#654321" stroke="#4a3020" stroke-width="1"/>
+    <circle cx="42" cy="51" r="3" fill="#DAA520"/>
+    <rect x="80" y="18" width="65" height="42" rx="2" fill="#654321" stroke="#4a3020" stroke-width="1"/>
+    <circle cx="112" cy="39" r="3" fill="#DAA520"/>
+    <!-- Items on desk -->
+    <!-- Stack of papers -->
+    <rect x="20" y="-15" width="40" height="15" fill="#FFFFF0" transform="rotate(-2,40,-8)"/>
+    <rect x="22" y="-13" width="40" height="15" fill="#FFF8DC" transform="rotate(1,42,-6)"/>
+    <!-- Quill pen in holder -->
+    <rect x="90" y="-10" width="12" height="10" rx="2" fill="#333"/>
+    <line x1="96" y1="-10" x2="110" y2="-40" stroke="#8B4513" stroke-width="2"/>
+    <path d="M110,-40 Q115,-42 112,-35" fill="#8B4513"/>
+    <!-- Desk lamp -->
+    <rect x="130" y="-8" width="8" height="8" rx="1" fill="#B8860B"/>
+    <line x1="134" y1="-8" x2="134" y2="-25" stroke="#B8860B" stroke-width="2"/>
+    <path d="M120,-30 L134,-25 L148,-30 L148,-25 L120,-25 Z" fill="#228B22" stroke="#006400" stroke-width="1"/>
+  </g>
+  <!-- Leather chair at desk -->
+  <g transform="translate(50,250)">
+    <rect x="0" y="0" width="60" height="10" rx="3" fill="#8B0000"/>
+    <rect x="5" y="-30" width="50" height="35" rx="5" fill="#8B0000" stroke="#660000" stroke-width="2"/>
+    <!-- Tufting buttons -->
+    <circle cx="20" cy="-18" r="2" fill="#660000"/>
+    <circle cx="40" cy="-18" r="2" fill="#660000"/>
+    <circle cx="30" cy="-5" r="2" fill="#660000"/>
+  </g>
+  <!-- Wall sconce light left -->
+  <g transform="translate(50,50)">
+    <rect x="0" y="0" width="10" height="25" fill="#DAA520"/>
+    <path d="M-6,25 L5,25 L16,25 L10,38 L0,38 z" fill="#DAA520" stroke="#B8860B" stroke-width="1"/>
+    <ellipse cx="5" cy="33" rx="4" ry="5" fill="#FFA500" opacity="0.7"/>
+  </g>
+  <!-- Wall sconce light right -->
+  <g transform="translate(530,50)">
+    <rect x="0" y="0" width="10" height="25" fill="#DAA520"/>
+    <path d="M-6,25 L5,25 L16,25 L10,38 L0,38 z" fill="#DAA520" stroke="#B8860B" stroke-width="1"/>
+    <ellipse cx="5" cy="33" rx="4" ry="5" fill="#FFA500" opacity="0.7"/>
+  </g>
+</svg>

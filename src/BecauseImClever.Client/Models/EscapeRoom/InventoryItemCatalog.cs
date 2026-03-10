@@ -10,12 +10,12 @@ public static class InventoryItemCatalog
         ["brass-key"] = new InventoryItem(
             "brass-key",
             "Brass Key",
-            "🗝️",
+            "images/escape-room/brass-key.svg",
             "A tarnished brass key found in the library. It might open a nearby door."),
         ["garden-key"] = new InventoryItem(
             "garden-key",
             "Garden Key",
-            "🌿",
+            "images/escape-room/garden-key.svg",
             "An ornate key shaped like a vine. It unlocks the garden gate."),
     };
 

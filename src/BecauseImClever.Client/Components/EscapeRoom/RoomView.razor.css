@@ -112,24 +112,60 @@
     background: linear-gradient(135deg, #ffe4b5 0%, #ffdab9 50%, #ffe4c4 100%);
 }
 
+.room-foyer .room-canvas {
+    background-image: url('/images/escape-room/foyer.svg');
+    background-size: cover;
+    background-position: center;
+}
+
 .room-library {
     background: linear-gradient(135deg, #d2b48c 0%, #c4a87a 50%, #deb887 100%);
+}
+
+.room-library .room-canvas {
+    background-image: url('/images/escape-room/library.svg');
+    background-size: cover;
+    background-position: center;
 }
 
 .room-kitchen {
     background: linear-gradient(135deg, #ffefd5 0%, #ffe4c4 50%, #ffdead 100%);
 }
 
+.room-kitchen .room-canvas {
+    background-image: url('/images/escape-room/kitchen.svg');
+    background-size: cover;
+    background-position: center;
+}
+
 .room-study {
     background: linear-gradient(135deg, #d4c4a8 0%, #c8b896 50%, #d2c2a6 100%);
+}
+
+.room-study .room-canvas {
+    background-image: url('/images/escape-room/study.svg');
+    background-size: cover;
+    background-position: center;
 }
 
 .room-garden {
     background: linear-gradient(135deg, #90ee90 0%, #98fb98 50%, #8fbc8f 100%);
 }
 
+.room-garden .room-canvas {
+    background-image: url('/images/escape-room/garden.svg');
+    background-size: cover;
+    background-position: center;
+}
+
 .room-exit {
     background: linear-gradient(135deg, #b0c4de 0%, #a9b8cc 50%, #c0d0e0 100%);
+}
+
+.room-exit .room-canvas {
+    background-image: url('/images/escape-room/exit.svg');
+    background-size: cover;
+    background-position: center;
 }
 
 /* Hotspot discoverability: subtle pulsing hint */
