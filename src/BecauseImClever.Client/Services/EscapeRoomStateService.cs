@@ -14,6 +14,7 @@ public class EscapeRoomStateService
     private readonly IJSRuntime js;
     private readonly HashSet<string> solvedPuzzles = [];
     private readonly List<string> inventory = [];
+    private readonly HashSet<string> unlockedDoors = [];
     private DateTimeOffset startTime;
 
     /// <summary>
@@ -46,6 +47,12 @@ public class EscapeRoomStateService
     /// <summary>Gets the list of collected inventory item IDs.</summary>
     public IReadOnlyList<string> Inventory => this.inventory;
 
+    /// <summary>Gets the set of explicitly unlocked door keys.</summary>
+    public IReadOnlySet<string> UnlockedDoors => this.unlockedDoors;
+
+    /// <summary>Gets the currently selected inventory item ID, or null if none selected.</summary>
+    public string? SelectedItem { get; private set; }
+
     /// <summary>Gets the elapsed time since the game started.</summary>
     public TimeSpan ElapsedTime => this.IsGameStarted ? DateTimeOffset.UtcNow - this.startTime : TimeSpan.Zero;
 
@@ -64,6 +71,8 @@ public class EscapeRoomStateService
         this.CurrentRoom = RoomId.Foyer;
         this.solvedPuzzles.Clear();
         this.inventory.Clear();
+        this.unlockedDoors.Clear();
+        this.SelectedItem = null;
         this.startTime = DateTimeOffset.UtcNow;
         this.IsGameStarted = true;
         this.OnStateChanged?.Invoke();
@@ -123,6 +132,21 @@ public class EscapeRoomStateService
     public void UseItem(string itemId)
     {
         this.inventory.Remove(itemId);
+        if (this.SelectedItem == itemId)
+        {
+            this.SelectedItem = null;
+        }
+
+        this.OnStateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Selects or deselects an inventory item. Toggling the same item deselects it.
+    /// </summary>
+    /// <param name="itemId">The item ID to select, or null to deselect.</param>
+    public void SelectItem(string? itemId)
+    {
+        this.SelectedItem = itemId == this.SelectedItem ? null : itemId;
         this.OnStateChanged?.Invoke();
     }
 
@@ -138,12 +162,22 @@ public class EscapeRoomStateService
             return false;
         }
 
-        if (door.RequiredItemId is not null && !this.inventory.Contains(door.RequiredItemId))
+        if (door.RequiredItemId is not null && !this.unlockedDoors.Contains(GetDoorKey(door)))
         {
             return false;
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Marks a door as permanently unlocked.
+    /// </summary>
+    /// <param name="door">The door to unlock.</param>
+    public void UnlockDoor(Door door)
+    {
+        this.unlockedDoors.Add(GetDoorKey(door));
+        this.OnStateChanged?.Invoke();
     }
 
     /// <summary>
@@ -156,6 +190,8 @@ public class EscapeRoomStateService
         this.CurrentRoom = RoomId.Foyer;
         this.solvedPuzzles.Clear();
         this.inventory.Clear();
+        this.unlockedDoors.Clear();
+        this.SelectedItem = null;
         this.startTime = DateTimeOffset.UtcNow;
         this.OnStateChanged?.Invoke();
     }
@@ -173,6 +209,7 @@ public class EscapeRoomStateService
             AttemptCount = this.AttemptCount,
             SolvedPuzzles = [.. this.solvedPuzzles],
             Inventory = [.. this.inventory],
+            UnlockedDoors = [.. this.unlockedDoors],
             StartTimeTicks = this.startTime.Ticks,
         };
 
@@ -209,7 +246,15 @@ public class EscapeRoomStateService
 
         this.inventory.Clear();
         this.inventory.AddRange(state.Inventory);
+        this.unlockedDoors.Clear();
+        foreach (var d in state.UnlockedDoors)
+        {
+            this.unlockedDoors.Add(d);
+        }
+
         this.startTime = new DateTimeOffset(state.StartTimeTicks, TimeSpan.Zero);
         this.IsGameStarted = true;
     }
+
+    private static string GetDoorKey(Door door) => $"{door.TargetRoomId}:{door.RequiredItemId}";
 }

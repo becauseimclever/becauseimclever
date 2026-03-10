@@ -78,6 +78,7 @@
     </div>
     @if (this.State.IsGameStarted && !this.isTransitioning)
     {
+        <InventoryBar />
         <Clippy Pose="@this.clippyPose"
                 HintText="@this.clippyHintText"
                 OnClicked="this.HandleClippyClicked"
@@ -242,10 +243,18 @@
         return Task.CompletedTask;
     }
 
-    private Task HandleLockedDoorClicked(Door door)
+    private async Task HandleLockedDoorClicked(Door door)
     {
+        if (door.RequiredItemId is not null && this.State.SelectedItem == door.RequiredItemId)
+        {
+            this.State.UseItem(door.RequiredItemId);
+            this.State.UnlockDoor(door);
+            this.ShowClippyHint(ClippyHints.GetPuzzleSolvedHint());
+            await this.State.SaveStateAsync();
+            return;
+        }
+
         this.ShowClippyHint(ClippyHints.GetLockedDoorHint());
-        return Task.CompletedTask;
     }
 
     private async Task HandleStartOver()

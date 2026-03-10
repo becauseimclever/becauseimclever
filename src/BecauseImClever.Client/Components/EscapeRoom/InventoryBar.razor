@@ -1,0 +1,45 @@
+@using BecauseImClever.Client.Models.EscapeRoom
+@using BecauseImClever.Client.Services
+@inject EscapeRoomStateService State
+@implements IDisposable
+
+<div class="inventory-bar">
+    <span class="inventory-label">Items:</span>
+    @if (State.Inventory.Count == 0)
+    {
+        <span class="inventory-empty">empty</span>
+    }
+    else
+    {
+        @foreach (var itemId in State.Inventory)
+        {
+            var item = InventoryItemCatalog.Get(itemId);
+            if (item is not null)
+            {
+                var isSelected = State.SelectedItem == itemId;
+                <button class="inventory-item @(isSelected ? "selected" : "")"
+                        title="@item.Name"
+                        @onclick="() => State.SelectItem(itemId)">
+                    <span class="item-icon">@item.Icon</span>
+                </button>
+            }
+        }
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        this.State.OnStateChanged += this.OnStateChanged;
+    }
+
+    public void Dispose()
+    {
+        this.State.OnStateChanged -= this.OnStateChanged;
+    }
+
+    private void OnStateChanged()
+    {
+        this.InvokeAsync(this.StateHasChanged);
+    }
+}

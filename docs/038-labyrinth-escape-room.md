@@ -278,13 +278,15 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 6: Inventory Bar & Item System
+### Slice 6: Inventory Bar & Item System ✅
 
 **What changes:**
 
 - **Client — Components**: Create `InventoryBar.razor` displayed at the bottom of the screen (Microsoft Bob–style toolbar)
-- **Client — State**: Add inventory management to `EscapeRoomStateService`
-- **Client — Interaction**: Allow selecting an inventory item and using it on a door/hotspot
+- **Client — Models**: Create `InventoryItemCatalog` static catalog mapping item IDs to display metadata (name, icon, description)
+- **Client — State**: Add `SelectedItem` property and `SelectItem` method to `EscapeRoomStateService` for item selection/toggle
+- **Client — State**: Add `UnlockedDoors` tracking and `UnlockDoor` method — item-gated doors now require explicit item use (select item + click door)
+- **Client — Interaction**: Clicking a locked door with the correct item selected consumes the item and permanently unlocks the door
 
 **Affected layers:** Client
 

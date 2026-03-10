@@ -272,7 +272,20 @@ public class EscapeRoomStateServiceTests
     }
 
     [Fact]
-    public void IsDoorUnlocked_ReturnsTrue_WhenRequiredItemInInventory()
+    public void IsDoorUnlocked_ReturnsTrue_WhenRequiredItemDoorExplicitlyUnlocked()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        var door = new Door(RoomId.Study, "Study Door", 83, 30, 12, 40, RequiredItemId: "brass-key");
+        service.UnlockDoor(door);
+
+        // Act & Assert
+        Assert.True(service.IsDoorUnlocked(door));
+    }
+
+    [Fact]
+    public void IsDoorUnlocked_ReturnsFalse_WhenRequiredItemInInventoryButDoorNotUnlocked()
     {
         // Arrange
         var service = new EscapeRoomStateService(this.mockJs.Object);
@@ -281,7 +294,40 @@ public class EscapeRoomStateServiceTests
         var door = new Door(RoomId.Study, "Study Door", 83, 30, 12, 40, RequiredItemId: "brass-key");
 
         // Act & Assert
-        Assert.True(service.IsDoorUnlocked(door));
+        Assert.False(service.IsDoorUnlocked(door));
+    }
+
+    [Fact]
+    public void UnlockDoor_RaisesOnStateChanged()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        var door = new Door(RoomId.Study, "Study Door", 83, 30, 12, 40, RequiredItemId: "brass-key");
+        var raised = false;
+        service.OnStateChanged += () => raised = true;
+
+        // Act
+        service.UnlockDoor(door);
+
+        // Assert
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void StartOver_ClearsUnlockedDoors()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        var door = new Door(RoomId.Study, "Study Door", 83, 30, 12, 40, RequiredItemId: "brass-key");
+        service.UnlockDoor(door);
+
+        // Act
+        service.StartOver();
+
+        // Assert
+        Assert.False(service.IsDoorUnlocked(door));
     }
 
     [Fact]
@@ -443,5 +489,127 @@ public class EscapeRoomStateServiceTests
         // Assert
         Assert.False(service.IsGameStarted);
         Assert.Equal(RoomId.Foyer, service.CurrentRoom);
+    }
+
+    [Fact]
+    public void SelectedItem_DefaultsToNull()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+
+        // Act & Assert
+        Assert.Null(service.SelectedItem);
+    }
+
+    [Fact]
+    public void SelectItem_SetsSelectedItem()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+
+        // Act
+        service.SelectItem("brass-key");
+
+        // Assert
+        Assert.Equal("brass-key", service.SelectedItem);
+    }
+
+    [Fact]
+    public void SelectItem_WithNull_DeselectsItem()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+        service.SelectItem("brass-key");
+
+        // Act
+        service.SelectItem(null);
+
+        // Assert
+        Assert.Null(service.SelectedItem);
+    }
+
+    [Fact]
+    public void SelectItem_TogglesSameItem()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+        service.SelectItem("brass-key");
+
+        // Act
+        service.SelectItem("brass-key");
+
+        // Assert
+        Assert.Null(service.SelectedItem);
+    }
+
+    [Fact]
+    public void SelectItem_RaisesOnStateChanged()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+        var raised = false;
+        service.OnStateChanged += () => raised = true;
+
+        // Act
+        service.SelectItem("brass-key");
+
+        // Assert
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void UseItem_ClearsSelectedItem_WhenUsedItemIsSelected()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+        service.SelectItem("brass-key");
+
+        // Act
+        service.UseItem("brass-key");
+
+        // Assert
+        Assert.Null(service.SelectedItem);
+    }
+
+    [Fact]
+    public void StartNewGame_ClearsSelectedItem()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+        service.SelectItem("brass-key");
+
+        // Act
+        service.StartNewGame();
+
+        // Assert
+        Assert.Null(service.SelectedItem);
+    }
+
+    [Fact]
+    public void StartOver_ClearsSelectedItem()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.AddItem("brass-key");
+        service.SelectItem("brass-key");
+
+        // Act
+        service.StartOver();
+
+        // Assert
+        Assert.Null(service.SelectedItem);
     }
 }
