@@ -1,0 +1,32 @@
+@if (IsVisible)
+{
+    <div class="puzzle-modal-overlay">
+        <div class="puzzle-modal">
+            <div class="puzzle-modal-title-bar">
+                <span>@Title</span>
+                <button class="puzzle-modal-close" @onclick="OnClose" title="Close">×</button>
+            </div>
+            <div class="puzzle-modal-body">
+                @ChildContent
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets a value indicating whether the modal is visible.</summary>
+    [Parameter, EditorRequired]
+    public bool IsVisible { get; set; }
+
+    /// <summary>Gets or sets the puzzle title shown in the title bar.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the callback invoked when the modal is closed.</summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>Gets or sets the child content rendered inside the modal body.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

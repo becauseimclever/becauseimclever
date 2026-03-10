@@ -102,4 +102,38 @@
     border-top: 2px groove #fff;
     font-size: 0.8rem;
     color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+::deep .bob-status-separator {
+    color: #999;
+}
+
+::deep .bob-status-btn {
+    margin-left: auto;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    cursor: pointer;
+    color: #000;
+}
+
+::deep .bob-status-btn:hover {
+    background: #d0d0d0;
+}
+
+::deep .bob-status-btn:active {
+    border-style: inset;
+}
+
+::deep .bob-attempt-badge {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 1px 8px;
+    border-radius: 8px;
+    margin-left: 8px;
 }

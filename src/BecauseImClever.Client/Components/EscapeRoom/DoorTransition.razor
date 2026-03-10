@@ -1,0 +1,17 @@
+@if (IsActive)
+{
+    <div class="door-transition">
+        <div class="door-transition-content">
+            <span class="door-transition-icon">🚪</span>
+            <p>Entering <strong>@TargetRoomName</strong>...</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsActive { get; set; }
+
+    [Parameter, EditorRequired]
+    public string TargetRoomName { get; set; } = string.Empty;
+}

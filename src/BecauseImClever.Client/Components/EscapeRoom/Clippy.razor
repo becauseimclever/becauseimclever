@@ -1,0 +1,37 @@
+@using BecauseImClever.Client.Models.EscapeRoom
+
+<div class="clippy">
+    <SpeechBubble IsVisible="@(!string.IsNullOrEmpty(HintText))"
+                  Text="@(HintText ?? string.Empty)"
+                  OnDismissed="OnHintDismissed" />
+    <div class="clippy-sprite @GetPoseClass()" @onclick="OnClicked" title="Click for a hint!">
+        <span class="clippy-icon">📎</span>
+    </div>
+</div>
+
+@code {
+    /// <summary>Gets or sets the current Clippy pose.</summary>
+    [Parameter, EditorRequired]
+    public ClippyPose Pose { get; set; }
+
+    /// <summary>Gets or sets the hint text to show in the speech bubble. Null or empty hides the bubble.</summary>
+    [Parameter]
+    public string? HintText { get; set; }
+
+    /// <summary>Gets or sets the callback invoked when Clippy is clicked.</summary>
+    [Parameter]
+    public EventCallback OnClicked { get; set; }
+
+    /// <summary>Gets or sets the callback invoked when the speech bubble is dismissed.</summary>
+    [Parameter]
+    public EventCallback OnHintDismissed { get; set; }
+
+    private string GetPoseClass() => this.Pose switch
+    {
+        ClippyPose.Idle => "clippy-idle",
+        ClippyPose.Thinking => "clippy-thinking",
+        ClippyPose.Pointing => "clippy-pointing",
+        ClippyPose.Celebrating => "clippy-celebrating",
+        _ => "clippy-idle",
+    };
+}

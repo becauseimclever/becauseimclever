@@ -194,7 +194,7 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 2: Room Rendering & Navigation
+### Slice 2: Room Rendering & Navigation ✅
 
 **What changes:**
 
@@ -216,7 +216,7 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 3: Clippy Guide & Speech Bubbles
+### Slice 3: Clippy Guide & Speech Bubbles ✅
 
 **What changes:**
 
@@ -236,7 +236,7 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 4: Puzzle Framework & First Puzzle
+### Slice 4: Puzzle Framework & First Puzzle ✅
 
 **What changes:**
 
@@ -255,24 +255,26 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 5: Remaining Puzzles
+### Slice 5: Remaining Puzzles ✅
 
 **What changes:**
 
 - **Client — Components**: Create puzzle components for each remaining room:
-  - `CipherPuzzle.razor` (Library)
-  - `SequencePuzzle.razor` (Kitchen)
-  - `LogicGridPuzzle.razor` (Study)
-  - `MazePuzzle.razor` (Garden)
-  - `ExitCodePuzzle.razor` (Exit)
+  - `CipherPuzzle.razor` (Library) — cipher wheel substitution decode, text input, case-insensitive
+  - `SequencePuzzle.razor` (Kitchen) — click-to-select ingredient buttons in correct order
+  - `LogicGridPuzzle.razor` (Study) — chalkboard with 3 solvable equations revealing a 3-digit code
+  - `MazePuzzle.razor` (Garden) — 7×7 grid navigation from (0,0) to (6,6), reveals 3-digit code
+  - `ExitCodePuzzle.razor` (Exit) — 6-digit combination lock (Study 3 digits + Garden 3 digits)
+- **Client — Page**: Wired all 5 puzzles into `EscapeRoom.razor` hotspot/modal system
+- **Client — Items**: Library puzzle grants `brass-key`, Kitchen puzzle grants `garden-key`
 
 **Affected layers:** Client
 
 **Acceptance criteria:**
-- Each puzzle is interactive, solvable, and rewards the correct item/code
-- Each puzzle's solution is randomized per seed — replaying with a different seed produces different solutions
-- Solving all puzzles enables the player to reach and unlock the exit
-- Clippy provides puzzle-specific hints
+- ✅ Each puzzle is interactive, solvable, and rewards the correct item/code
+- ✅ Each puzzle's solution is randomized per seed — replaying with a different seed produces different solutions
+- ✅ Solving all puzzles enables the player to reach and unlock the exit
+- ⬜ Clippy provides puzzle-specific hints (existing per-room hints; puzzle-specific hints deferred to Slice 6/7)
 
 ---
 

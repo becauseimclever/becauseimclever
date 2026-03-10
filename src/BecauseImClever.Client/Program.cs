@@ -24,6 +24,7 @@ builder.Services.AddScoped<IDataDeletionService, ClientDataDeletionService>();
 builder.Services.AddScoped<IFeatureToggleService, ClientFeatureToggleService>();
 builder.Services.AddScoped<ClientPostImageService>();
 builder.Services.AddScoped<IClientSpellCheckService, ClientSpellCheckService>();
+builder.Services.AddScoped<EscapeRoomStateService>();
 
 // Add authentication services
 builder.Services.AddAuthorizationCore(options =>

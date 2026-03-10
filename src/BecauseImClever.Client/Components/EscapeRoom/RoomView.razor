@@ -1,0 +1,66 @@
+@using BecauseImClever.Client.Models.EscapeRoom
+@using BecauseImClever.Client.Services
+@inject EscapeRoomStateService State
+
+<div class="room-scene @Room.BackgroundClass">
+    <div class="room-header">
+        <h2>@Room.Name</h2>
+        <p class="room-description">@Room.Description</p>
+    </div>
+
+    <div class="room-canvas">
+        @foreach (var hotspot in Room.Hotspots)
+        {
+            <div class="room-hotspot"
+                 title="@hotspot.Label"
+                 style="left: @(hotspot.X)%; top: @(hotspot.Y)%; width: @(hotspot.Width)%; height: @(hotspot.Height)%;"
+                 @onclick="() => OnHotspotClicked.InvokeAsync(hotspot)">
+                <span class="hotspot-label">@hotspot.Label</span>
+            </div>
+        }
+
+        @foreach (var door in Room.Doors)
+        {
+            var isUnlocked = State.IsDoorUnlocked(door);
+            <div class="room-door @(isUnlocked ? "unlocked" : "locked")"
+                 title="@GetDoorTitle(door, isUnlocked)"
+                 style="left: @(door.X)%; top: @(door.Y)%; width: @(door.Width)%; height: @(door.Height)%;"
+                 @onclick="() => HandleDoorClick(door)">
+                <span class="door-label">@door.Label</span>
+                @if (!isUnlocked)
+                {
+                    <span class="door-lock">🔒</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Room Room { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<Door> OnDoorClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<Hotspot> OnHotspotClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<Door> OnLockedDoorClicked { get; set; }
+
+    private async Task HandleDoorClick(Door door)
+    {
+        if (this.State.IsDoorUnlocked(door))
+        {
+            await this.OnDoorClicked.InvokeAsync(door);
+        }
+        else
+        {
+            await this.OnLockedDoorClicked.InvokeAsync(door);
+        }
+    }
+
+    private static string GetDoorTitle(Door door, bool isUnlocked)
+        => isUnlocked ? door.Label : $"{door.Label} 🔒";
+}

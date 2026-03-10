@@ -1,0 +1,67 @@
+.maze-puzzle {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+}
+
+.maze-instructions {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.maze-grid {
+    display: grid;
+    gap: 2px;
+    background: #2a5a2a;
+    border: 4px solid #8b6914;
+    border-radius: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
+    max-width: 350px;
+}
+
+.maze-cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    background: #c8e6c8;
+    border: 1px solid #4a8a4a;
+    border-radius: 2px;
+}
+
+.maze-cell:hover:not(.maze-wall) {
+    background: #a8d8a8;
+}
+
+.maze-wall {
+    background: #2d5a2d;
+    cursor: default;
+}
+
+.maze-player {
+    background: #fffacd;
+    border-color: #daa520;
+}
+
+.maze-exit {
+    background: #ffe4b5;
+    border-color: #cd853f;
+}
+
+.maze-success {
+    color: #228B22;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.maze-solved {
+    text-align: center;
+    padding: 16px;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    color: #228B22;
+    font-size: 1rem;
+}

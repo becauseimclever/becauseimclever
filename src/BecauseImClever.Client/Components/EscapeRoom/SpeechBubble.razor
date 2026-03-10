@@ -1,0 +1,24 @@
+@if (IsVisible)
+{
+    <div class="speech-bubble">
+        <div class="speech-bubble-content">
+            <span class="speech-bubble-text">@Text</span>
+            <button class="speech-bubble-dismiss" @onclick="OnDismissed" title="Dismiss">×</button>
+        </div>
+        <div class="speech-bubble-tail"></div>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets a value indicating whether the bubble is visible.</summary>
+    [Parameter, EditorRequired]
+    public bool IsVisible { get; set; }
+
+    /// <summary>Gets or sets the text to display.</summary>
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the callback invoked when the bubble is dismissed.</summary>
+    [Parameter]
+    public EventCallback OnDismissed { get; set; }
+}

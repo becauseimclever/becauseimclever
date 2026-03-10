@@ -1,4 +1,10 @@
 @page "/experiments/escape-room"
+@using BecauseImClever.Client.Components.EscapeRoom
+@using BecauseImClever.Client.Models.EscapeRoom
+@using BecauseImClever.Client.Services
+@inject EscapeRoomStateService State
+@inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Escape Room - BecauseImClever</PageTitle>
 
@@ -6,6 +12,10 @@
     <div class="bob-title-bar">
         <span class="bob-title-icon">🏰</span>
         <span>Labyrinth Escape Room</span>
+        @if (this.State.IsGameStarted)
+        {
+            <span class="bob-attempt-badge">Attempt #@this.State.AttemptCount</span>
+        }
         <div class="bob-title-buttons">
             <span class="bob-btn-minimize">_</span>
             <span class="bob-btn-maximize">□</span>
@@ -13,17 +23,263 @@
         </div>
     </div>
     <div class="bob-content">
-        <h1>Welcome to the Labyrinth</h1>
-        <p class="bob-intro">
-            You find yourself in a mysterious labyrinth of interconnected rooms.
-            Solve puzzles, collect items, and find your way out!
-        </p>
-        <div class="bob-start-area">
-            <p>Click <strong>Start</strong> to begin your escape...</p>
-            <button class="bob-btn" disabled>Start</button>
-        </div>
+        @if (!this.State.IsGameStarted)
+        {
+            <h1>Welcome to the Labyrinth</h1>
+            <p class="bob-intro">
+                You find yourself in a mysterious labyrinth of interconnected rooms.
+                Solve puzzles, collect items, and find your way out!
+            </p>
+            <div class="bob-start-area">
+                <p>Click <strong>Start</strong> to begin your escape...</p>
+                <button class="bob-btn" @onclick="this.StartGame">Start</button>
+            </div>
+        }
+        else if (this.isTransitioning)
+        {
+            <DoorTransition IsActive="true" TargetRoomName="@this.transitionRoomName" />
+        }
+        else
+        {
+            <RoomView Room="@this.currentRoom"
+                      OnDoorClicked="this.HandleDoorClicked"
+                      OnHotspotClicked="this.HandleHotspotClicked"
+                      OnLockedDoorClicked="this.HandleLockedDoorClicked" />
+
+            <PuzzleModal IsVisible="@this.showPuzzleModal"
+                         Title="@this.puzzleTitle"
+                         OnClose="this.ClosePuzzleModal">
+                @if (this.activePuzzleId == "foyer-sorting" && this.foyerPuzzle is not null)
+                {
+                    <SortingPuzzle Params="@this.foyerPuzzle" OnSolved="this.HandlePuzzleSolved" />
+                }
+                else if (this.activePuzzleId == "library-cipher" && this.libraryPuzzle is not null)
+                {
+                    <CipherPuzzle Params="@this.libraryPuzzle" OnSolved="this.HandlePuzzleSolved" />
+                }
+                else if (this.activePuzzleId == "kitchen-sequence" && this.kitchenPuzzle is not null)
+                {
+                    <SequencePuzzle Params="@this.kitchenPuzzle" OnSolved="this.HandlePuzzleSolved" />
+                }
+                else if (this.activePuzzleId == "study-logic" && this.studyPuzzle is not null)
+                {
+                    <LogicGridPuzzle Params="@this.studyPuzzle" OnSolved="this.HandlePuzzleSolved" />
+                }
+                else if (this.activePuzzleId == "garden-maze" && this.gardenPuzzle is not null)
+                {
+                    <MazePuzzle Params="@this.gardenPuzzle" OnSolved="this.HandlePuzzleSolved" />
+                }
+                else if (this.activePuzzleId == "exit-code" && this.exitPuzzle is not null)
+                {
+                    <ExitCodePuzzle Params="@this.exitPuzzle" OnSolved="this.HandlePuzzleSolved" />
+                }
+            </PuzzleModal>
+        }
     </div>
+    @if (this.State.IsGameStarted && !this.isTransitioning)
+    {
+        <Clippy Pose="@this.clippyPose"
+                HintText="@this.clippyHintText"
+                OnClicked="this.HandleClippyClicked"
+                OnHintDismissed="this.HandleClippyDismissed" />
+    }
     <div class="bob-status-bar">
-        <span>Ready</span>
+        @if (this.State.IsGameStarted)
+        {
+            <span>Room: @this.currentRoom.Name</span>
+            <span class="bob-status-separator">|</span>
+            <span>Puzzles: @this.State.SolvedPuzzles.Count</span>
+            <button class="bob-status-btn" @onclick="this.HandleStartOver">Start Over</button>
+        }
+        else
+        {
+            <span>Ready</span>
+        }
     </div>
 </div>
+
+@code {
+    private Room currentRoom = RoomMap.Rooms[RoomId.Foyer];
+    private bool isTransitioning;
+    private string transitionRoomName = string.Empty;
+    private ClippyPose clippyPose = ClippyPose.Idle;
+    private string? clippyHintText;
+    private bool showPuzzleModal;
+    private string puzzleTitle = string.Empty;
+    private string? activePuzzleId;
+    private FoyerPuzzleParams? foyerPuzzle;
+    private LibraryPuzzleParams? libraryPuzzle;
+    private KitchenPuzzleParams? kitchenPuzzle;
+    private StudyPuzzleParams? studyPuzzle;
+    private GardenPuzzleParams? gardenPuzzle;
+    private ExitPuzzleParams? exitPuzzle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = this.Navigation.ToAbsoluteUri(this.Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var seedValue = query["seed"];
+        if (seedValue is not null && int.TryParse(seedValue, out var seed))
+        {
+            this.State.StartNewGame(seed: seed);
+        }
+        else
+        {
+            await this.State.LoadStateAsync();
+        }
+
+        this.State.OnStateChanged += this.OnStateChanged;
+        this.UpdateCurrentRoom();
+    }
+
+    public void Dispose()
+    {
+        this.State.OnStateChanged -= this.OnStateChanged;
+    }
+
+    private void OnStateChanged()
+    {
+        this.UpdateCurrentRoom();
+        this.InvokeAsync(this.StateHasChanged);
+    }
+
+    private async Task StartGame()
+    {
+        this.State.StartNewGame();
+        this.UpdateCurrentRoom();
+        this.ShowClippyHint(ClippyHints.GetWelcomeHint());
+        await this.State.SaveStateAsync();
+    }
+
+    private async Task HandleDoorClicked(Door door)
+    {
+        if (!RoomMap.Rooms.TryGetValue(door.TargetRoomId, out var targetRoom))
+        {
+            return;
+        }
+
+        this.isTransitioning = true;
+        this.transitionRoomName = targetRoom.Name;
+        this.StateHasChanged();
+
+        await Task.Delay(600);
+
+        this.State.NavigateTo(door.TargetRoomId);
+        this.isTransitioning = false;
+        this.UpdateCurrentRoom();
+        this.ShowClippyHint(ClippyHints.GetRoomHint(door.TargetRoomId));
+        await this.State.SaveStateAsync();
+    }
+
+    private Task HandleHotspotClicked(Hotspot hotspot)
+    {
+        if (hotspot.InteractionType == InteractionType.Puzzle && hotspot.PuzzleId is not null)
+        {
+            this.activePuzzleId = hotspot.PuzzleId;
+            this.puzzleTitle = hotspot.Label;
+
+            if (hotspot.PuzzleId == "foyer-sorting")
+            {
+                this.foyerPuzzle = this.State.Randomizer!.GenerateFoyerPuzzle();
+            }
+            else if (hotspot.PuzzleId == "library-cipher")
+            {
+                this.libraryPuzzle = this.State.Randomizer!.GenerateLibraryPuzzle();
+            }
+            else if (hotspot.PuzzleId == "kitchen-sequence")
+            {
+                this.kitchenPuzzle = this.State.Randomizer!.GenerateKitchenPuzzle();
+            }
+            else if (hotspot.PuzzleId == "study-logic")
+            {
+                this.studyPuzzle = this.State.Randomizer!.GenerateStudyPuzzle();
+            }
+            else if (hotspot.PuzzleId == "garden-maze")
+            {
+                this.gardenPuzzle = this.State.Randomizer!.GenerateGardenPuzzle();
+            }
+            else if (hotspot.PuzzleId == "exit-code")
+            {
+                this.exitPuzzle = this.State.Randomizer!.GenerateExitPuzzle();
+            }
+
+            this.showPuzzleModal = true;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task HandlePuzzleSolved()
+    {
+        if (this.activePuzzleId is not null)
+        {
+            this.State.SolvePuzzle(this.activePuzzleId);
+
+            if (this.activePuzzleId == "library-cipher")
+            {
+                this.State.AddItem("brass-key");
+            }
+            else if (this.activePuzzleId == "kitchen-sequence")
+            {
+                this.State.AddItem("garden-key");
+            }
+
+            this.ShowClippyHint(ClippyHints.GetPuzzleSolvedHint());
+            await this.State.SaveStateAsync();
+        }
+    }
+
+    private Task ClosePuzzleModal()
+    {
+        this.showPuzzleModal = false;
+        this.activePuzzleId = null;
+        this.foyerPuzzle = null;
+        this.libraryPuzzle = null;
+        this.kitchenPuzzle = null;
+        this.studyPuzzle = null;
+        this.gardenPuzzle = null;
+        this.exitPuzzle = null;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleLockedDoorClicked(Door door)
+    {
+        this.ShowClippyHint(ClippyHints.GetLockedDoorHint());
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleStartOver()
+    {
+        this.State.StartOver();
+        this.UpdateCurrentRoom();
+        await this.State.SaveStateAsync();
+    }
+
+    private void UpdateCurrentRoom()
+    {
+        if (RoomMap.Rooms.TryGetValue(this.State.CurrentRoom, out var room))
+        {
+            this.currentRoom = room;
+        }
+    }
+
+    private Task HandleClippyClicked()
+    {
+        var hint = ClippyHints.GetPuzzleHint(this.State.CurrentRoom);
+        this.ShowClippyHint(hint);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleClippyDismissed()
+    {
+        this.clippyHintText = null;
+        this.clippyPose = ClippyPose.Idle;
+        return Task.CompletedTask;
+    }
+
+    private void ShowClippyHint(ClippyHint hint)
+    {
+        this.clippyHintText = hint.Message;
+        this.clippyPose = hint.Pose;
+    }
+}

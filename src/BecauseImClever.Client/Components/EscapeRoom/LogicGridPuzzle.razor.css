@@ -1,0 +1,78 @@
+.logic-puzzle {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+}
+
+.logic-instructions {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.logic-chalkboard {
+    background: #2a5a2a;
+    border: 6px solid #8b6914;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.logic-equation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    color: #f0f0f0;
+    font-family: 'Courier New', monospace;
+}
+
+.logic-equation-text {
+    min-width: 80px;
+    text-align: right;
+}
+
+.logic-equation-equals {
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.logic-digit-input {
+    width: 36px;
+    height: 36px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    border: 2px solid #ffd700;
+    border-radius: 4px;
+    background: #1a3a1a;
+    color: #ffd700;
+}
+
+.logic-digit-input::placeholder {
+    color: #6b8e6b;
+}
+
+.logic-error {
+    color: #cc0000;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.logic-success {
+    color: #228B22;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.logic-solved {
+    text-align: center;
+    padding: 16px;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    color: #228B22;
+    font-size: 1rem;
+}

@@ -1,0 +1,120 @@
+.sequence-puzzle {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+}
+
+.sequence-instructions {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.sequence-ingredients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.sequence-ingredient {
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    padding: 8px 14px;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.sequence-ingredient:active:not(:disabled) {
+    border-style: inset;
+}
+
+.sequence-ingredient:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.sequence-selected {
+    margin-bottom: 12px;
+}
+
+.sequence-label {
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.sequence-selected-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 36px;
+    background: #fff8dc;
+    border: 2px solid #8b7355;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.sequence-selected-item {
+    background: #000080;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.sequence-placeholder {
+    color: #999;
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.sequence-error {
+    color: #cc0000;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.sequence-success {
+    color: #228B22;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.sequence-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.sequence-reset,
+.sequence-submit {
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    padding: 6px 20px;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.sequence-reset:active,
+.sequence-submit:active:not(:disabled) {
+    border-style: inset;
+}
+
+.sequence-submit:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.sequence-solved {
+    text-align: center;
+    padding: 16px;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    color: #228B22;
+    font-size: 1rem;
+}

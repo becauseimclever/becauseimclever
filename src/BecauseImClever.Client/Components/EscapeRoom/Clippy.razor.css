@@ -1,0 +1,100 @@
+.clippy {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.clippy-sprite {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #f0e68c, #ffd700);
+    border: 3px solid #333;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+
+.clippy-sprite:hover {
+    transform: scale(1.1);
+}
+
+.clippy-sprite:active {
+    transform: scale(0.95);
+}
+
+.clippy-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+/* Pose animations */
+.clippy-idle {
+    animation: clippyBounce 2s ease-in-out infinite;
+}
+
+.clippy-thinking {
+    animation: clippyThink 1.5s ease-in-out infinite;
+}
+
+.clippy-pointing {
+    animation: clippyPoint 0.6s ease-out;
+}
+
+.clippy-celebrating {
+    animation: clippyCelebrate 0.5s ease-in-out infinite;
+}
+
+@keyframes clippyBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes clippyThink {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(-5deg);
+    }
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+@keyframes clippyPoint {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes clippyCelebrate {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-8px) rotate(-10deg);
+    }
+    75% {
+        transform: translateY(-8px) rotate(10deg);
+    }
+}
