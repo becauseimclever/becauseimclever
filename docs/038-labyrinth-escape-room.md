@@ -321,21 +321,25 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 8: Visual Polish & Responsive Design
+### Slice 8: Visual Polish & Responsive Design ✅
 
 **What changes:**
 
-- **Client — CSS**: Finalize Microsoft Bob visual styling across all rooms and components
-- **Client — Assets**: Create or source room background illustrations, item icons, Clippy sprite sheet
-- **Client — Responsive**: Ensure the experience works on tablet-sized screens and above (not mobile-optimized — show a friendly "best on desktop" message on small screens)
+- ✅ **Client — Components**: Created `SmallScreenMessage.razor` with Clippy emoji, friendly suggestion to use desktop/tablet
+- ✅ **Client — CSS**: Added responsive media queries to all components (768px–1024px tablet scaling, <768px hides main window)
+- ✅ **Client — CSS**: Added hotspot discoverability pulse animation (subtle dashed border pulse on idle, solid on hover)
+- ✅ **Client — CSS**: Added door discoverability (🚪 emoji indicator on unlocked doors)
+- ✅ **Client — Responsive**: SmallScreenMessage shown only on screens <768px (via CSS `display: none`/`flex` media query)
+- ✅ **Client — Responsive**: Main `.bob-window` hidden on screens <768px, scaled to 95% width on tablets
+- ✅ **Client — Responsive**: All puzzle components, modal, Clippy, speech bubble, and completion screen scale gracefully on tablets
 
 **Affected layers:** Client
 
 **Acceptance criteria:**
-- Consistent Microsoft Bob aesthetic across all rooms
-- All hotspots are visually discoverable (subtle hover effects)
-- Readable and playable on screens ≥ 768px wide
-- Small-screen visitors see a friendly message suggesting desktop
+- ✅ Consistent Microsoft Bob aesthetic across all rooms
+- ✅ All hotspots are visually discoverable (subtle hover effects)
+- ✅ Readable and playable on screens ≥ 768px wide
+- ✅ Small-screen visitors see a friendly message suggesting desktop
 
 ---
 

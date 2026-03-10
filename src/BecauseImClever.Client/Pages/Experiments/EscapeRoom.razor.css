@@ -156,3 +156,27 @@
 ::deep .bob-confirm-no {
     background: #c0c0c0;
 }
+
+/* Hide main window on small screens */
+@media (max-width: 767px) {
+    ::deep .bob-window {
+        display: none;
+    }
+}
+
+/* Responsive scaling for medium screens */
+@media (min-width: 768px) and (max-width: 1024px) {
+    ::deep .bob-window {
+        max-width: 95%;
+        margin: var(--spacing-md) auto;
+    }
+
+    ::deep .bob-content {
+        padding: var(--spacing-md);
+        min-height: 250px;
+    }
+
+    ::deep .bob-content h1 {
+        font-size: 1.5rem;
+    }
+}

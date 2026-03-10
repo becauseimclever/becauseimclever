@@ -131,3 +131,66 @@
 ::deep .room-exit {
     background: linear-gradient(135deg, #b0c4de 0%, #a9b8cc 50%, #c0d0e0 100%);
 }
+
+/* Hotspot discoverability: subtle pulsing hint */
+::deep .room-hotspot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px dashed rgba(0, 0, 128, 0.15);
+    border-radius: 4px;
+    animation: hotspotPulse 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes hotspotPulse {
+    0%, 100% {
+        border-color: rgba(0, 0, 128, 0.1);
+    }
+
+    50% {
+        border-color: rgba(0, 0, 128, 0.3);
+    }
+}
+
+::deep .room-hotspot:hover::after {
+    animation: none;
+    border-color: #000080;
+}
+
+/* Door discoverability: doorknob indicator */
+::deep .room-door.unlocked::before {
+    content: '🚪';
+    font-size: 1.5rem;
+    position: absolute;
+    top: 4px;
+    opacity: 0.7;
+}
+
+::deep .room-door.unlocked:hover::before {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Responsive room layout */
+@media (min-width: 768px) and (max-width: 1024px) {
+    ::deep .room-canvas {
+        height: 280px;
+    }
+
+    ::deep .room-header h2 {
+        font-size: 1.1rem;
+    }
+
+    ::deep .room-description {
+        font-size: 0.85rem;
+    }
+
+    ::deep .door-label {
+        font-size: 0.7rem;
+    }
+
+    ::deep .hotspot-label {
+        font-size: 0.65rem;
+    }
+}

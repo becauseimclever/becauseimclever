@@ -301,4 +301,14 @@ public class EscapeRoomTests : BunitContext
         // Assert
         Assert.DoesNotContain("puzzle-modal-overlay", cut.Markup);
     }
+
+    [Fact]
+    public void EscapeRoom_RendersSmallScreenMessage()
+    {
+        // Arrange & Act
+        var cut = this.Render<EscapeRoom>();
+
+        // Assert
+        cut.FindComponent<SmallScreenMessage>();
+    }
 }

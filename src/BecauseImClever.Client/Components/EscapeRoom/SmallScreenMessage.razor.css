@@ -1,0 +1,57 @@
+::deep .small-screen-message {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px;
+    background: #ffffcc;
+    border: 3px solid #000080;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #888;
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    max-width: 360px;
+    margin: 48px auto;
+}
+
+@media (max-width: 767px) {
+    ::deep .small-screen-message {
+        display: flex;
+    }
+}
+
+::deep .small-screen-clippy {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    animation: smallScreenBounce 2s ease-in-out infinite;
+}
+
+@keyframes smallScreenBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+::deep .small-screen-title {
+    font-size: 1.4rem;
+    color: #000080;
+    margin: 0 0 12px;
+}
+
+::deep .small-screen-text {
+    font-size: 1rem;
+    color: #333;
+    margin: 0 0 8px;
+    line-height: 1.5;
+}
+
+::deep .small-screen-subtext {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    font-style: italic;
+}

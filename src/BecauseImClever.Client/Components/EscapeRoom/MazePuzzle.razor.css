@@ -65,3 +65,16 @@
     color: #228B22;
     font-size: 1rem;
 }
+
+/* Responsive maze */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .maze-cell {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .maze-grid {
+        max-width: 280px;
+    }
+}

@@ -89,3 +89,15 @@
         opacity: 1;
     }
 }
+
+/* Responsive puzzle modal */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .puzzle-modal {
+        min-width: 300px;
+        max-width: 90%;
+    }
+
+    .puzzle-modal-body {
+        padding: 12px;
+    }
+}
