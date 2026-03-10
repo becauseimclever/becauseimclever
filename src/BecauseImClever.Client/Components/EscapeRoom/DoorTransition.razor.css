@@ -1,4 +1,4 @@
-::deep .door-transition {
+.door-transition {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,20 +12,20 @@
     animation: fadeIn 0.3s ease-in;
 }
 
-::deep .door-transition-content {
+.door-transition-content {
     text-align: center;
     color: #ffffcc;
     font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
 }
 
-::deep .door-transition-icon {
+.door-transition-icon {
     font-size: 3rem;
     display: block;
     margin-bottom: 12px;
     animation: doorSwing 0.5s ease-in-out;
 }
 
-::deep .door-transition-content p {
+.door-transition-content p {
     font-size: 1.4rem;
     margin: 0;
 }

@@ -1,4 +1,4 @@
-::deep .small-screen-message {
+.small-screen-message {
     display: none;
     flex-direction: column;
     align-items: center;
@@ -15,12 +15,12 @@
 }
 
 @media (max-width: 767px) {
-    ::deep .small-screen-message {
+    .small-screen-message {
         display: flex;
     }
 }
 
-::deep .small-screen-clippy {
+.small-screen-clippy {
     font-size: 3rem;
     margin-bottom: 12px;
     animation: smallScreenBounce 2s ease-in-out infinite;
@@ -36,20 +36,20 @@
     }
 }
 
-::deep .small-screen-title {
+.small-screen-title {
     font-size: 1.4rem;
     color: #000080;
     margin: 0 0 12px;
 }
 
-::deep .small-screen-text {
+.small-screen-text {
     font-size: 1rem;
     color: #333;
     margin: 0 0 8px;
     line-height: 1.5;
 }
 
-::deep .small-screen-subtext {
+.small-screen-subtext {
     font-size: 0.85rem;
     color: #666;
     margin: 0;

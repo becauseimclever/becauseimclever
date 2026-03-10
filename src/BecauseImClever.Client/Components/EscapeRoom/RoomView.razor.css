@@ -1,4 +1,4 @@
-::deep .room-scene {
+.room-scene {
     position: relative;
     min-height: 400px;
     border: 2px inset #999;
@@ -6,33 +6,33 @@
     overflow: hidden;
 }
 
-::deep .room-header {
+.room-header {
     padding: 12px 16px;
     background: rgba(0, 0, 128, 0.08);
     border-bottom: 2px groove #ccc;
 }
 
-::deep .room-header h2 {
+.room-header h2 {
     margin: 0 0 4px;
     font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
     color: #000080;
     font-size: 1.3rem;
 }
 
-::deep .room-description {
+.room-description {
     margin: 0;
     font-size: 0.95rem;
     color: #444;
     font-style: italic;
 }
 
-::deep .room-canvas {
+.room-canvas {
     position: relative;
     width: 100%;
     height: 350px;
 }
 
-::deep .room-hotspot {
+.room-hotspot {
     position: absolute;
     border: 2px dashed transparent;
     border-radius: 4px;
@@ -43,12 +43,12 @@
     transition: border-color 0.2s, background 0.2s;
 }
 
-::deep .room-hotspot:hover {
+.room-hotspot:hover {
     border-color: #000080;
     background: rgba(0, 0, 128, 0.08);
 }
 
-::deep .hotspot-label {
+.hotspot-label {
     font-size: 0.75rem;
     color: #000080;
     background: rgba(255, 255, 204, 0.9);
@@ -59,11 +59,11 @@
     pointer-events: none;
 }
 
-::deep .room-hotspot:hover .hotspot-label {
+.room-hotspot:hover .hotspot-label {
     opacity: 1;
 }
 
-::deep .room-door {
+.room-door {
     position: absolute;
     border: 3px solid #8B4513;
     border-radius: 4px 4px 0 0;
@@ -76,26 +76,26 @@
     background: rgba(139, 69, 19, 0.15);
 }
 
-::deep .room-door.unlocked {
+.room-door.unlocked {
     border-color: #228B22;
     background: rgba(34, 139, 34, 0.1);
 }
 
-::deep .room-door.unlocked:hover {
+.room-door.unlocked:hover {
     background: rgba(34, 139, 34, 0.25);
 }
 
-::deep .room-door.locked {
+.room-door.locked {
     border-color: #8B0000;
     background: rgba(139, 0, 0, 0.1);
     cursor: not-allowed;
 }
 
-::deep .room-door.locked:hover {
+.room-door.locked:hover {
     background: rgba(139, 0, 0, 0.15);
 }
 
-::deep .door-label {
+.door-label {
     font-size: 0.8rem;
     font-weight: bold;
     color: #333;
@@ -103,37 +103,37 @@
     padding: 2px 4px;
 }
 
-::deep .door-lock {
+.door-lock {
     font-size: 1.2rem;
 }
 
 /* Room-specific backgrounds */
-::deep .room-foyer {
+.room-foyer {
     background: linear-gradient(135deg, #ffe4b5 0%, #ffdab9 50%, #ffe4c4 100%);
 }
 
-::deep .room-library {
+.room-library {
     background: linear-gradient(135deg, #d2b48c 0%, #c4a87a 50%, #deb887 100%);
 }
 
-::deep .room-kitchen {
+.room-kitchen {
     background: linear-gradient(135deg, #ffefd5 0%, #ffe4c4 50%, #ffdead 100%);
 }
 
-::deep .room-study {
+.room-study {
     background: linear-gradient(135deg, #d4c4a8 0%, #c8b896 50%, #d2c2a6 100%);
 }
 
-::deep .room-garden {
+.room-garden {
     background: linear-gradient(135deg, #90ee90 0%, #98fb98 50%, #8fbc8f 100%);
 }
 
-::deep .room-exit {
+.room-exit {
     background: linear-gradient(135deg, #b0c4de 0%, #a9b8cc 50%, #c0d0e0 100%);
 }
 
 /* Hotspot discoverability: subtle pulsing hint */
-::deep .room-hotspot::after {
+.room-hotspot::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -153,13 +153,13 @@
     }
 }
 
-::deep .room-hotspot:hover::after {
+.room-hotspot:hover::after {
     animation: none;
     border-color: #000080;
 }
 
 /* Door discoverability: doorknob indicator */
-::deep .room-door.unlocked::before {
+.room-door.unlocked::before {
     content: '🚪';
     font-size: 1.5rem;
     position: absolute;
@@ -167,30 +167,30 @@
     opacity: 0.7;
 }
 
-::deep .room-door.unlocked:hover::before {
+.room-door.unlocked:hover::before {
     opacity: 1;
     transform: scale(1.1);
 }
 
 /* Responsive room layout */
 @media (min-width: 768px) and (max-width: 1024px) {
-    ::deep .room-canvas {
+    .room-canvas {
         height: 280px;
     }
 
-    ::deep .room-header h2 {
+    .room-header h2 {
         font-size: 1.1rem;
     }
 
-    ::deep .room-description {
+    .room-description {
         font-size: 0.85rem;
     }
 
-    ::deep .door-label {
+    .door-label {
         font-size: 0.7rem;
     }
 
-    ::deep .hotspot-label {
+    .hotspot-label {
         font-size: 0.65rem;
     }
 }
