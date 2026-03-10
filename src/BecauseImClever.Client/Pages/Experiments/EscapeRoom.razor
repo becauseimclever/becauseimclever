@@ -35,6 +35,12 @@
                 <button class="bob-btn" @onclick="this.StartGame">Start</button>
             </div>
         }
+        else if (this.State.IsGameComplete)
+        {
+            <CompletionScreen ElapsedTime="@this.State.ElapsedTime"
+                              AttemptNumber="@this.State.AttemptCount"
+                              OnPlayAgain="this.HandlePlayAgain" />
+        }
         else if (this.isTransitioning)
         {
             <DoorTransition IsActive="true" TargetRoomName="@this.transitionRoomName" />
@@ -76,7 +82,7 @@
             </PuzzleModal>
         }
     </div>
-    @if (this.State.IsGameStarted && !this.isTransitioning)
+    @if (this.State.IsGameStarted && !this.isTransitioning && !this.State.IsGameComplete)
     {
         <InventoryBar />
         <Clippy Pose="@this.clippyPose"
@@ -90,7 +96,16 @@
             <span>Room: @this.currentRoom.Name</span>
             <span class="bob-status-separator">|</span>
             <span>Puzzles: @this.State.SolvedPuzzles.Count</span>
-            <button class="bob-status-btn" @onclick="this.HandleStartOver">Start Over</button>
+            @if (this.showStartOverConfirm)
+            {
+                <span class="bob-confirm-text">Reset all progress?</span>
+                <button class="bob-status-btn bob-confirm-yes" @onclick="this.ConfirmStartOver">Yes</button>
+                <button class="bob-status-btn bob-confirm-no" @onclick="this.CancelStartOver">No</button>
+            }
+            else
+            {
+                <button class="bob-status-btn" @onclick="this.HandleStartOver">Start Over</button>
+            }
         }
         else
         {
@@ -114,6 +129,7 @@
     private StudyPuzzleParams? studyPuzzle;
     private GardenPuzzleParams? gardenPuzzle;
     private ExitPuzzleParams? exitPuzzle;
+    private bool showStartOverConfirm;
 
     protected override async Task OnInitializedAsync()
     {
@@ -257,10 +273,31 @@
         this.ShowClippyHint(ClippyHints.GetLockedDoorHint());
     }
 
-    private async Task HandleStartOver()
+    private Task HandleStartOver()
+    {
+        this.showStartOverConfirm = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmStartOver()
+    {
+        this.showStartOverConfirm = false;
+        this.State.StartOver();
+        this.UpdateCurrentRoom();
+        await this.State.SaveStateAsync();
+    }
+
+    private Task CancelStartOver()
+    {
+        this.showStartOverConfirm = false;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandlePlayAgain()
     {
         this.State.StartOver();
         this.UpdateCurrentRoom();
+        this.ShowClippyHint(ClippyHints.GetWelcomeHint());
         await this.State.SaveStateAsync();
     }
 

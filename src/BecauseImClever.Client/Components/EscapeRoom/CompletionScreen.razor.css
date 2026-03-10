@@ -1,0 +1,131 @@
+.completion-screen {
+    position: relative;
+    padding: var(--spacing-xl);
+    text-align: center;
+    overflow: hidden;
+    min-height: 300px;
+}
+
+.completion-content {
+    position: relative;
+    z-index: 1;
+}
+
+.celebration-clippy {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md);
+    animation: celebration-bounce 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes celebration-bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-12px); }
+}
+
+.completion-heading {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 2rem;
+    color: #000080;
+    margin-bottom: var(--spacing-sm);
+}
+
+.completion-message {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: var(--spacing-lg);
+}
+
+.completion-stats {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #e0e0e0;
+    border: 2px inset #fff;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: 4px;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #000080;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #333;
+    font-family: 'Courier New', monospace;
+}
+
+.completion-play-again {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 10px 40px;
+    background: #c0c0c0;
+    border: 2px outset #fff;
+    cursor: pointer;
+    color: #000;
+}
+
+.completion-play-again:hover {
+    background: #d0d0ff;
+}
+
+.completion-play-again:active {
+    border-style: inset;
+}
+
+/* Confetti */
+.confetti {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    left: calc(var(--i) * 3.33%);
+    background: hsl(calc(var(--i) * 37), 80%, 60%);
+    animation: confetti-fall 3s ease-in forwards;
+    animation-delay: calc(var(--i) * 0.08s);
+    opacity: 0.9;
+}
+
+.confetti-piece:nth-child(odd) {
+    border-radius: 50%;
+}
+
+.confetti-piece:nth-child(3n) {
+    width: 8px;
+    height: 12px;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(350px) rotate(720deg);
+        opacity: 0;
+    }
+}

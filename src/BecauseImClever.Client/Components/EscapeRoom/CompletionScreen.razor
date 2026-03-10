@@ -1,0 +1,52 @@
+@using BecauseImClever.Client.Models.EscapeRoom
+
+<div class="completion-screen">
+    <div class="confetti" aria-hidden="true">
+        @for (var i = 0; i < 30; i++)
+        {
+            <span class="confetti-piece" style="--i: @i;"></span>
+        }
+    </div>
+
+    <div class="completion-content">
+        <div class="celebration-clippy">
+            <span class="celebration-sprite">📎🎉</span>
+        </div>
+
+        <h2 class="completion-heading">Congratulations!</h2>
+        <p class="completion-message">You escaped the labyrinth!</p>
+
+        <div class="completion-stats">
+            <div class="stat">
+                <span class="stat-label">Time</span>
+                <span class="stat-value">@FormatTime(this.ElapsedTime)</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Attempt</span>
+                <span class="stat-value">#@this.AttemptNumber</span>
+            </div>
+        </div>
+
+        <button class="bob-btn completion-play-again" @onclick="this.OnPlayAgain">
+            Play Again
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TimeSpan ElapsedTime { get; set; }
+
+    [Parameter, EditorRequired]
+    public int AttemptNumber { get; set; }
+
+    [Parameter]
+    public EventCallback OnPlayAgain { get; set; }
+
+    private static string FormatTime(TimeSpan elapsed)
+    {
+        return elapsed.TotalHours >= 1
+            ? $"{(int)elapsed.TotalHours}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}"
+            : $"{(int)elapsed.TotalMinutes}:{elapsed.Seconds:D2}";
+    }
+}

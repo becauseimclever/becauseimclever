@@ -144,7 +144,7 @@ public class EscapeRoomTests : BunitContext
     }
 
     [Fact]
-    public void EscapeRoom_StartOver_IncrementsAttemptCount()
+    public void EscapeRoom_StartOver_ShowsConfirmationDialog()
     {
         // Arrange
         var cut = this.Render<EscapeRoom>();
@@ -154,8 +154,86 @@ public class EscapeRoomTests : BunitContext
         cut.Find(".bob-status-btn").Click();
 
         // Assert
+        Assert.Contains("Reset all progress?", cut.Markup);
+        Assert.NotNull(cut.Find(".bob-confirm-yes"));
+        Assert.NotNull(cut.Find(".bob-confirm-no"));
+    }
+
+    [Fact]
+    public void EscapeRoom_StartOverConfirmYes_IncrementsAttemptCount()
+    {
+        // Arrange
+        var cut = this.Render<EscapeRoom>();
+        cut.Find(".bob-btn").Click();
+
+        // Act
+        cut.Find(".bob-status-btn").Click();
+        cut.Find(".bob-confirm-yes").Click();
+
+        // Assert
         var badge = cut.Find(".bob-attempt-badge");
         Assert.Contains("Attempt #2", badge.TextContent);
+    }
+
+    [Fact]
+    public void EscapeRoom_StartOverConfirmNo_DismissesDialog()
+    {
+        // Arrange
+        var cut = this.Render<EscapeRoom>();
+        cut.Find(".bob-btn").Click();
+
+        // Act
+        cut.Find(".bob-status-btn").Click();
+        cut.Find(".bob-confirm-no").Click();
+
+        // Assert
+        Assert.DoesNotContain("Reset all progress?", cut.Markup);
+        var badge = cut.Find(".bob-attempt-badge");
+        Assert.Contains("Attempt #1", badge.TextContent);
+    }
+
+    [Fact]
+    public void EscapeRoom_WhenGameComplete_ShowsCompletionScreen()
+    {
+        // Arrange
+        var cut = this.Render<EscapeRoom>();
+        cut.Find(".bob-btn").Click();
+        var state = this.Services.GetRequiredService<EscapeRoomStateService>();
+        state.SolvePuzzle("exit-code");
+
+        // Assert
+        Assert.Contains("Congratulations", cut.Markup);
+    }
+
+    [Fact]
+    public void EscapeRoom_WhenGameComplete_HidesRoomView()
+    {
+        // Arrange
+        var cut = this.Render<EscapeRoom>();
+        cut.Find(".bob-btn").Click();
+        var state = this.Services.GetRequiredService<EscapeRoomStateService>();
+        state.SolvePuzzle("exit-code");
+
+        // Assert
+        Assert.DoesNotContain("room-scene", cut.Markup);
+    }
+
+    [Fact]
+    public void EscapeRoom_CompletionPlayAgain_ResetsToFoyer()
+    {
+        // Arrange
+        var cut = this.Render<EscapeRoom>();
+        cut.Find(".bob-btn").Click();
+        var state = this.Services.GetRequiredService<EscapeRoomStateService>();
+        state.SolvePuzzle("exit-code");
+
+        // Act
+        cut.Find(".completion-play-again").Click();
+
+        // Assert
+        Assert.DoesNotContain("Congratulations", cut.Markup);
+        Assert.Contains("room-scene", cut.Markup);
+        Assert.Contains("The Foyer", cut.Markup);
     }
 
     [Fact]

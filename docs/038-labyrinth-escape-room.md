@@ -298,15 +298,16 @@ public class PuzzleRandomizer
 
 ---
 
-### Slice 7: Completion Screen & Timer
+### Slice 7: Completion Screen & Timer ✅
 
 **What changes:**
 
-- **Client — Components**: Create `CompletionScreen.razor` with congratulatory message, elapsed time, attempt number, and "Play Again" button
-- **Client — Components**: Add "Start Over" button accessible at any time (in a corner/menu), with a confirmation dialog
-- **Client — State**: On "Play Again" or "Start Over": increment attempt counter, generate a new seed, reset room/inventory/puzzle state, persist updated counter and new seed to sessionStorage
-- **Client — Styling**: Microsoft Bob celebration screen aesthetic (confetti, Clippy celebrating)
-- **Client — UI**: Display current attempt number (e.g., "Attempt #3") in the page header/HUD
+- ✅ **Client — Components**: Created `CompletionScreen.razor` with congratulatory message, elapsed time (M:SS / H:MM:SS), attempt number, and "Play Again" button
+- ✅ **Client — Components**: "Start Over" button now shows a confirmation dialog ("Reset all progress?" with Yes/No) before resetting
+- ✅ **Client — State**: On "Play Again" or "Start Over": increments attempt counter, generates a new seed, resets room/inventory/puzzle state, persists to sessionStorage
+- ✅ **Client — Styling**: Microsoft Bob celebration screen with confetti animation (30 falling pieces) and Clippy celebrating (📎🎉)
+- ✅ **Client — UI**: Attempt number displayed in completion screen stats
+- ✅ **Client — Integration**: CompletionScreen wired into EscapeRoom.razor, shown when `IsGameComplete` is true; InventoryBar and Clippy hidden during completion
 
 **Affected layers:** Client
 
