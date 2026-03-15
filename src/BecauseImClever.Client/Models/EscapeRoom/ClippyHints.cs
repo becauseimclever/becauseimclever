@@ -6,6 +6,15 @@ namespace BecauseImClever.Client.Models.EscapeRoom;
 /// </summary>
 public static class ClippyHints
 {
+    private static readonly string[] DevToolsDialoguePool =
+    [
+        "It looks like you're trying to cheat! Would you like help with that? ...Just kidding. I can't help you there. \U0001f4ce",
+        "Hey! Those developer tools won't help you escape. Trust me, I've tried. \U0001f4ce",
+        "I see you opened the console. Bold move. The puzzles are solved with brains, not breakpoints! \U0001f4ce",
+        "Oh no, not the dev tools! I'm telling the other rooms you're snooping. \U0001f4ce",
+        "Fun fact: the escape code is definitely not stored in a global variable. Definitely not. \U0001f440\U0001f4ce",
+    ];
+
     private static readonly Dictionary<RoomId, ClippyHint> RoomHints = new()
     {
         [RoomId.Foyer] = new ClippyHint(
@@ -121,4 +130,31 @@ public static class ClippyHints
     /// <returns>A welcome hint.</returns>
     public static ClippyHint GetWelcomeHint()
         => new("It looks like you're trying to escape! I'm here to help. Click on objects to interact with them.", ClippyPose.Idle);
+
+    /// <summary>
+    /// Gets the Clippy admonishment dialogue when DevTools is opened during the escape room.
+    /// The response escalates based on how many times DevTools has been opened.
+    /// </summary>
+    /// <param name="openCount">How many times DevTools has been opened (1-based).</param>
+    /// <returns>An admonishment hint with the Suspicious pose.</returns>
+    public static ClippyHint GetDevToolsAdmonishment(int openCount) => openCount switch
+    {
+        1 => new(DevToolsDialoguePool[Math.Abs(Environment.TickCount) % DevToolsDialoguePool.Length], ClippyPose.Suspicious),
+        2 => new("You again? I'm starting to think you're not even trying the puzzles. \U0001f4ce", ClippyPose.Suspicious),
+        _ => new("At this point I'm just impressed by your persistence. Fine, I'll allow it. \U0001f4ce", ClippyPose.Suspicious),
+    };
+
+    /// <summary>
+    /// Gets the Clippy response when the player clicks the "There Is No Cow Level" book in the Library.
+    /// </summary>
+    /// <returns>A cow level dismissal hint.</returns>
+    public static ClippyHint GetCowLevelBookHint()
+        => new("That book? It's just an old legend. There is no cow level. Move along. \U0001f4ce", ClippyPose.Suspicious);
+
+    /// <summary>
+    /// Gets the Clippy reaction when the cow level Easter egg is unlocked via console command.
+    /// </summary>
+    /// <returns>A surprised Clippy hint.</returns>
+    public static ClippyHint GetCowLevelUnlockedHint()
+        => new("Wait... how do you know about that? That level doesn't exist! \U0001f4ce", ClippyPose.Suspicious);
 }

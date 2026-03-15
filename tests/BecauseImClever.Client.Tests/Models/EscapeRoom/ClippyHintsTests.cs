@@ -196,4 +196,110 @@ public class ClippyHintsTests
         Assert.False(string.IsNullOrWhiteSpace(hint.Message));
         Assert.Equal(ClippyPose.Thinking, hint.Pose);
     }
+
+    [Fact]
+    public void GetDevToolsAdmonishment_FirstOpen_ReturnsSuspiciousPose()
+    {
+        // Act
+        var hint = ClippyHints.GetDevToolsAdmonishment(1);
+
+        // Assert
+        Assert.Equal(ClippyPose.Suspicious, hint.Pose);
+    }
+
+    [Fact]
+    public void GetDevToolsAdmonishment_FirstOpen_ReturnsNonEmptyMessage()
+    {
+        // Act
+        var hint = ClippyHints.GetDevToolsAdmonishment(1);
+
+        // Assert
+        Assert.NotNull(hint);
+        Assert.False(string.IsNullOrWhiteSpace(hint.Message));
+    }
+
+    [Fact]
+    public void GetDevToolsAdmonishment_SecondOpen_ReturnsDifferentMessage()
+    {
+        // Act
+        var first = ClippyHints.GetDevToolsAdmonishment(1);
+        var second = ClippyHints.GetDevToolsAdmonishment(2);
+
+        // Assert
+        Assert.NotEqual(first.Message, second.Message);
+    }
+
+    [Fact]
+    public void GetDevToolsAdmonishment_ThirdOpen_ReturnsDifferentFromSecond()
+    {
+        // Act
+        var second = ClippyHints.GetDevToolsAdmonishment(2);
+        var third = ClippyHints.GetDevToolsAdmonishment(3);
+
+        // Assert
+        Assert.NotEqual(second.Message, third.Message);
+    }
+
+    [Fact]
+    public void GetDevToolsAdmonishment_FourthOpen_ReturnsSameAsThird()
+    {
+        // Act — 3+ should all return the same resigned message
+        var third = ClippyHints.GetDevToolsAdmonishment(3);
+        var fourth = ClippyHints.GetDevToolsAdmonishment(4);
+
+        // Assert
+        Assert.Equal(third.Message, fourth.Message);
+    }
+
+    [Fact]
+    public void GetDevToolsAdmonishment_ContainsClippyEmoji()
+    {
+        // Act
+        var hint = ClippyHints.GetDevToolsAdmonishment(1);
+
+        // Assert — all Clippy dialogue ends with the paperclip emoji
+        Assert.Contains("\U0001f4ce", hint.Message);
+    }
+
+    [Fact]
+    public void GetCowLevelBookHint_ReturnsNonEmptyHint()
+    {
+        // Act
+        var hint = ClippyHints.GetCowLevelBookHint();
+
+        // Assert
+        Assert.NotNull(hint);
+        Assert.False(string.IsNullOrWhiteSpace(hint.Message));
+    }
+
+    [Fact]
+    public void GetCowLevelBookHint_ContainsCowLevelReference()
+    {
+        // Act
+        var hint = ClippyHints.GetCowLevelBookHint();
+
+        // Assert
+        Assert.Contains("cow level", hint.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void GetCowLevelUnlockedHint_ReturnsNonEmptyHint()
+    {
+        // Act
+        var hint = ClippyHints.GetCowLevelUnlockedHint();
+
+        // Assert
+        Assert.NotNull(hint);
+        Assert.False(string.IsNullOrWhiteSpace(hint.Message));
+    }
+
+    [Fact]
+    public void GetCowLevelUnlockedHint_UsesSuspiciousPose()
+    {
+        // Act
+        var hint = ClippyHints.GetCowLevelUnlockedHint();
+
+        // Assert
+        Assert.Equal(ClippyPose.Suspicious, hint.Pose);
+    }
 }

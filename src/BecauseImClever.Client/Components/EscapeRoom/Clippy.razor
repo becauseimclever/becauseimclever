@@ -15,6 +15,7 @@
 @code {
     private const string SpriteSheetPath = "images/escape-room/Clippy%20pixel%20sprite%20.png";
     private const int Columns = 4;
+    private const int Rows = 2;
     private const int CellSize = 256;
 
     /// <summary>Gets or sets the current Clippy pose.</summary>
@@ -39,6 +40,7 @@
         ClippyPose.Thinking => "clippy-thinking",
         ClippyPose.Pointing => "clippy-pointing",
         ClippyPose.Celebrating => "clippy-celebrating",
+        ClippyPose.Suspicious => "clippy-suspicious",
         _ => "clippy-idle",
     };
 
@@ -48,6 +50,7 @@
         ClippyPose.Thinking => (1, 0),
         ClippyPose.Pointing => (2, 0),
         ClippyPose.Celebrating => (3, 0),
+        ClippyPose.Suspicious => (0, 1),
         _ => (0, 0),
     };
 

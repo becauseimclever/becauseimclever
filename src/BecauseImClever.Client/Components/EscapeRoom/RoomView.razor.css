@@ -194,6 +194,28 @@
     border-color: #000080;
 }
 
+/* Cow level Easter egg hotspots */
+.room-hotspot[data-hotspot-id="garden-cowlevel-graffiti"] .hotspot-label {
+    color: #4a6741;
+    background: transparent;
+    font-style: italic;
+    opacity: 0.3;
+    font-size: 0.65rem;
+}
+
+.room-hotspot[data-hotspot-id="garden-cowlevel-graffiti"]::after {
+    border-color: transparent;
+    animation: none;
+}
+
+.room-hotspot[data-hotspot-id="library-cowlevel-book"] .hotspot-label {
+    font-size: 0.6rem;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    background: rgba(139, 69, 19, 0.15);
+    color: #5c3a1e;
+}
+
 /* Door discoverability: doorknob indicator */
 .room-door.unlocked::before {
     content: '🚪';

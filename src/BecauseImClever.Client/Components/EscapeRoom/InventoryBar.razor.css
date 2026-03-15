@@ -56,3 +56,16 @@
     object-fit: contain;
     pointer-events: none;
 }
+
+.inventory-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    border: 2px outset #fff;
+    border-radius: 4px;
+    background: #e0e0e0;
+    cursor: default;
+}

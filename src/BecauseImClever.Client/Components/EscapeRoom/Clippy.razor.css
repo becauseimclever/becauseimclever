@@ -56,6 +56,10 @@
     animation: clippyCelebrate 0.5s ease-in-out infinite;
 }
 
+.clippy-suspicious {
+    animation: clippySuspicious 1s ease-in-out infinite;
+}
+
 @keyframes clippyBounce {
     0%, 100% {
         transform: translateY(0);
@@ -98,6 +102,15 @@
     }
     75% {
         transform: translateY(-8px) rotate(10deg);
+    }
+}
+
+@keyframes clippySuspicious {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.05) rotate(-3deg);
     }
 }
 

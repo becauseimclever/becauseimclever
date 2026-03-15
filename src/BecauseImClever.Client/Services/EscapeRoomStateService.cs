@@ -53,6 +53,12 @@ public class EscapeRoomStateService
     /// <summary>Gets the currently selected inventory item ID, or null if none selected.</summary>
     public string? SelectedItem { get; private set; }
 
+    /// <summary>Gets the number of times DevTools has been opened during the current game session.</summary>
+    public int DevToolsOpenCount { get; private set; }
+
+    /// <summary>Gets a value indicating whether the cow level Easter egg has been unlocked.</summary>
+    public bool CowLevelUnlocked { get; private set; }
+
     /// <summary>Gets the elapsed time since the game started.</summary>
     public TimeSpan ElapsedTime => this.IsGameStarted ? DateTimeOffset.UtcNow - this.startTime : TimeSpan.Zero;
 
@@ -73,8 +79,28 @@ public class EscapeRoomStateService
         this.inventory.Clear();
         this.unlockedDoors.Clear();
         this.SelectedItem = null;
+        this.DevToolsOpenCount = 0;
+        this.CowLevelUnlocked = false;
         this.startTime = DateTimeOffset.UtcNow;
         this.IsGameStarted = true;
+        this.OnStateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Increments the DevTools open counter and raises <see cref="OnStateChanged"/>.
+    /// </summary>
+    public void IncrementDevToolsOpenCount()
+    {
+        this.DevToolsOpenCount++;
+        this.OnStateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Marks the cow level Easter egg as unlocked.
+    /// </summary>
+    public void UnlockCowLevel()
+    {
+        this.CowLevelUnlocked = true;
         this.OnStateChanged?.Invoke();
     }
 
@@ -192,6 +218,8 @@ public class EscapeRoomStateService
         this.inventory.Clear();
         this.unlockedDoors.Clear();
         this.SelectedItem = null;
+        this.DevToolsOpenCount = 0;
+        this.CowLevelUnlocked = false;
         this.startTime = DateTimeOffset.UtcNow;
         this.OnStateChanged?.Invoke();
     }
@@ -211,6 +239,8 @@ public class EscapeRoomStateService
             Inventory = [.. this.inventory],
             UnlockedDoors = [.. this.unlockedDoors],
             StartTimeTicks = this.startTime.Ticks,
+            DevToolsOpenCount = this.DevToolsOpenCount,
+            CowLevelUnlocked = this.CowLevelUnlocked,
         };
 
         var json = JsonSerializer.Serialize(state);
@@ -253,6 +283,8 @@ public class EscapeRoomStateService
         }
 
         this.startTime = new DateTimeOffset(state.StartTimeTicks, TimeSpan.Zero);
+        this.DevToolsOpenCount = state.DevToolsOpenCount;
+        this.CowLevelUnlocked = state.CowLevelUnlocked;
         this.IsGameStarted = true;
     }
 

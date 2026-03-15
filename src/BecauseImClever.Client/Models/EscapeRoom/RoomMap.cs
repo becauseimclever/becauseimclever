@@ -31,6 +31,7 @@ public static class RoomMap
             "room-library",
             [
                 new Hotspot("library-desk", "Reading Desk", 30, 50, 40, 25, InteractionType.Puzzle, PuzzleId: "library-cipher"),
+                new Hotspot("library-cowlevel-book", "There Is No Cow Level: A Comprehensive History of Bovine Denial", 70, 15, 15, 10, InteractionType.Decorative),
                 new Hotspot("library-shelves", "Bookshelves", 5, 10, 90, 35, InteractionType.Decorative),
                 new Hotspot("library-globe", "Old Globe", 80, 55, 12, 18, InteractionType.Decorative),
             ],
@@ -77,6 +78,7 @@ public static class RoomMap
             [
                 new Hotspot("garden-maze", "Hedge Maze Entrance", 20, 20, 60, 60, InteractionType.Puzzle, PuzzleId: "garden-maze"),
                 new Hotspot("garden-fountain", "Stone Fountain", 75, 15, 15, 20, InteractionType.Decorative),
+                new Hotspot("garden-cowlevel-graffiti", "there is no cow level", 10, 50, 12, 8, InteractionType.Decorative),
                 new Hotspot("garden-bench", "Garden Bench", 5, 70, 18, 15, InteractionType.Decorative),
             ],
             [

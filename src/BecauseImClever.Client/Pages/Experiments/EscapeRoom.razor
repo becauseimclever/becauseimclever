@@ -1,10 +1,12 @@
 @page "/experiments/escape-room"
+@using BecauseImClever.Client.Components
 @using BecauseImClever.Client.Components.EscapeRoom
 @using BecauseImClever.Client.Models.EscapeRoom
 @using BecauseImClever.Client.Services
 @inject EscapeRoomStateService State
 @inject NavigationManager Navigation
-@implements IDisposable
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 <PageTitle>Escape Room - BecauseImClever</PageTitle>
 
@@ -132,6 +134,8 @@
     private GardenPuzzleParams? gardenPuzzle;
     private ExitPuzzleParams? exitPuzzle;
     private bool showStartOverConfirm;
+    private DotNetObjectReference<EscapeRoom>? cowLevelRef;
+    private int lastDevToolsOpenCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,15 +153,56 @@
 
         this.State.OnStateChanged += this.OnStateChanged;
         this.UpdateCurrentRoom();
+        this.lastDevToolsOpenCount = this.State.DevToolsOpenCount;
     }
 
-    public void Dispose()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            this.cowLevelRef = DotNetObjectReference.Create(this);
+            await this.JSRuntime.InvokeVoidAsync("consoleWatcher.registerCowLevel", this.cowLevelRef);
+        }
+    }
+
+    /// <summary>
+    /// Called from JavaScript when the cow level Easter egg is triggered.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnCowLevelUnlocked()
+    {
+        if (!this.State.CowLevelUnlocked)
+        {
+            this.State.UnlockCowLevel();
+            this.ShowClippyHint(ClippyHints.GetCowLevelUnlockedHint());
+            await this.State.SaveStateAsync();
+            this.StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
     {
         this.State.OnStateChanged -= this.OnStateChanged;
+        try
+        {
+            await this.JSRuntime.InvokeVoidAsync("consoleWatcher.unregisterCowLevel");
+        }
+        catch
+        {
+            // Silently fail during disposal
+        }
+
+        this.cowLevelRef?.Dispose();
     }
 
     private void OnStateChanged()
     {
+        if (this.State.DevToolsOpenCount > this.lastDevToolsOpenCount)
+        {
+            this.lastDevToolsOpenCount = this.State.DevToolsOpenCount;
+            this.ShowClippyHint(ClippyHints.GetDevToolsAdmonishment(this.State.DevToolsOpenCount));
+        }
+
         this.UpdateCurrentRoom();
         this.InvokeAsync(this.StateHasChanged);
     }
@@ -192,6 +237,12 @@
 
     private Task HandleHotspotClicked(Hotspot hotspot)
     {
+        if (hotspot.Id == "library-cowlevel-book")
+        {
+            this.ShowClippyHint(ClippyHints.GetCowLevelBookHint());
+            return Task.CompletedTask;
+        }
+
         if (hotspot.InteractionType == InteractionType.Puzzle && hotspot.PuzzleId is not null)
         {
             this.activePuzzleId = hotspot.PuzzleId;

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Layout;
+using BecauseImClever.Client.Services;
 using BecauseImClever.Domain.Entities;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +57,9 @@ public class MainLayoutTests : BunitContext
                 Content = new StringContent("{\"version\":\"1.0.0\"}",  System.Text.Encoding.UTF8, "application/json"),
             });
         this.Services.AddSingleton(new HttpClient(mockHandler.Object) { BaseAddress = new Uri("http://localhost/") });
+
+        // Setup EscapeRoomStateService
+        this.Services.AddSingleton<EscapeRoomStateService>();
     }
 
     [Fact]

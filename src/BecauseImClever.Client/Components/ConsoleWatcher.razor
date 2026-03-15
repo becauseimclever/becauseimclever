@@ -22,6 +22,12 @@
     [Parameter]
     public EventCallback OnDevToolsDetected { get; set; }
 
+    /// <summary>
+    /// When true, suppresses the generic toast and console message in favor of in-game handling.
+    /// </summary>
+    [Parameter]
+    public bool IsEscapeRoomActive { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !this.isInitialized)
@@ -37,7 +43,7 @@
     [JSInvokable]
     public async Task OnDevToolsOpened()
     {
-        if (this.hasConsent)
+        if (!this.IsEscapeRoomActive && this.hasConsent)
         {
             var toastShown = await this.JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "consoleWatcherToastShown");
             if (toastShown != "true")
@@ -58,11 +64,14 @@
     {
         try
         {
-            var alreadyShown = await this.JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "consoleWatcherShown");
-            if (alreadyShown != "true")
+            if (!this.IsEscapeRoomActive)
             {
-                await this.JSRuntime.InvokeVoidAsync("consoleWatcher.showMessage");
-                await this.JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "consoleWatcherShown", "true");
+                var alreadyShown = await this.JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "consoleWatcherShown");
+                if (alreadyShown != "true")
+                {
+                    await this.JSRuntime.InvokeVoidAsync("consoleWatcher.showMessage");
+                    await this.JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "consoleWatcherShown", "true");
+                }
             }
 
             this.hasConsent = await this.ConsentService.HasUserConsentedAsync();

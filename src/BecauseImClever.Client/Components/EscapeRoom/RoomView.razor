@@ -12,6 +12,7 @@
         @foreach (var hotspot in Room.Hotspots)
         {
             <div class="room-hotspot"
+                 data-hotspot-id="@hotspot.Id"
                  title="@hotspot.Label"
                  style="left: @(hotspot.X)%; top: @(hotspot.Y)%; width: @(hotspot.Width)%; height: @(hotspot.Height)%;"
                  @onclick="() => OnHotspotClicked.InvokeAsync(hotspot)">

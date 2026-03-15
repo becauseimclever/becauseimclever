@@ -612,4 +612,161 @@ public class EscapeRoomStateServiceTests
         // Assert
         Assert.Null(service.SelectedItem);
     }
+
+    [Fact]
+    public void DevToolsOpenCount_DefaultsToZero()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+
+        // Act & Assert
+        Assert.Equal(0, service.DevToolsOpenCount);
+    }
+
+    [Fact]
+    public void IncrementDevToolsOpenCount_IncrementsCount()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+
+        // Act
+        service.IncrementDevToolsOpenCount();
+
+        // Assert
+        Assert.Equal(1, service.DevToolsOpenCount);
+    }
+
+    [Fact]
+    public void IncrementDevToolsOpenCount_IncrementsMultipleTimes()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+
+        // Act
+        service.IncrementDevToolsOpenCount();
+        service.IncrementDevToolsOpenCount();
+        service.IncrementDevToolsOpenCount();
+
+        // Assert
+        Assert.Equal(3, service.DevToolsOpenCount);
+    }
+
+    [Fact]
+    public void IncrementDevToolsOpenCount_RaisesOnStateChanged()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        var raised = false;
+        service.OnStateChanged += () => raised = true;
+
+        // Act
+        service.IncrementDevToolsOpenCount();
+
+        // Assert
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void CowLevelUnlocked_DefaultsToFalse()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+
+        // Act & Assert
+        Assert.False(service.CowLevelUnlocked);
+    }
+
+    [Fact]
+    public void UnlockCowLevel_SetsCowLevelUnlockedToTrue()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+
+        // Act
+        service.UnlockCowLevel();
+
+        // Assert
+        Assert.True(service.CowLevelUnlocked);
+    }
+
+    [Fact]
+    public void UnlockCowLevel_RaisesOnStateChanged()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        var raised = false;
+        service.OnStateChanged += () => raised = true;
+
+        // Act
+        service.UnlockCowLevel();
+
+        // Assert
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void StartNewGame_ResetsDevToolsOpenCount()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.IncrementDevToolsOpenCount();
+        service.IncrementDevToolsOpenCount();
+
+        // Act
+        service.StartNewGame();
+
+        // Assert
+        Assert.Equal(0, service.DevToolsOpenCount);
+    }
+
+    [Fact]
+    public void StartNewGame_ResetsCowLevelUnlocked()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.UnlockCowLevel();
+
+        // Act
+        service.StartNewGame();
+
+        // Assert
+        Assert.False(service.CowLevelUnlocked);
+    }
+
+    [Fact]
+    public void StartOver_ResetsDevToolsOpenCount()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.IncrementDevToolsOpenCount();
+
+        // Act
+        service.StartOver();
+
+        // Assert
+        Assert.Equal(0, service.DevToolsOpenCount);
+    }
+
+    [Fact]
+    public void StartOver_ResetsCowLevelUnlocked()
+    {
+        // Arrange
+        var service = new EscapeRoomStateService(this.mockJs.Object);
+        service.StartNewGame();
+        service.UnlockCowLevel();
+
+        // Act
+        service.StartOver();
+
+        // Assert
+        Assert.False(service.CowLevelUnlocked);
+    }
 }

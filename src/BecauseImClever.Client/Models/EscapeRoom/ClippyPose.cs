@@ -16,4 +16,7 @@ public enum ClippyPose
 
     /// <summary>Celebration — confetti and cheering.</summary>
     Celebrating,
+
+    /// <summary>Suspicious/scolding pose — arms crossed, raised eyebrow.</summary>
+    Suspicious,
 }

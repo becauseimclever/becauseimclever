@@ -5,7 +5,7 @@
 
 <div class="inventory-bar">
     <span class="inventory-label">Items:</span>
-    @if (State.Inventory.Count == 0)
+    @if (State.Inventory.Count == 0 && !State.CowLevelUnlocked)
     {
         <span class="inventory-empty">empty</span>
     }
@@ -23,6 +23,10 @@
                     <img class="item-icon" src="@item.Icon" alt="@item.Name" />
                 </button>
             }
+        }
+        @if (State.CowLevelUnlocked)
+        {
+            <span class="inventory-badge" title="Cow Level Denier">🐄💀</span>
         }
     }
 </div>

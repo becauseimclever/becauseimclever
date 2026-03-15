@@ -18,4 +18,8 @@ public class GameState
     public int AttemptCount { get; set; } = 1;
 
     public long StartTimeTicks { get; set; }
+
+    public int DevToolsOpenCount { get; set; }
+
+    public bool CowLevelUnlocked { get; set; }
 }

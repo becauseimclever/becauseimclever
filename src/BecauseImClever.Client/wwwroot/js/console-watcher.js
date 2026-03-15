@@ -195,5 +195,87 @@ window.consoleWatcher = {
                 // Silently fail - notification is non-critical
             }
         }
+    },
+
+    /** @type {boolean} */
+    _cowLevelRegistered: false,
+
+    /** @type {boolean} */
+    _cowLevelTriggered: false,
+
+    /** @type {object|null} */
+    _cowLevelDotNetRef: null,
+
+    /**
+     * Registers the ThereIsNoCowLevel console Easter egg.
+     * When the user types ThereIsNoCowLevel in the console, a styled
+     * Diablo-themed message is printed and a .NET callback is invoked.
+     * @param {object} dotNetRef - A DotNetObjectReference for calling back into Blazor.
+     */
+    registerCowLevel: function (dotNetRef) {
+        this._cowLevelDotNetRef = dotNetRef;
+        if (this._cowLevelRegistered) {
+            return;
+        }
+        this._cowLevelRegistered = true;
+
+        var self = this;
+        var variants = ['ThereIsNoCowLevel', 'thereisnocowlevel', 'THEREISNOCOWLEVEL'];
+        variants.forEach(function (name) {
+            try {
+                Object.defineProperty(window, name, {
+                    get: function () {
+                        self._triggerCowLevel();
+                        return '\uD83D\uDC04 Moo.';
+                    },
+                    configurable: true
+                });
+            } catch (e) {
+                // Property may already exist
+            }
+        });
+    },
+
+    /**
+     * Unregisters the cow level Easter egg.
+     */
+    unregisterCowLevel: function () {
+        this._cowLevelDotNetRef = null;
+    },
+
+    /**
+     * Fires the cow level Easter egg output and Blazor callback.
+     * @private
+     */
+    _triggerCowLevel: function () {
+        if (this._cowLevelTriggered) {
+            console.log('%cYou already found the secret. The cows remember. \uD83D\uDC04',
+                'font-size: 14px; color: #ffd700; padding: 8px;');
+            return;
+        }
+
+        this._cowLevelTriggered = true;
+
+        var mooStyle = 'font-size: 32px; font-weight: bold; color: #ff4500; text-shadow: 0 0 10px #ff6b00; padding: 16px;';
+        var bodyStyle = 'font-size: 14px; color: #e0e0e0; background: #1a0a0a; padding: 16px; line-height: 1.8; border-left: 3px solid #8b0000;';
+        var cainStyle = 'font-size: 13px; color: #ffd700; font-style: italic; padding: 8px;';
+
+        console.log('%c\uD83D\uDC04\uD83D\uDD25 M O O .', mooStyle);
+        console.log(
+            '%cYou found the secret. But you shouldn\'t have come here.\n\n' +
+            'The Lord of Terror sends his regards.\n' +
+            'Sanctuary has fallen, hero. The Prime Evils walk the earth once more,\n' +
+            'and not even the Horadrim can save you now.',
+            bodyStyle
+        );
+        console.log('%cStay a while and listen... or better yet, get back to the puzzle.\nYou still have rooms to clear. \uD83D\uDC04\uD83D\uDD25\n\n(Secret unlocked: Cow Level Denier \uD83C\uDFC6)', cainStyle);
+
+        if (this._cowLevelDotNetRef) {
+            try {
+                this._cowLevelDotNetRef.invokeMethodAsync('OnCowLevelUnlocked');
+            } catch (e) {
+                // Silently fail
+            }
+        }
     }
 };
