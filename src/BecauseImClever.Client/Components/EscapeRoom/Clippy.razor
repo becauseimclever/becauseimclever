@@ -5,11 +5,18 @@
                   Text="@(HintText ?? string.Empty)"
                   OnDismissed="OnHintDismissed" />
     <div class="clippy-sprite @GetPoseClass()" @onclick="OnClicked" title="Click for a hint!">
-        <img class="clippy-icon" src="images/escape-room/clippy.svg" alt="Clippy" />
+        <div class="clippy-icon"
+             role="img"
+             aria-label="Clippy"
+             style="@GetSpriteStyle()"></div>
     </div>
 </div>
 
 @code {
+    private const string SpriteSheetPath = "images/escape-room/Clippy%20pixel%20sprite%20.png";
+    private const int Columns = 4;
+    private const int CellSize = 256;
+
     /// <summary>Gets or sets the current Clippy pose.</summary>
     [Parameter, EditorRequired]
     public ClippyPose Pose { get; set; }
@@ -34,4 +41,21 @@
         ClippyPose.Celebrating => "clippy-celebrating",
         _ => "clippy-idle",
     };
+
+    private (int Col, int Row) GetSpriteCell() => this.Pose switch
+    {
+        ClippyPose.Idle => (0, 0),
+        ClippyPose.Thinking => (1, 0),
+        ClippyPose.Pointing => (2, 0),
+        ClippyPose.Celebrating => (3, 0),
+        _ => (0, 0),
+    };
+
+    private string GetSpriteStyle()
+    {
+        var (col, row) = this.GetSpriteCell();
+        var offsetX = col * CellSize;
+        var offsetY = row * CellSize;
+        return $"background-image: url('{SpriteSheetPath}'); background-position: -{offsetX}px -{offsetY}px; background-size: {CellSize * Columns}px auto;";
+    }
 }

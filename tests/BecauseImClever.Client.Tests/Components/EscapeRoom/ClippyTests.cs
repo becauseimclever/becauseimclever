@@ -115,14 +115,17 @@ public class ClippyTests : BunitContext
     }
 
     [Fact]
-    public void Clippy_RendersClippySvgImage()
+    public void Clippy_RendersClippySpriteIcon()
     {
         // Arrange & Act
         var cut = this.Render<Clippy>(parameters => parameters
             .Add(p => p.Pose, ClippyPose.Idle));
 
-        // Assert — Clippy is represented by an SVG image
-        var img = cut.Find("img.clippy-icon");
-        Assert.Equal("images/escape-room/clippy.svg", img.GetAttribute("src"));
+        // Assert — Clippy sprite is a div with background-image style
+        var icon = cut.Find("div.clippy-icon");
+        Assert.Equal("img", icon.GetAttribute("role"));
+        var style = icon.GetAttribute("style") ?? string.Empty;
+        Assert.Contains("background-image", style);
+        Assert.Contains("Clippy%20pixel%20sprite%20.png", style);
     }
 }
