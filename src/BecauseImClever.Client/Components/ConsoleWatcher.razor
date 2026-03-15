@@ -1,0 +1,98 @@
+@implements IAsyncDisposable
+@using BecauseImClever.Application.Interfaces
+@inject IJSRuntime JSRuntime
+@inject IConsentService ConsentService
+
+@if (this.showToast)
+{
+    <div class="console-watcher-toast" @onclick="DismissToast">
+        <span>&#x1F440; We see you, fellow developer!</span>
+    </div>
+}
+
+@code {
+    private bool isInitialized;
+    private bool hasConsent;
+    private bool showToast;
+    private DotNetObjectReference<ConsoleWatcher>? dotNetRef;
+
+    /// <summary>
+    /// Callback invoked when DevTools is detected as open.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnDevToolsDetected { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !this.isInitialized)
+        {
+            this.isInitialized = true;
+            await this.InitializeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Called from JavaScript when DevTools is detected.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnDevToolsOpened()
+    {
+        if (this.hasConsent)
+        {
+            this.showToast = true;
+            this.StateHasChanged();
+        }
+
+        if (this.OnDevToolsDetected.HasDelegate)
+        {
+            await this.OnDevToolsDetected.InvokeAsync();
+        }
+    }
+
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            var alreadyShown = await this.JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "consoleWatcherShown");
+            if (alreadyShown == "true")
+            {
+                return;
+            }
+
+            await this.JSRuntime.InvokeVoidAsync("consoleWatcher.showMessage");
+            await this.JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "consoleWatcherShown", "true");
+
+            this.hasConsent = await this.ConsentService.HasUserConsentedAsync();
+
+            if (this.hasConsent)
+            {
+                this.dotNetRef = DotNetObjectReference.Create(this);
+                await this.JSRuntime.InvokeVoidAsync("consoleWatcher.startDetection", this.dotNetRef);
+            }
+        }
+        catch
+        {
+            // Silently fail - console watcher is non-critical
+        }
+    }
+
+    private void DismissToast()
+    {
+        this.showToast = false;
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await this.JSRuntime.InvokeVoidAsync("consoleWatcher.stopDetection");
+        }
+        catch
+        {
+            // Silently fail during disposal
+        }
+
+        this.dotNetRef?.Dispose();
+    }
+}

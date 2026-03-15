@@ -21,6 +21,7 @@
 @import url("components/_modal.css");
 @import url("components/_blog.css");
 @import url("components/_blazor.css");
+@import url("components/_console-watcher.css");
 
 /* === Themes (CSS Variable Overrides) === */
 @import url("themes/_theme-retro.css");
