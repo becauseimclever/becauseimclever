@@ -50,6 +50,32 @@ public static class ClippyHints
             ClippyPose.Thinking),
     };
 
+    private static readonly Dictionary<string, ClippyHint> ActivePuzzleHints = new()
+    {
+        ["foyer-sorting"] = new ClippyHint(
+            "Look at the dates on each picture frame. Drag them so the earliest year is at the top!",
+            ClippyPose.Thinking),
+        ["library-cipher"] = new ClippyHint(
+            "Try matching a common letter like 'E' first. The cipher wheel shifts every letter by the same amount!",
+            ClippyPose.Thinking),
+        ["kitchen-sequence"] = new ClippyHint(
+            "The recipe on the wall lists the ingredients in order. Click them in that exact sequence!",
+            ClippyPose.Thinking),
+        ["study-logic"] = new ClippyHint(
+            "Solve the equations one at a time — each one gives you a digit of the code!",
+            ClippyPose.Thinking),
+        ["garden-maze"] = new ClippyHint(
+            "Use the arrow keys or click adjacent cells to move through the maze. If you hit a wall, try backtracking!",
+            ClippyPose.Thinking),
+        ["exit-code"] = new ClippyHint(
+            "Remember the three-digit code from the study? Combine it with the three-digit code from the garden!",
+            ClippyPose.Thinking),
+    };
+
+    private static readonly ClippyHint GenericActivePuzzleHint = new(
+        "It looks like you're working on a puzzle! Take your time and look for patterns.",
+        ClippyPose.Thinking);
+
     /// <summary>
     /// Gets the room-entry hint for the specified room.
     /// </summary>
@@ -65,6 +91,15 @@ public static class ClippyHints
     /// <returns>A puzzle hint with pose.</returns>
     public static ClippyHint GetPuzzleHint(RoomId roomId)
         => PuzzleHints[roomId];
+
+    /// <summary>
+    /// Gets the hint for an actively open puzzle, keyed by puzzle ID.
+    /// These are more specific than room-level puzzle hints.
+    /// </summary>
+    /// <param name="puzzleId">The puzzle ID.</param>
+    /// <returns>A puzzle-specific hint with pose.</returns>
+    public static ClippyHint GetActivePuzzleHint(string puzzleId)
+        => ActivePuzzleHints.GetValueOrDefault(puzzleId, GenericActivePuzzleHint);
 
     /// <summary>
     /// Gets the hint shown when a player clicks a locked door.

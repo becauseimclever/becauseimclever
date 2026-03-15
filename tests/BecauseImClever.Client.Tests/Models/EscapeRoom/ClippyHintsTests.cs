@@ -122,4 +122,78 @@ public class ClippyHintsTests
         // Assert
         Assert.Contains("It looks like", hint.Message);
     }
+
+    [Theory]
+    [InlineData("foyer-sorting")]
+    [InlineData("library-cipher")]
+    [InlineData("kitchen-sequence")]
+    [InlineData("study-logic")]
+    [InlineData("garden-maze")]
+    [InlineData("exit-code")]
+    public void GetActivePuzzleHint_ForEveryPuzzle_ReturnsNonEmptyHint(string puzzleId)
+    {
+        // Act
+        var hint = ClippyHints.GetActivePuzzleHint(puzzleId);
+
+        // Assert
+        Assert.NotNull(hint);
+        Assert.False(string.IsNullOrWhiteSpace(hint.Message));
+    }
+
+    [Theory]
+    [InlineData("foyer-sorting")]
+    [InlineData("library-cipher")]
+    [InlineData("kitchen-sequence")]
+    [InlineData("study-logic")]
+    [InlineData("garden-maze")]
+    [InlineData("exit-code")]
+    public void GetActivePuzzleHint_ForEveryPuzzle_UsesThinkingPose(string puzzleId)
+    {
+        // Act
+        var hint = ClippyHints.GetActivePuzzleHint(puzzleId);
+
+        // Assert
+        Assert.Equal(ClippyPose.Thinking, hint.Pose);
+    }
+
+    [Theory]
+    [InlineData("foyer-sorting")]
+    [InlineData("library-cipher")]
+    [InlineData("kitchen-sequence")]
+    [InlineData("study-logic")]
+    [InlineData("garden-maze")]
+    [InlineData("exit-code")]
+    public void GetActivePuzzleHint_ForEveryPuzzle_DiffersFromRoomPuzzleHint(string puzzleId)
+    {
+        // Map puzzle IDs to room IDs
+        var roomId = puzzleId switch
+        {
+            "foyer-sorting" => RoomId.Foyer,
+            "library-cipher" => RoomId.Library,
+            "kitchen-sequence" => RoomId.Kitchen,
+            "study-logic" => RoomId.Study,
+            "garden-maze" => RoomId.Garden,
+            "exit-code" => RoomId.Exit,
+            _ => throw new ArgumentException($"Unknown puzzle ID: {puzzleId}"),
+        };
+
+        // Act
+        var activePuzzleHint = ClippyHints.GetActivePuzzleHint(puzzleId);
+        var roomPuzzleHint = ClippyHints.GetPuzzleHint(roomId);
+
+        // Assert — active puzzle hints should be more specific than room-level puzzle hints
+        Assert.NotEqual(roomPuzzleHint.Message, activePuzzleHint.Message);
+    }
+
+    [Fact]
+    public void GetActivePuzzleHint_UnknownPuzzleId_ReturnsGenericHint()
+    {
+        // Act
+        var hint = ClippyHints.GetActivePuzzleHint("unknown-puzzle");
+
+        // Assert
+        Assert.NotNull(hint);
+        Assert.False(string.IsNullOrWhiteSpace(hint.Message));
+        Assert.Equal(ClippyPose.Thinking, hint.Pose);
+    }
 }

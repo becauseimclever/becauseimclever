@@ -1,6 +1,6 @@
 # 038 - Labyrinth Escape Room
 
-## Status: � In Progress
+## Status: ✅ Complete
 
 ## Feature Description
 
@@ -274,7 +274,7 @@ public class PuzzleRandomizer
 - ✅ Each puzzle is interactive, solvable, and rewards the correct item/code
 - ✅ Each puzzle's solution is randomized per seed — replaying with a different seed produces different solutions
 - ✅ Solving all puzzles enables the player to reach and unlock the exit
-- ⬜ Clippy provides puzzle-specific hints (existing per-room hints; puzzle-specific hints deferred to Slice 6/7)
+- ✅ Clippy provides puzzle-specific hints when a puzzle modal is open (more targeted than room-level hints)
 
 ---
 
@@ -363,13 +363,13 @@ public class PuzzleRandomizer
 
 ## Success Criteria
 
-- [ ] "Experiments" link appears in navigation and loads the escape room page
-- [ ] 4–6 rooms render with interactive hotspots and room transitions
-- [ ] Each puzzle is solvable and gates progression through doors
-- [ ] Puzzle solutions are randomized per seed, producing different solutions each playthrough
-- [ ] Clippy provides contextual hints and celebrates puzzle completions
-- [ ] Inventory system allows collecting and using items
-- [ ] Completion screen shows elapsed time and attempt count
-- [ ] "Start Over" generates a new seed and increments the attempt counter
-- [ ] Game state persists in sessionStorage across page refreshes
-- [ ] All tests passing with 90%+ coverage
+- [x] "Experiments" link appears in navigation and loads the escape room page
+- [x] 4–6 rooms render with interactive hotspots and room transitions
+- [x] Each puzzle is solvable and gates progression through doors
+- [x] Puzzle solutions are randomized per seed, producing different solutions each playthrough
+- [x] Clippy provides contextual hints and celebrates puzzle completions
+- [x] Inventory system allows collecting and using items
+- [x] Completion screen shows elapsed time and attempt count
+- [x] "Start Over" generates a new seed and increments the attempt counter
+- [x] Game state persists in sessionStorage across page refreshes
+- [x] All tests passing with 90%+ coverage on escape room components

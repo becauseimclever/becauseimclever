@@ -313,7 +313,9 @@
 
     private Task HandleClippyClicked()
     {
-        var hint = ClippyHints.GetPuzzleHint(this.State.CurrentRoom);
+        var hint = this.showPuzzleModal && this.activePuzzleId is not null
+            ? ClippyHints.GetActivePuzzleHint(this.activePuzzleId)
+            : ClippyHints.GetPuzzleHint(this.State.CurrentRoom);
         this.ShowClippyHint(hint);
         return Task.CompletedTask;
     }
