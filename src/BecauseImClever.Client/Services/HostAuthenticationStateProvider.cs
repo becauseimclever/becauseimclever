@@ -38,7 +38,7 @@ namespace BecauseImClever.Client.Services
 
                 var userInfo = await response.Content.ReadFromJsonAsync<UserInfo>();
 
-                if (userInfo == null)
+                if (userInfo == null || !userInfo.IsAuthenticated)
                 {
                     return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
                 }
@@ -102,6 +102,11 @@ namespace BecauseImClever.Client.Services
         /// </summary>
         private sealed class UserInfo
         {
+            /// <summary>
+            /// Gets or sets a value indicating whether the user is authenticated.
+            /// </summary>
+            public bool IsAuthenticated { get; set; }
+
             /// <summary>
             /// Gets or sets the user's display name.
             /// </summary>

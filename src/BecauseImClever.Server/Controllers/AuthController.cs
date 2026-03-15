@@ -63,7 +63,7 @@ namespace BecauseImClever.Server.Controllers
         {
             if (!this.User.Identity?.IsAuthenticated ?? true)
             {
-                return this.Unauthorized();
+                return this.Ok(new { IsAuthenticated = false });
             }
 
             var claims = this.User.Claims.Select(c => new { c.Type, c.Value }).ToList();
@@ -73,6 +73,7 @@ namespace BecauseImClever.Server.Controllers
 
             var userInfo = new
             {
+                IsAuthenticated = true,
                 Name = this.User.Identity?.Name ?? this.User.FindFirst(ClaimTypes.Name)?.Value,
                 Email = this.User.FindFirst(ClaimTypes.Email)?.Value,
                 IsAdmin = isAdmin,

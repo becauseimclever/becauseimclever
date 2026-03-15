@@ -187,10 +187,10 @@ public class ConsoleWatcherTests : TestContext
     }
 
     /// <summary>
-    /// Verifies that detection is not started when the session flag is already set.
+    /// Verifies that detection is still started even when the session flag is already set.
     /// </summary>
     [Fact]
-    public void OnAfterRender_WhenAlreadyShown_DoesNotStartDetection()
+    public void OnAfterRender_WhenAlreadyShown_StillStartsDetection()
     {
         // Arrange
         this.jsInterop.Setup<string?>("sessionStorage.getItem", "consoleWatcherShown").SetResult("true");
@@ -201,9 +201,8 @@ public class ConsoleWatcherTests : TestContext
         // Assert
         cut.WaitForAssertion(() =>
         {
-            Assert.Single(this.jsInterop.Invocations["sessionStorage.getItem"]);
+            Assert.Single(this.jsInterop.Invocations["consoleWatcher.startDetection"]);
         });
-        Assert.Empty(this.jsInterop.Invocations["consoleWatcher.startDetection"]);
     }
 
     /// <summary>
@@ -353,6 +352,28 @@ public class ConsoleWatcherTests : TestContext
         cut.WaitForAssertion(() =>
         {
             Assert.Single(this.jsInterop.Invocations["consoleWatcher.showMessage"]);
+        });
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.OnDevToolsOpened());
+
+        // Assert
+        Assert.DoesNotContain("console-watcher-toast", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that the toast is not shown when its session flag is already set.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task OnDevToolsOpened_WhenToastAlreadyShown_DoesNotShowToast()
+    {
+        // Arrange
+        this.jsInterop.Setup<string?>("sessionStorage.getItem", "consoleWatcherToastShown").SetResult("true");
+        var cut = this.Render<ConsoleWatcher>();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(this.jsInterop.Invocations["consoleWatcher.startDetection"]);
         });
 
         // Act

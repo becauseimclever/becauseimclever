@@ -39,8 +39,13 @@
     {
         if (this.hasConsent)
         {
-            this.showToast = true;
-            this.StateHasChanged();
+            var toastShown = await this.JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "consoleWatcherToastShown");
+            if (toastShown != "true")
+            {
+                this.showToast = true;
+                await this.JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "consoleWatcherToastShown", "true");
+                this.StateHasChanged();
+            }
         }
 
         if (this.OnDevToolsDetected.HasDelegate)
@@ -54,13 +59,11 @@
         try
         {
             var alreadyShown = await this.JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "consoleWatcherShown");
-            if (alreadyShown == "true")
+            if (alreadyShown != "true")
             {
-                return;
+                await this.JSRuntime.InvokeVoidAsync("consoleWatcher.showMessage");
+                await this.JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "consoleWatcherShown", "true");
             }
-
-            await this.JSRuntime.InvokeVoidAsync("consoleWatcher.showMessage");
-            await this.JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "consoleWatcherShown", "true");
 
             this.hasConsent = await this.ConsentService.HasUserConsentedAsync();
 

@@ -83,7 +83,7 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public void GetCurrentUser_WhenNotAuthenticated_ReturnsUnauthorized()
+    public void GetCurrentUser_WhenNotAuthenticated_ReturnsOkWithNotAuthenticated()
     {
         // Arrange
         var identity = new ClaimsIdentity(); // Not authenticated
@@ -93,7 +93,11 @@ public class AuthControllerTests
         var result = this.controller.GetCurrentUser();
 
         // Assert
-        Assert.IsType<UnauthorizedResult>(result);
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var value = okResult.Value;
+        Assert.NotNull(value);
+        var isAuthenticatedProperty = value.GetType().GetProperty("IsAuthenticated");
+        Assert.False((bool?)isAuthenticatedProperty?.GetValue(value));
     }
 
     [Fact]

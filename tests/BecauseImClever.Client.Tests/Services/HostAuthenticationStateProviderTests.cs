@@ -34,10 +34,11 @@ public class HostAuthenticationStateProviderTests
     }
 
     [Fact]
-    public async Task GetAuthenticationStateAsync_WhenUnauthorized_ReturnsUnauthenticatedState()
+    public async Task GetAuthenticationStateAsync_WhenNotAuthenticated_ReturnsUnauthenticatedState()
     {
         // Arrange
-        var httpClient = CreateMockHttpClient(HttpStatusCode.Unauthorized);
+        var userInfo = new { IsAuthenticated = false };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
         var provider = new HostAuthenticationStateProvider(httpClient);
 
         // Act
@@ -55,6 +56,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = true,
@@ -78,6 +80,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = false,
@@ -100,6 +103,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = false,
@@ -121,6 +125,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = true,
@@ -142,6 +147,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = false,
@@ -163,6 +169,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "guest",
             Email = "guest@example.com",
             IsAdmin = false,
@@ -185,6 +192,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = (string?)null,
             Email = "test@example.com",
             IsAdmin = false,
@@ -207,6 +215,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = string.Empty,
             IsAdmin = false,
@@ -229,6 +238,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = false,
@@ -255,6 +265,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = true,
@@ -297,6 +308,7 @@ public class HostAuthenticationStateProviderTests
         // Arrange
         var userInfo = new
         {
+            IsAuthenticated = true,
             Name = "testuser",
             Email = "test@example.com",
             IsAdmin = false,
