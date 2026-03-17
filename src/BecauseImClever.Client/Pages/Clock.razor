@@ -5,6 +5,15 @@
 
 <div class="clock-container">
     <h1>Clock</h1>
+
+    <div class="timezone-picker">
+        <select class="timezone-selector" value="@selectedTimeZone.Id" @onchange="OnTimezoneChanged">
+            @foreach (var tz in TimeZoneInfo.GetSystemTimeZones())
+            {
+                <option value="@tz.Id">@tz.DisplayName</option>
+            }
+        </select>
+    </div>
     
     <svg class="clock-face" viewBox="0 0 400 400" width="400" height="400">
         <!-- Clock face background -->
@@ -64,6 +73,7 @@
     </svg>
     
     <div class="digital-time">@currentTime.ToString("HH:mm:ss")</div>
+    <div class="timezone-display">@selectedTimeZone.DisplayName</div>
 </div>
 
 <style>
@@ -80,6 +90,22 @@
         margin-bottom: 2rem;
         color: var(--color-accent);
         font-family: var(--font-mono);
+    }
+
+    .timezone-picker {
+        margin-bottom: 1.5rem;
+    }
+
+    .timezone-selector {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        padding: 0.4rem 0.6rem;
+        background: var(--color-bg-secondary);
+        color: var(--color-text);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        max-width: 100%;
     }
     
     .clock-face {
@@ -143,10 +169,18 @@
         color: var(--color-text);
         letter-spacing: 0.1em;
     }
+
+    .timezone-display {
+        margin-top: 0.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+    }
 </style>
 
 @code {
     private DateTime currentTime = DateTime.Now;
+    private TimeZoneInfo selectedTimeZone = TimeZoneInfo.Local;
     private Timer? timer;
 
     protected override void OnInitialized()
@@ -156,8 +190,18 @@
 
     private void UpdateTime(object? state)
     {
-        currentTime = DateTime.Now;
+        currentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, selectedTimeZone);
         InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTimezoneChanged(ChangeEventArgs e)
+    {
+        var tzId = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(tzId))
+        {
+            selectedTimeZone = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+            currentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, selectedTimeZone);
+        }
     }
 
     private string GetHourHandTransform()

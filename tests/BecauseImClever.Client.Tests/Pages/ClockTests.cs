@@ -187,4 +187,87 @@ public class ClockTests : BunitContext
         // Should contain colons for HH:MM:SS format
         Assert.Contains(":", digitalDisplay.TextContent);
     }
+
+    [Fact]
+    public void Clock_RendersTimezoneSelector()
+    {
+        // Arrange & Act
+        var cut = this.Render<Clock>();
+
+        // Assert
+        var select = cut.Find("select.timezone-selector");
+        Assert.NotNull(select);
+    }
+
+    [Fact]
+    public void Clock_TimezoneSelectorContainsOptions()
+    {
+        // Arrange & Act
+        var cut = this.Render<Clock>();
+
+        // Assert
+        var options = cut.FindAll("select.timezone-selector option");
+        Assert.True(options.Count > 1, "Timezone selector should contain multiple timezone options");
+    }
+
+    [Fact]
+    public void Clock_TimezoneSelectorDefaultsToLocalTimezone()
+    {
+        // Arrange & Act
+        var cut = this.Render<Clock>();
+
+        // Assert
+        var select = cut.Find("select.timezone-selector");
+        var selectedValue = select.GetAttribute("value");
+        Assert.Equal(TimeZoneInfo.Local.Id, selectedValue);
+    }
+
+    [Fact]
+    public void Clock_RendersTimezoneDisplayName()
+    {
+        // Arrange & Act
+        var cut = this.Render<Clock>();
+
+        // Assert
+        var timezoneDisplay = cut.Find(".timezone-display");
+        Assert.NotNull(timezoneDisplay);
+        Assert.False(string.IsNullOrWhiteSpace(timezoneDisplay.TextContent));
+    }
+
+    [Fact]
+    public void Clock_TimezoneChange_UpdatesDigitalTimeDisplay()
+    {
+        // Arrange
+        var cut = this.Render<Clock>();
+        var select = cut.Find("select.timezone-selector");
+
+        // Pick a timezone different from local
+        var targetZone = TimeZoneInfo.Local.Id == "UTC"
+            ? TimeZoneInfo.GetSystemTimeZones().First(tz => tz.Id != "UTC")
+            : TimeZoneInfo.FindSystemTimeZoneById("UTC");
+
+        // Act
+        select.Change(targetZone.Id);
+
+        // Assert - digital display should still show valid time format
+        var digitalDisplay = cut.Find(".digital-time");
+        Assert.Contains(":", digitalDisplay.TextContent);
+    }
+
+    [Fact]
+    public void Clock_TimezoneChange_UpdatesTimezoneDisplay()
+    {
+        // Arrange
+        var cut = this.Render<Clock>();
+        var select = cut.Find("select.timezone-selector");
+
+        var targetZone = TimeZoneInfo.FindSystemTimeZoneById("UTC");
+
+        // Act
+        select.Change(targetZone.Id);
+
+        // Assert
+        var timezoneDisplay = cut.Find(".timezone-display");
+        Assert.Contains(targetZone.DisplayName, timezoneDisplay.TextContent);
+    }
 }
