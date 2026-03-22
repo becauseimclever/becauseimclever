@@ -46,9 +46,9 @@ public static class RoomMap
             "A rustic kitchen with copper pots and a mysterious recipe pinned to the wall.",
             "room-kitchen",
             [
-                new Hotspot("kitchen-recipe", "Recipe Board", 25, 10, 50, 30, InteractionType.Puzzle, PuzzleId: "kitchen-sequence"),
-                new Hotspot("kitchen-stove", "Cast Iron Stove", 60, 50, 25, 30, InteractionType.Decorative),
-                new Hotspot("kitchen-pantry", "Pantry Shelf", 10, 45, 20, 35, InteractionType.Decorative),
+                new Hotspot("kitchen-recipe", "Recipe Board", 4, 7, 20, 34, InteractionType.Puzzle, PuzzleId: "kitchen-sequence"),
+                new Hotspot("kitchen-stove", "Cast Iron Stove", 41, 37, 18, 37, InteractionType.Decorative),
+                new Hotspot("kitchen-pantry", "Pantry Shelf", 75, 9, 21, 63, InteractionType.Decorative),
             ],
             [
                 new Door(RoomId.Foyer, "Back to Foyer", 5, 30, 12, 40),
