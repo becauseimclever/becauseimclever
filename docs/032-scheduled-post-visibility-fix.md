@@ -1,6 +1,6 @@
 # 032 - Scheduled Post Visibility and Published Date Fix
 
-## Status: 🔄 In Progress
+## Status: ✅ Complete
 
 ## Feature Description
 
@@ -110,13 +110,13 @@ if (newStatus == PostStatus.Published)
 
 ## Implementation Tasks
 
-- [ ] Update `DatabaseBlogService.GetPostsAsync()` to filter by `Published` status
-- [ ] Update `DatabaseBlogService.GetPostsAsync(page, pageSize)` to filter by `Published` status
-- [ ] Update `AdminPostService.UpdateStatusAsync()` to set `PublishedDate` when status becomes `Published`
-- [ ] Update `AdminPostService.UpdateStatusInternalAsync()` to set `PublishedDate` when status becomes `Published`
-- [ ] Add unit tests for status filtering in `DatabaseBlogService`
-- [ ] Add unit tests for published date update in `AdminPostService`
-- [ ] Verify `ScheduledPostPublisherService` correctly sets published date
+- [x] Update `DatabaseBlogService.GetPostsAsync()` to filter by `Published` status
+- [x] Update `DatabaseBlogService.GetPostsAsync(page, pageSize)` to filter by `Published` status
+- [x] Update `AdminPostService.UpdateStatusAsync()` to set `PublishedDate` when status becomes `Published`
+- [x] Update `AdminPostService.UpdateStatusInternalAsync()` to set `PublishedDate` when status becomes `Published`
+- [x] Add unit tests for status filtering in `DatabaseBlogService`
+- [x] Add unit tests for published date update in `AdminPostService`
+- [x] Verify `ScheduledPostPublisherService` correctly sets published date
 
 ## Success Criteria
 

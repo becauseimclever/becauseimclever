@@ -2,6 +2,36 @@
 
 ## Active Decisions
 
+### Scheduled Post Visibility Fix (#032)
+
+**Author:** Banner  
+**Date:** 2026-03-24  
+**Feature:** #032 Scheduled Post Visibility and Published Date Fix
+
+#### Decision 1: `GetPostBySlugAsync` Left Unfiltered
+
+`DatabaseBlogService.GetPostBySlugAsync` intentionally returns a post of **any status** (Draft, Scheduled, Debug, Published). This preserves admin preview functionality where an admin can navigate directly to a post URL to verify content before it goes public. Only the list methods (`GetPostsAsync()` and `GetPostsAsync(page, pageSize)`) are filtered to `PostStatus.Published`.
+
+#### Decision 2: Status Filter Added at the Query Level
+
+The `Where(p => p.Status == PostStatus.Published)` predicate is applied before `OrderByDescending`/`Skip`/`Take` so the filter runs in the database, not in-memory. This prevents loading non-published rows over the wire.
+
+#### Decision 3: `PublishedDate` Set in Both Status-Change Paths
+
+Both `UpdateStatusAsync` (single post) and `UpdateStatusInternalAsync` (used by the batch `UpdateStatusesAsync`) received the same `PublishedDate` assignment block. This guarantees consistency whether a status change arrives via a direct API call or a batch operation.
+
+#### Decision 4: Scheduled Post Uses `ScheduledPublishDate` as `PublishedDate`
+
+When a post transitions to `Published` and it has a `ScheduledPublishDate` in the past, that value is used as `PublishedDate` rather than `DateTimeOffset.UtcNow`. This means:
+
+- The post's public timestamp reflects the **author's intended publication time**, not the moment the background job ran.
+- If a post is published manually (no `ScheduledPublishDate`, or scheduled date is in the future), `DateTimeOffset.UtcNow` is used instead.
+- The logic lives inside `AdminPostService` rather than `ScheduledPostPublisherService`, keeping the background service thin and avoiding duplication.
+
+#### Decision 5: `ScheduledPostPublisherService` — No Changes Needed
+
+The service already calls `adminPostService.UpdateStatusAsync(post.Slug, PostStatus.Published, "system")`. Since the `PublishedDate` logic now lives in `UpdateStatusAsync`, no changes to the background service were required.
+
 ### Guest Writer CRUD E2E Test Patterns (#028)
 
 **Author:** Natasha  
