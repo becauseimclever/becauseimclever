@@ -1,5 +1,4 @@
-@using BecauseImClever.Application.Interfaces
-@inject IConsentService ConsentService
+@inherits ConsentBannerBase
 
 @if (showBanner)
 {
@@ -21,26 +20,4 @@
             </div>
         </div>
     </div>
-}
-
-@code {
-    private bool showBanner;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var hasConsented = await this.ConsentService.HasConsentBeenGivenAsync();
-        this.showBanner = !hasConsented;
-    }
-
-    private async Task AcceptAsync()
-    {
-        await this.ConsentService.SaveConsentAsync(true);
-        this.showBanner = false;
-    }
-
-    private async Task DeclineAsync()
-    {
-        await this.ConsentService.SaveConsentAsync(false);
-        this.showBanner = false;
-    }
 }

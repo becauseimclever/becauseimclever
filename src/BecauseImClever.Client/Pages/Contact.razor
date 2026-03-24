@@ -1,6 +1,5 @@
 @page "/contact"
-@using BecauseImClever.Domain.Entities
-@inject HttpClient Http
+@inherits ContactBase
 
 <PageTitle>Contact</PageTitle>
 
@@ -71,38 +70,3 @@
     <Sidebar />
 </main>
 
-@code {
-    private ContactMessage contactMessage = new();
-    private bool isSubmitting = false;
-    private bool isSubmitted = false;
-    private string? errorMessage;
-
-    private async Task HandleSubmit()
-    {
-        isSubmitting = true;
-        errorMessage = null;
-
-        try
-        {
-            var response = await Http.PostAsJsonAsync("api/contact", contactMessage);
-
-            if (response.IsSuccessStatusCode)
-            {
-                isSubmitted = true;
-                contactMessage = new ContactMessage();
-            }
-            else
-            {
-                errorMessage = "Failed to send message. Please try again later.";
-            }
-        }
-        catch (Exception)
-        {
-            errorMessage = "An error occurred. Please try again later.";
-        }
-        finally
-        {
-            isSubmitting = false;
-        }
-    }
-}

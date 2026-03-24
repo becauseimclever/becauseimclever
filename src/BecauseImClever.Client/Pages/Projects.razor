@@ -1,7 +1,5 @@
 @page "/projects"
-@using BecauseImClever.Application.Interfaces
-@using BecauseImClever.Domain.Entities
-@inject IProjectService ProjectService
+@inherits ProjectsBase
 
 <PageTitle>Projects</PageTitle>
 
@@ -33,11 +31,3 @@
     <Sidebar />
 </main>
 
-@code {
-    private IEnumerable<Project>? projects;
-
-    protected override async Task OnInitializedAsync()
-    {
-        projects = await ProjectService.GetProjectsAsync();
-    }
-}

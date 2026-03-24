@@ -1,6 +1,4 @@
-@using BecauseImClever.Application.Interfaces
-@using BecauseImClever.Domain.Entities
-@inject IAnnouncementService AnnouncementService
+@inherits SidebarBase
 
 <aside class="sidebar">
     <!-- Announcements Widget -->
@@ -27,11 +25,3 @@
     </div>
 </aside>
 
-@code {
-    private IEnumerable<Announcement>? announcements;
-
-    protected override async Task OnInitializedAsync()
-    {
-        announcements = await AnnouncementService.GetLatestAnnouncementsAsync();
-    }
-}

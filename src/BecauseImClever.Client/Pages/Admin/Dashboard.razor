@@ -1,10 +1,7 @@
 @page "/admin"
-@using BecauseImClever.Application.Interfaces
-@using System.Net.Http.Json
 @layout AdminLayout
 @attribute [Authorize(Policy = "Admin")]
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@inherits DashboardBase
 
 <PageTitle>Admin - Dashboard</PageTitle>
 
@@ -69,34 +66,3 @@
     }
 </div>
 
-@code {
-    private DashboardStats? stats;
-    private bool isLoading = true;
-    private string? errorMessage;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadStatsAsync();
-    }
-
-    private async Task LoadStatsAsync()
-    {
-        try
-        {
-            isLoading = true;
-            errorMessage = null;
-
-            stats = await Http.GetFromJsonAsync<DashboardStats>("api/stats");
-        }
-        catch (HttpRequestException ex)
-        {
-            errorMessage = $"Failed to load dashboard statistics: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private record DashboardStats(int TotalPosts, int PublishedPosts, int DraftPosts, int DebugPosts, int ScheduledPosts);
-}

@@ -1,6 +1,4 @@
-@using BecauseImClever.Application.Interfaces
-@inject IBrowserFingerprintService FingerprintService
-@inject IDataDeletionService DeletionService
+@inherits DataDeletionFormBase
 
 <div class="data-deletion-form">
     <h3>Your Data Rights</h3>
@@ -41,30 +39,3 @@
         </button>
     }
 </div>
-
-@code {
-    private bool isProcessing;
-    private DeletionResult? result;
-
-    private async Task DeleteMyDataAsync()
-    {
-        isProcessing = true;
-        StateHasChanged();
-
-        try
-        {
-            var fingerprint = await FingerprintService.CollectFingerprintAsync();
-            var hash = fingerprint.ComputeHash();
-            result = await DeletionService.DeleteMyDataAsync(hash);
-        }
-        catch
-        {
-            result = new DeletionResult(false, 0, "An error occurred");
-        }
-        finally
-        {
-            isProcessing = false;
-            StateHasChanged();
-        }
-    }
-}

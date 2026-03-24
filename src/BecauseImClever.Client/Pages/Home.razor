@@ -1,7 +1,5 @@
 ﻿@page "/"
-@using BecauseImClever.Application.Interfaces
-@using BecauseImClever.Domain.Entities
-@inject IBlogService BlogService
+@inherits HomeBase
 
 <PageTitle>Home</PageTitle>
 
@@ -76,12 +74,3 @@
     <Sidebar />
 
 </main>
-
-@code {
-    private IEnumerable<BlogPost>? posts;
-
-    protected override async Task OnInitializedAsync()
-    {
-        posts = await BlogService.GetPostsAsync(1, 4);
-    }
-}

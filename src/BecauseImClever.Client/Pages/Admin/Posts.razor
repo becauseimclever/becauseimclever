@@ -1,11 +1,8 @@
 @page "/admin/posts"
-@using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Domain.Entities
-@using System.Net.Http.Json
 @layout AdminLayout
 @attribute [Authorize(Policy = "PostManagement")]
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@inherits PostsBase
 
 <PageTitle>Admin - Posts</PageTitle>
 
@@ -395,115 +392,3 @@
     }
 </style>
 
-@code {
-    private List<AdminPostSummary> posts = new();
-    private IEnumerable<AdminPostSummary> filteredPosts = Enumerable.Empty<AdminPostSummary>();
-    private HashSet<string> updatingPosts = new();
-    private bool isLoading = true;
-    private string? errorMessage;
-    private string? successMessage;
-    private string statusFilter = string.Empty;
-    private string searchQuery = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadPosts();
-    }
-
-    private async Task LoadPosts()
-    {
-        isLoading = true;
-        errorMessage = null;
-
-        try
-        {
-            var result = await Http.GetFromJsonAsync<List<AdminPostSummary>>("api/admin/posts");
-            posts = result ?? new List<AdminPostSummary>();
-            ApplyFilters();
-        }
-        catch (HttpRequestException ex)
-        {
-            errorMessage = $"Failed to load posts: {ex.Message}";
-            posts = new List<AdminPostSummary>();
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void ApplyFilters()
-    {
-        filteredPosts = posts;
-
-        if (!string.IsNullOrEmpty(statusFilter))
-        {
-            if (Enum.TryParse<PostStatus>(statusFilter, out var status))
-            {
-                filteredPosts = filteredPosts.Where(p => p.Status == status);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(searchQuery))
-        {
-            var query = searchQuery.ToLowerInvariant();
-            filteredPosts = filteredPosts.Where(p =>
-                p.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                p.Slug.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                p.Summary.Contains(query, StringComparison.OrdinalIgnoreCase));
-        }
-
-        filteredPosts = filteredPosts.OrderByDescending(p => p.PublishedDate);
-    }
-
-    private async Task OnStatusChange(string slug, ChangeEventArgs e)
-    {
-        var newStatusString = e.Value?.ToString();
-        if (string.IsNullOrEmpty(newStatusString) || !Enum.TryParse<PostStatus>(newStatusString, out var newStatus))
-        {
-            return;
-        }
-
-        var post = posts.FirstOrDefault(p => p.Slug == slug);
-        if (post is null || post.Status == newStatus)
-        {
-            return;
-        }
-
-        updatingPosts.Add(slug);
-        errorMessage = null;
-        successMessage = null;
-
-        try
-        {
-            var request = new { Status = (int)newStatus };
-            var response = await Http.PatchAsJsonAsync($"api/admin/posts/{slug}/status", request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<StatusUpdateResult>();
-                if (result?.Success == true)
-                {
-                    successMessage = $"Status for '{post.Title}' updated to {newStatus}";
-                    await LoadPosts();
-                }
-                else
-                {
-                    errorMessage = result?.Error ?? "Failed to update status";
-                }
-            }
-            else
-            {
-                errorMessage = $"Failed to update status: {response.ReasonPhrase}";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error updating status: {ex.Message}";
-        }
-        finally
-        {
-            updatingPosts.Remove(slug);
-        }
-    }
-}
