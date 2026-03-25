@@ -14,14 +14,16 @@ using Microsoft.JSInterop;
 /// </summary>
 public class PostEditorBase : ComponentBase, IDisposable
 {
-    [Inject]
-    private HttpClient Http { get; set; } = default!;
+    private const int AutoSaveIntervalMs = 30000;
+    private const int SlugCheckDebounceMs = 500;
 
-    [Inject]
-    private NavigationManager Navigation { get; set; } = default!;
+    private static readonly Markdig.MarkdownPipeline MarkdownPipelineInstance =
+        Markdig.MarkdownExtensions.UseAdvancedExtensions(new Markdig.MarkdownPipelineBuilder()).Build();
 
-    [Inject]
-    private IJSRuntime JS { get; set; } = default!;
+    private PostEditorModel? originalFormState;
+    private System.Threading.Timer? autoSaveTimer;
+    private System.Threading.CancellationTokenSource? slugCheckCts;
+    private List<string> allTags = new();
 
     /// <summary>
     /// Gets or sets the slug of the post being edited (null for new posts).
@@ -32,99 +34,87 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <summary>
     /// Gets or sets the form model for the post editor.
     /// </summary>
-    protected PostEditorModel formModel = new();
-
-    private PostEditorModel? originalFormState;
+    protected PostEditorModel FormModel { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the original title of the post being edited.
     /// </summary>
-    protected string? originalTitle;
+    protected string? OriginalTitle { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the post is loading.
     /// </summary>
-    protected bool isLoading = true;
+    protected bool IsLoading { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether the post is being saved.
     /// </summary>
-    protected bool isSaving;
+    protected bool IsSaving { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the post is being deleted.
     /// </summary>
-    protected bool isDeleting;
+    protected bool IsDeleting { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the delete confirmation dialog is shown.
     /// </summary>
-    protected bool showDeleteConfirm;
+    protected bool ShowDeleteConfirm { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the editor is in preview-only mode.
     /// </summary>
-    protected bool isPreviewOnly;
+    protected bool IsPreviewOnly { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether auto-save is in progress.
     /// </summary>
-    protected bool isAutoSaving;
+    protected bool IsAutoSaving { get; set; }
 
     /// <summary>
     /// Gets or sets the time of the last auto-save.
     /// </summary>
-    protected DateTime? lastAutoSaveTime;
-
-    private System.Threading.Timer? autoSaveTimer;
-    private const int AutoSaveIntervalMs = 30000;
+    protected DateTime? LastAutoSaveTime { get; set; }
 
     /// <summary>
     /// Gets or sets the error message to display.
     /// </summary>
-    protected string? errorMessage;
+    protected string? ErrorMessage { get; set; }
 
     /// <summary>
     /// Gets or sets the slug validation message.
     /// </summary>
-    protected string? slugValidationMessage;
+    protected string? SlugValidationMessage { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the slug is valid.
     /// </summary>
-    protected bool slugIsValid;
+    protected bool SlugIsValid { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the slug is being checked.
     /// </summary>
-    protected bool isCheckingSlug;
-
-    private System.Threading.CancellationTokenSource? slugCheckCts;
-    private const int SlugCheckDebounceMs = 500;
-
-    private List<string> allTags = new();
+    protected bool IsCheckingSlug { get; set; }
 
     /// <summary>
     /// Gets or sets the filtered tag suggestions.
     /// </summary>
-    protected List<string> filteredTags = new();
+    protected List<string> FilteredTags { get; set; } = new();
 
     /// <summary>
     /// Gets or sets a value indicating whether tag suggestions are shown.
     /// </summary>
-    protected bool showTagSuggestions;
+    protected bool ShowTagSuggestions { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the editor is in fullscreen mode.
     /// </summary>
-    protected bool isFullscreen;
+    protected bool IsFullscreen { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the post preview is shown.
     /// </summary>
-    protected bool showPreview;
-
-    private static readonly Markdig.MarkdownPipeline MarkdownPipeline = Markdig.MarkdownExtensions.UseAdvancedExtensions(new Markdig.MarkdownPipelineBuilder()).Build();
+    protected bool ShowPreview { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the editor is in edit mode (i.e., editing an existing post).
@@ -134,19 +124,28 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <summary>
     /// Gets a value indicating whether the form has unsaved changes.
     /// </summary>
-    protected bool hasUnsavedChanges => this.originalFormState is not null && !FormEquals(this.formModel, this.originalFormState);
+    protected bool HasUnsavedChanges => this.originalFormState is not null && !FormEquals(this.FormModel, this.originalFormState);
 
     /// <summary>
     /// Gets the word count of the post content.
     /// </summary>
-    protected int WordCount => string.IsNullOrWhiteSpace(this.formModel.Content)
+    protected int WordCount => string.IsNullOrWhiteSpace(this.FormModel.Content)
         ? 0
-        : this.formModel.Content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+        : this.FormModel.Content.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
     /// <summary>
     /// Gets the estimated reading time in minutes.
     /// </summary>
     protected int ReadingTime => Math.Max(1, (int)Math.Ceiling(this.WordCount / 200.0));
+
+    [Inject]
+    private HttpClient Http { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -162,13 +161,13 @@ public class PostEditorBase : ComponentBase, IDisposable
         }
         else
         {
-            this.formModel.PublishedDate = DateTime.Today;
-            this.formModel.Status = PostStatus.Draft;
-            this.isLoading = false;
+            this.FormModel.PublishedDate = DateTime.Today;
+            this.FormModel.Status = PostStatus.Draft;
+            this.IsLoading = false;
         }
 
         await this.LoadAllTagsAsync();
-        this.originalFormState = CloneFormModel(this.formModel);
+        this.originalFormState = CloneFormModel(this.FormModel);
     }
 
     /// <inheritdoc />
@@ -180,20 +179,20 @@ public class PostEditorBase : ComponentBase, IDisposable
             await this.JS.InvokeVoidAsync("postEditor.registerFullscreenKeys", DotNetObjectReference.Create(this));
         }
 
-        await this.JS.InvokeVoidAsync("postEditor.setUnsavedChanges", this.hasUnsavedChanges);
+        await this.JS.InvokeVoidAsync("postEditor.setUnsavedChanges", this.HasUnsavedChanges);
     }
 
     private async Task LoadPost()
     {
-        this.isLoading = true;
-        this.errorMessage = null;
+        this.IsLoading = true;
+        this.ErrorMessage = null;
 
         try
         {
             var post = await this.Http.GetFromJsonAsync<PostForEdit>($"api/admin/posts/{this.Slug}");
             if (post != null)
             {
-                this.formModel = new PostEditorModel
+                this.FormModel = new PostEditorModel
                 {
                     Title = post.Title,
                     Slug = post.Slug,
@@ -208,20 +207,20 @@ public class PostEditorBase : ComponentBase, IDisposable
                     UpdatedBy = post.UpdatedBy,
                     ScheduledPublishDate = post.ScheduledPublishDate?.LocalDateTime,
                 };
-                this.originalTitle = post.Title;
+                this.OriginalTitle = post.Title;
             }
             else
             {
-                this.errorMessage = "Post not found.";
+                this.ErrorMessage = "Post not found.";
             }
         }
         catch (HttpRequestException ex)
         {
-            this.errorMessage = $"Failed to load post: {ex.Message}";
+            this.ErrorMessage = $"Failed to load post: {ex.Message}";
         }
         finally
         {
-            this.isLoading = false;
+            this.IsLoading = false;
         }
     }
 
@@ -231,11 +230,11 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <param name="e">The change event args.</param>
     protected void OnTitleChanged(ChangeEventArgs e)
     {
-        this.formModel.Title = e.Value?.ToString() ?? string.Empty;
-        if (!this.IsEditMode && string.IsNullOrEmpty(this.formModel.Slug))
+        this.FormModel.Title = e.Value?.ToString() ?? string.Empty;
+        if (!this.IsEditMode && string.IsNullOrEmpty(this.FormModel.Slug))
         {
             this.GenerateSlug();
-            _ = this.ValidateSlugAsync(this.formModel.Slug);
+            _ = this.ValidateSlugAsync(this.FormModel.Slug);
         }
     }
 
@@ -244,22 +243,28 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// </summary>
     protected void GenerateSlug()
     {
-        if (string.IsNullOrWhiteSpace(this.formModel.Title))
+        if (string.IsNullOrWhiteSpace(this.FormModel.Title))
         {
             return;
         }
 
-        this.formModel.Slug = this.formModel.Title
+        this.FormModel.Slug = this.FormModel.Title
             .ToLowerInvariant()
             .Replace(" ", "-")
-            .Replace("--", "-")
             .Trim('-');
 
-        this.formModel.Slug = new string(this.formModel.Slug
+        this.FormModel.Slug = new string(this.FormModel.Slug
             .Where(c => char.IsLetterOrDigit(c) || c == '-')
             .ToArray());
 
-        _ = this.ValidateSlugAsync(this.formModel.Slug);
+        while (this.FormModel.Slug.Contains("--", StringComparison.Ordinal))
+        {
+            this.FormModel.Slug = this.FormModel.Slug.Replace("--", "-");
+        }
+
+        this.FormModel.Slug = this.FormModel.Slug.Trim('-');
+
+        _ = this.ValidateSlugAsync(this.FormModel.Slug);
     }
 
     /// <summary>
@@ -275,7 +280,7 @@ public class PostEditorBase : ComponentBase, IDisposable
         }
 
         var newSlug = e.Value?.ToString() ?? string.Empty;
-        this.formModel.Slug = newSlug;
+        this.FormModel.Slug = newSlug;
 
         await this.ValidateSlugAsync(newSlug);
     }
@@ -286,9 +291,9 @@ public class PostEditorBase : ComponentBase, IDisposable
         this.slugCheckCts = new System.Threading.CancellationTokenSource();
         var token = this.slugCheckCts.Token;
 
-        this.slugValidationMessage = null;
-        this.slugIsValid = false;
-        this.isCheckingSlug = false;
+        this.SlugValidationMessage = null;
+        this.SlugIsValid = false;
+        this.IsCheckingSlug = false;
 
         if (string.IsNullOrWhiteSpace(slug))
         {
@@ -298,12 +303,12 @@ public class PostEditorBase : ComponentBase, IDisposable
         var formatError = ValidateSlugFormat(slug);
         if (formatError != null)
         {
-            this.slugValidationMessage = formatError;
-            this.slugIsValid = false;
+            this.SlugValidationMessage = formatError;
+            this.SlugIsValid = false;
             return;
         }
 
-        this.isCheckingSlug = true;
+        this.IsCheckingSlug = true;
         this.StateHasChanged();
 
         try
@@ -326,13 +331,13 @@ public class PostEditorBase : ComponentBase, IDisposable
             {
                 if (response.Available)
                 {
-                    this.slugValidationMessage = "✓ Slug is available";
-                    this.slugIsValid = true;
+                    this.SlugValidationMessage = "✓ Slug is available";
+                    this.SlugIsValid = true;
                 }
                 else
                 {
-                    this.slugValidationMessage = "✗ Slug is already in use";
-                    this.slugIsValid = false;
+                    this.SlugValidationMessage = "✗ Slug is already in use";
+                    this.SlugIsValid = false;
                 }
             }
         }
@@ -342,11 +347,11 @@ public class PostEditorBase : ComponentBase, IDisposable
         }
         catch (HttpRequestException)
         {
-            this.slugValidationMessage = null;
+            this.SlugValidationMessage = null;
         }
         finally
         {
-            this.isCheckingSlug = false;
+            this.IsCheckingSlug = false;
             this.StateHasChanged();
         }
     }
@@ -392,22 +397,22 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <returns>The CSS class string.</returns>
     protected string GetSlugInputClass()
     {
-        if (this.IsEditMode || string.IsNullOrWhiteSpace(this.formModel.Slug))
+        if (this.IsEditMode || string.IsNullOrWhiteSpace(this.FormModel.Slug))
         {
             return string.Empty;
         }
 
-        if (this.isCheckingSlug)
+        if (this.IsCheckingSlug)
         {
             return string.Empty;
         }
 
-        if (this.slugValidationMessage == null)
+        if (this.SlugValidationMessage == null)
         {
             return string.Empty;
         }
 
-        return this.slugIsValid ? "slug-input-valid" : "slug-input-invalid";
+        return this.SlugIsValid ? "slug-input-valid" : "slug-input-invalid";
     }
 
     /// <summary>
@@ -415,7 +420,7 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// </summary>
     protected void ToggleFullscreen()
     {
-        this.isFullscreen = !this.isFullscreen;
+        this.IsFullscreen = !this.IsFullscreen;
     }
 
     /// <summary>
@@ -427,12 +432,12 @@ public class PostEditorBase : ComponentBase, IDisposable
     {
         if (key == "F11")
         {
-            this.isFullscreen = true;
+            this.IsFullscreen = true;
             this.StateHasChanged();
         }
-        else if (key == "Escape" && this.isFullscreen)
+        else if (key == "Escape" && this.IsFullscreen)
         {
-            this.isFullscreen = false;
+            this.IsFullscreen = false;
             this.StateHasChanged();
         }
     }
@@ -443,12 +448,12 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <returns>The collection of tag strings.</returns>
     protected IEnumerable<string> GetTags()
     {
-        if (string.IsNullOrWhiteSpace(this.formModel.TagsInput))
+        if (string.IsNullOrWhiteSpace(this.FormModel.TagsInput))
         {
             return Enumerable.Empty<string>();
         }
 
-        return this.formModel.TagsInput
+        return this.FormModel.TagsInput
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(t => t.Trim())
             .Where(t => !string.IsNullOrWhiteSpace(t));
@@ -473,7 +478,7 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <param name="e">The change event args.</param>
     protected void OnTagInputChanged(ChangeEventArgs e)
     {
-        this.formModel.TagsInput = e.Value?.ToString() ?? string.Empty;
+        this.FormModel.TagsInput = e.Value?.ToString() ?? string.Empty;
         this.UpdateTagSuggestions();
     }
 
@@ -484,14 +489,14 @@ public class PostEditorBase : ComponentBase, IDisposable
 
         if (string.IsNullOrWhiteSpace(lastTagPart))
         {
-            this.filteredTags = this.allTags
+            this.FilteredTags = this.allTags
                 .Where(t => !currentTags.Contains(t, StringComparer.OrdinalIgnoreCase))
                 .Take(10)
                 .ToList();
         }
         else
         {
-            this.filteredTags = this.allTags
+            this.FilteredTags = this.allTags
                 .Where(t => t.Contains(lastTagPart, StringComparison.OrdinalIgnoreCase))
                 .Where(t => !currentTags.Contains(t, StringComparer.OrdinalIgnoreCase))
                 .Take(10)
@@ -501,21 +506,21 @@ public class PostEditorBase : ComponentBase, IDisposable
 
     private string GetLastTagPart()
     {
-        if (string.IsNullOrWhiteSpace(this.formModel.TagsInput))
+        if (string.IsNullOrWhiteSpace(this.FormModel.TagsInput))
         {
             return string.Empty;
         }
 
-        var parts = this.formModel.TagsInput.Split(',');
+        var parts = this.FormModel.TagsInput.Split(',');
         return parts.Last().Trim();
     }
 
     /// <summary>
     /// Shows the tag suggestion dropdown.
     /// </summary>
-    protected void ShowTagSuggestions()
+    protected void ShowTagSuggestionsDropdown()
     {
-        this.showTagSuggestions = true;
+        this.ShowTagSuggestions = true;
         this.UpdateTagSuggestions();
     }
 
@@ -526,7 +531,7 @@ public class PostEditorBase : ComponentBase, IDisposable
     {
         _ = Task.Delay(200).ContinueWith(_ =>
         {
-            this.showTagSuggestions = false;
+            this.ShowTagSuggestions = false;
             this.InvokeAsync(this.StateHasChanged);
         });
     }
@@ -546,11 +551,11 @@ public class PostEditorBase : ComponentBase, IDisposable
 
         if (currentTags.Any())
         {
-            this.formModel.TagsInput = string.Join(", ", currentTags) + ", " + tag;
+            this.FormModel.TagsInput = string.Join(", ", currentTags) + ", " + tag;
         }
         else
         {
-            this.formModel.TagsInput = tag;
+            this.FormModel.TagsInput = tag;
         }
 
         this.UpdateTagSuggestions();
@@ -564,7 +569,7 @@ public class PostEditorBase : ComponentBase, IDisposable
     {
         var currentTags = this.GetTags().ToList();
         currentTags.RemoveAll(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase));
-        this.formModel.TagsInput = string.Join(", ", currentTags);
+        this.FormModel.TagsInput = string.Join(", ", currentTags);
     }
 
     /// <summary>
@@ -572,14 +577,14 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// </summary>
     protected void OnStatusChanged()
     {
-        if (this.formModel.Status == PostStatus.Scheduled && !this.formModel.ScheduledPublishDate.HasValue)
+        if (this.FormModel.Status == PostStatus.Scheduled && !this.FormModel.ScheduledPublishDate.HasValue)
         {
-            this.formModel.ScheduledPublishDate = DateTime.Now.AddDays(1).Date.AddHours(9);
+            this.FormModel.ScheduledPublishDate = DateTime.Now.AddDays(1).Date.AddHours(9);
         }
 
-        if (this.formModel.Status != PostStatus.Scheduled)
+        if (this.FormModel.Status != PostStatus.Scheduled)
         {
-            this.formModel.ScheduledPublishDate = null;
+            this.FormModel.ScheduledPublishDate = null;
         }
     }
 
@@ -589,44 +594,44 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task HandleSubmit()
     {
-        if (string.IsNullOrWhiteSpace(this.formModel.Title) ||
-            string.IsNullOrWhiteSpace(this.formModel.Slug) ||
-            string.IsNullOrWhiteSpace(this.formModel.Summary) ||
-            string.IsNullOrWhiteSpace(this.formModel.Content))
+        if (string.IsNullOrWhiteSpace(this.FormModel.Title) ||
+            string.IsNullOrWhiteSpace(this.FormModel.Slug) ||
+            string.IsNullOrWhiteSpace(this.FormModel.Summary) ||
+            string.IsNullOrWhiteSpace(this.FormModel.Content))
         {
-            this.errorMessage = "Please fill in all required fields.";
+            this.ErrorMessage = "Please fill in all required fields.";
             return;
         }
 
         if (!this.IsEditMode)
         {
-            var formatError = ValidateSlugFormat(this.formModel.Slug);
+            var formatError = ValidateSlugFormat(this.FormModel.Slug);
             if (formatError != null)
             {
-                this.errorMessage = formatError;
+                this.ErrorMessage = formatError;
                 return;
             }
         }
 
-        this.isSaving = true;
-        this.errorMessage = null;
+        this.IsSaving = true;
+        this.ErrorMessage = null;
 
         try
         {
             var tags = this.GetTags().ToList();
-            var publishedDate = new DateTimeOffset(DateTime.SpecifyKind(this.formModel.PublishedDate, DateTimeKind.Utc), TimeSpan.Zero);
-            var scheduledDate = this.formModel.ScheduledPublishDate.HasValue
-                ? new DateTimeOffset(DateTime.SpecifyKind(this.formModel.ScheduledPublishDate.Value, DateTimeKind.Utc), TimeSpan.Zero)
+            var publishedDate = new DateTimeOffset(DateTime.SpecifyKind(this.FormModel.PublishedDate, DateTimeKind.Utc), TimeSpan.Zero);
+            var scheduledDate = this.FormModel.ScheduledPublishDate.HasValue
+                ? new DateTimeOffset(DateTime.SpecifyKind(this.FormModel.ScheduledPublishDate.Value, DateTimeKind.Utc), TimeSpan.Zero)
                 : (DateTimeOffset?)null;
 
             if (this.IsEditMode)
             {
                 var request = new UpdatePostRequest(
-                    this.formModel.Title,
-                    this.formModel.Summary,
-                    this.formModel.Content,
+                    this.FormModel.Title,
+                    this.FormModel.Summary,
+                    this.FormModel.Content,
                     publishedDate,
-                    this.formModel.Status,
+                    this.FormModel.Status,
                     tags,
                     scheduledDate);
 
@@ -639,18 +644,18 @@ public class PostEditorBase : ComponentBase, IDisposable
                 else
                 {
                     var result = await response.Content.ReadFromJsonAsync<UpdatePostResult>();
-                    this.errorMessage = result?.Error ?? "Failed to update post.";
+                    this.ErrorMessage = result?.Error ?? "Failed to update post.";
                 }
             }
             else
             {
                 var request = new CreatePostRequest(
-                    this.formModel.Title,
-                    this.formModel.Slug,
-                    this.formModel.Summary,
-                    this.formModel.Content,
+                    this.FormModel.Title,
+                    this.FormModel.Slug,
+                    this.FormModel.Summary,
+                    this.FormModel.Content,
                     publishedDate,
-                    this.formModel.Status,
+                    this.FormModel.Status,
                     tags,
                     scheduledDate);
 
@@ -663,17 +668,17 @@ public class PostEditorBase : ComponentBase, IDisposable
                 else
                 {
                     var result = await response.Content.ReadFromJsonAsync<CreatePostResult>();
-                    this.errorMessage = result?.Error ?? "Failed to create post.";
+                    this.ErrorMessage = result?.Error ?? "Failed to create post.";
                 }
             }
         }
         catch (Exception ex)
         {
-            this.errorMessage = $"Error: {ex.Message}";
+            this.ErrorMessage = $"Error: {ex.Message}";
         }
         finally
         {
-            this.isSaving = false;
+            this.IsSaving = false;
         }
     }
 
@@ -690,7 +695,7 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// </summary>
     protected void ConfirmDelete()
     {
-        this.showDeleteConfirm = true;
+        this.ShowDeleteConfirm = true;
     }
 
     /// <summary>
@@ -698,15 +703,15 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// </summary>
     protected void CancelDelete()
     {
-        this.showDeleteConfirm = false;
+        this.ShowDeleteConfirm = false;
     }
 
     /// <summary>
     /// Shows the post preview.
     /// </summary>
-    protected void ShowPreview()
+    protected void OpenPreview()
     {
-        this.showPreview = true;
+        this.ShowPreview = true;
     }
 
     /// <summary>
@@ -714,7 +719,7 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// </summary>
     protected void ClosePreview()
     {
-        this.showPreview = false;
+        this.ShowPreview = false;
     }
 
     /// <summary>
@@ -729,7 +734,7 @@ public class PostEditorBase : ComponentBase, IDisposable
             return string.Empty;
         }
 
-        return Markdig.Markdown.ToHtml(markdown, MarkdownPipeline);
+        return Markdig.Markdown.ToHtml(markdown, MarkdownPipelineInstance);
     }
 
     /// <summary>
@@ -738,8 +743,8 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// <returns>A task representing the asynchronous operation.</returns>
     protected async Task DeletePost()
     {
-        this.isDeleting = true;
-        this.errorMessage = null;
+        this.IsDeleting = true;
+        this.ErrorMessage = null;
 
         try
         {
@@ -752,45 +757,45 @@ public class PostEditorBase : ComponentBase, IDisposable
             else
             {
                 var result = await response.Content.ReadFromJsonAsync<DeletePostResult>();
-                this.errorMessage = result?.Error ?? "Failed to delete post.";
-                this.showDeleteConfirm = false;
+                this.ErrorMessage = result?.Error ?? "Failed to delete post.";
+                this.ShowDeleteConfirm = false;
             }
         }
         catch (Exception ex)
         {
-            this.errorMessage = $"Error: {ex.Message}";
-            this.showDeleteConfirm = false;
+            this.ErrorMessage = $"Error: {ex.Message}";
+            this.ShowDeleteConfirm = false;
         }
         finally
         {
-            this.isDeleting = false;
+            this.IsDeleting = false;
         }
     }
 
     private async Task AutoSaveAsync()
     {
-        if (!this.IsEditMode || !this.hasUnsavedChanges || this.isSaving || this.isAutoSaving)
+        if (!this.IsEditMode || !this.HasUnsavedChanges || this.IsSaving || this.IsAutoSaving)
         {
             return;
         }
 
-        this.isAutoSaving = true;
+        this.IsAutoSaving = true;
         this.StateHasChanged();
 
         try
         {
             var tags = this.GetTags().ToList();
-            var publishedDate = new DateTimeOffset(DateTime.SpecifyKind(this.formModel.PublishedDate, DateTimeKind.Utc), TimeSpan.Zero);
-            var scheduledDate = this.formModel.ScheduledPublishDate.HasValue
-                ? new DateTimeOffset(DateTime.SpecifyKind(this.formModel.ScheduledPublishDate.Value, DateTimeKind.Utc), TimeSpan.Zero)
+            var publishedDate = new DateTimeOffset(DateTime.SpecifyKind(this.FormModel.PublishedDate, DateTimeKind.Utc), TimeSpan.Zero);
+            var scheduledDate = this.FormModel.ScheduledPublishDate.HasValue
+                ? new DateTimeOffset(DateTime.SpecifyKind(this.FormModel.ScheduledPublishDate.Value, DateTimeKind.Utc), TimeSpan.Zero)
                 : (DateTimeOffset?)null;
 
             var request = new UpdatePostRequest(
-                this.formModel.Title,
-                this.formModel.Summary,
-                this.formModel.Content,
+                this.FormModel.Title,
+                this.FormModel.Summary,
+                this.FormModel.Content,
                 publishedDate,
-                this.formModel.Status,
+                this.FormModel.Status,
                 tags,
                 scheduledDate);
 
@@ -798,8 +803,8 @@ public class PostEditorBase : ComponentBase, IDisposable
 
             if (response.IsSuccessStatusCode)
             {
-                this.lastAutoSaveTime = DateTime.Now;
-                this.originalFormState = CloneFormModel(this.formModel);
+                this.LastAutoSaveTime = DateTime.Now;
+                this.originalFormState = CloneFormModel(this.FormModel);
             }
         }
         catch
@@ -808,7 +813,7 @@ public class PostEditorBase : ComponentBase, IDisposable
         }
         finally
         {
-            this.isAutoSaving = false;
+            this.IsAutoSaving = false;
             this.StateHasChanged();
         }
     }

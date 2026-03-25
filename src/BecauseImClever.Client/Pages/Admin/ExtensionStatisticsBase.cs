@@ -11,31 +11,18 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class ExtensionStatisticsBase : ComponentBase
 {
-    [Inject]
-    private IExtensionStatisticsService StatisticsService { get; set; } = default!;
-
     /// <summary>
     /// Gets or sets the loaded extension statistics.
     /// </summary>
-    protected ExtensionStatisticsResponse? statistics;
+    protected ExtensionStatisticsResponse? Statistics { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether statistics are loading.
     /// </summary>
-    protected bool isLoading = true;
+    protected bool IsLoading { get; set; } = true;
 
-    /// <inheritdoc />
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            this.statistics = await this.StatisticsService.GetStatisticsAsync();
-        }
-        finally
-        {
-            this.isLoading = false;
-        }
-    }
+    [Inject]
+    private IExtensionStatisticsService StatisticsService { get; set; } = default!;
 
     /// <summary>
     /// Gets the display name for a browser extension ID.
@@ -51,5 +38,18 @@ public class ExtensionStatisticsBase : ComponentBase
             "capital-one-shopping" => "Capital One Shopping",
             _ => extensionId,
         };
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            this.Statistics = await this.StatisticsService.GetStatisticsAsync();
+        }
+        finally
+        {
+            this.IsLoading = false;
+        }
     }
 }

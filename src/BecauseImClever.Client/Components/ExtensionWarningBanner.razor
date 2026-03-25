@@ -1,13 +1,13 @@
 @inherits ExtensionWarningBannerBase
 
-@if (showBanner && detectedExtensions.Any())
+@if (ShowBanner && DetectedExtensions.Any())
 {
     <div class="extension-warning-banner" role="alert">
         <div class="warning-content">
             <span class="warning-icon">⚠️</span>
             <div class="warning-text">
                 <strong>Browser Extension Warning</strong>
-                @foreach (var extension in detectedExtensions)
+                @foreach (var extension in DetectedExtensions)
                 {
                     <p>@extension.Name: @extension.WarningMessage</p>
                 }

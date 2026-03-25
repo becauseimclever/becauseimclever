@@ -12,30 +12,32 @@ using Microsoft.JSInterop;
 /// </summary>
 public class BlogBase : ComponentBase, IDisposable
 {
+    private const int PageSize = 10;
+
+    private int currentPage = 1;
+
+    private DotNetObjectReference<BlogBase>? objRef;
+
+    /// <summary>
+    /// Gets or sets the list of loaded blog posts.
+    /// </summary>
+    protected List<BlogPost> Posts { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether there are more posts to load.
+    /// </summary>
+    protected bool HasMore { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether posts are currently loading.
+    /// </summary>
+    protected bool IsLoading { get; set; }
+
     [Inject]
     private IBlogService BlogService { get; set; } = default!;
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = default!;
-
-    /// <summary>
-    /// Gets or sets the list of loaded blog posts.
-    /// </summary>
-    protected List<BlogPost> posts = new();
-
-    /// <summary>
-    /// Gets or sets a value indicating whether there are more posts to load.
-    /// </summary>
-    protected bool hasMore = true;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether posts are currently loading.
-    /// </summary>
-    protected bool isLoading = false;
-
-    private int currentPage = 1;
-    private const int PageSize = 10;
-    private DotNetObjectReference<BlogBase>? objRef;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -60,7 +62,7 @@ public class BlogBase : ComponentBase, IDisposable
     [JSInvokable]
     public async Task LoadMore()
     {
-        if (this.isLoading || !this.hasMore)
+        if (this.IsLoading || !this.HasMore)
         {
             return;
         }
@@ -71,22 +73,22 @@ public class BlogBase : ComponentBase, IDisposable
 
     private async Task LoadPosts()
     {
-        this.isLoading = true;
+        this.IsLoading = true;
         this.StateHasChanged();
 
         var newPosts = await this.BlogService.GetPostsAsync(this.currentPage, PageSize);
 
         if (newPosts.Any())
         {
-            this.posts.AddRange(newPosts);
+            this.Posts.AddRange(newPosts);
             this.currentPage++;
         }
         else
         {
-            this.hasMore = false;
+            this.HasMore = false;
         }
 
-        this.isLoading = false;
+        this.IsLoading = false;
     }
 
     /// <summary>

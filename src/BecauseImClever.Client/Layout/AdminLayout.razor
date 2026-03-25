@@ -13,8 +13,8 @@
                 <li><a href="about">About</a></li>
             </ul>
         </nav>
-        <select class="theme-switch" @onchange="OnThemeChanged" value="@currentTheme?.Key">
-            @foreach (var theme in availableThemes)
+        <select class="theme-switch" @onchange="OnThemeChanged" value="@CurrentTheme?.Key">
+            @foreach (var theme in AvailableThemes)
             {
                 <option value="@theme.Key">@theme.DisplayName</option>
             }
@@ -25,11 +25,11 @@
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="sidebar-header">
-                <h2>@(isAdmin ? "Admin Panel" : "Writer Panel")</h2>
+                <h2>@(IsAdmin ? "Admin Panel" : "Writer Panel")</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    @if (isAdmin)
+                    @if (IsAdmin)
                     {
                         <li class="@GetActiveClass("/admin")">
                             <a href="admin">
@@ -41,10 +41,10 @@
                     <li class="@GetActiveClass("/admin/posts")">
                         <a href="admin/posts">
                             <span class="nav-icon">📝</span>
-                            <span>@(isAdmin ? "Posts" : "My Posts")</span>
+                            <span>@(IsAdmin ? "Posts" : "My Posts")</span>
                         </a>
                     </li>
-                    @if (isAdmin)
+                    @if (IsAdmin)
                     {
                         <li class="@GetActiveClass("/admin/settings")">
                             <a href="admin/settings">

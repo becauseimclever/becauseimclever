@@ -120,6 +120,26 @@ public class ClientProjectServiceTests
         Assert.Equal("testowner", project.Owner);
     }
 
+    [Fact]
+    public async Task GetProjectsAsync_WhenHttpThrowsException_ThrowsHttpRequestException()
+    {
+        // Arrange
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("http://localhost/") };
+        var service = new ClientProjectService(httpClient);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() => service.GetProjectsAsync());
+    }
+
     private static HttpClient CreateMockHttpClient<T>(T response, string expectedUri)
     {
         var mockHandler = new Mock<HttpMessageHandler>();

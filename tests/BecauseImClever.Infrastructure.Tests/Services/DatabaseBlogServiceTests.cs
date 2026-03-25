@@ -221,6 +221,95 @@ public class DatabaseBlogServiceTests
     }
 
     /// <summary>
+    /// Verifies that GetPostsAsync only returns posts with Published status.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsAsync_ShouldOnlyReturnPublishedPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = CreateContext(dbName);
+
+        var publishedPost = CreateTestPost("published-post", "Published Post", DateTime.UtcNow, PostStatus.Published);
+        var scheduledPost = CreateTestPost("scheduled-post", "Scheduled Post", DateTime.UtcNow.AddDays(-1), PostStatus.Scheduled);
+        var draftPost = CreateTestPost("draft-post", "Draft Post", DateTime.UtcNow.AddDays(-2), PostStatus.Draft);
+
+        context.Posts.AddRange(publishedPost, scheduledPost, draftPost);
+        await context.SaveChangesAsync();
+
+        var service = new DatabaseBlogService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsAsync()).ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("published-post", result[0].Slug);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsAsync with pagination only returns posts with Published status.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsAsync_WithPagination_ShouldOnlyReturnPublishedPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = CreateContext(dbName);
+
+        var publishedPost1 = CreateTestPost("published-1", "Published 1", DateTime.UtcNow, PostStatus.Published);
+        var publishedPost2 = CreateTestPost("published-2", "Published 2", DateTime.UtcNow.AddDays(-1), PostStatus.Published);
+        var scheduledPost = CreateTestPost("scheduled-post", "Scheduled Post", DateTime.UtcNow.AddDays(-2), PostStatus.Scheduled);
+        var draftPost = CreateTestPost("draft-post", "Draft Post", DateTime.UtcNow.AddDays(-3), PostStatus.Draft);
+
+        context.Posts.AddRange(publishedPost1, publishedPost2, scheduledPost, draftPost);
+        await context.SaveChangesAsync();
+
+        var service = new DatabaseBlogService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsAsync(page: 1, pageSize: 10)).ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.All(result, p => Assert.Equal(PostStatus.Published, p.Status));
+        Assert.DoesNotContain(result, p => p.Slug == "scheduled-post");
+        Assert.DoesNotContain(result, p => p.Slug == "draft-post");
+    }
+
+    /// <summary>
+    /// Verifies that GetPostBySlugAsync returns a post regardless of its status (supports admin preview).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostBySlugAsync_ShouldReturnPostRegardlessOfStatus()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = CreateContext(dbName);
+
+        var scheduledPost = CreateTestPost("scheduled-post", "Scheduled Post", DateTime.UtcNow.AddDays(1), PostStatus.Scheduled);
+        var draftPost = CreateTestPost("draft-post", "Draft Post", DateTime.UtcNow, PostStatus.Draft);
+
+        context.Posts.AddRange(scheduledPost, draftPost);
+        await context.SaveChangesAsync();
+
+        var service = new DatabaseBlogService(context, this.mockLogger.Object);
+
+        // Act
+        var scheduledResult = await service.GetPostBySlugAsync("scheduled-post");
+        var draftResult = await service.GetPostBySlugAsync("draft-post");
+
+        // Assert — intentional behavior: direct slug access supports admin preview of non-published posts
+        Assert.NotNull(scheduledResult);
+        Assert.Equal("scheduled-post", scheduledResult.Slug);
+        Assert.NotNull(draftResult);
+        Assert.Equal("draft-post", draftResult.Slug);
+    }
+
+    /// <summary>
     /// Creates an in-memory database context for testing.
     /// </summary>
     /// <param name="databaseName">The unique database name for test isolation.</param>

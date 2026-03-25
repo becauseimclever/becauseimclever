@@ -11,26 +11,26 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class DashboardBase : ComponentBase
 {
+    /// <summary>
+    /// Gets or sets the loaded dashboard statistics.
+    /// </summary>
+    protected DashboardStats? Stats { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether statistics are loading.
+    /// </summary>
+    protected bool IsLoading { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the error message to display.
+    /// </summary>
+    protected string? ErrorMessage { get; set; }
+
     [Inject]
     private HttpClient Http { get; set; } = default!;
 
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
-
-    /// <summary>
-    /// Gets or sets the loaded dashboard statistics.
-    /// </summary>
-    protected DashboardStats? stats;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether statistics are loading.
-    /// </summary>
-    protected bool isLoading = true;
-
-    /// <summary>
-    /// Gets or sets the error message to display.
-    /// </summary>
-    protected string? errorMessage;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -42,18 +42,18 @@ public class DashboardBase : ComponentBase
     {
         try
         {
-            this.isLoading = true;
-            this.errorMessage = null;
+            this.IsLoading = true;
+            this.ErrorMessage = null;
 
-            this.stats = await this.Http.GetFromJsonAsync<DashboardStats>("api/stats");
+            this.Stats = await this.Http.GetFromJsonAsync<DashboardStats>("api/stats");
         }
         catch (HttpRequestException ex)
         {
-            this.errorMessage = $"Failed to load dashboard statistics: {ex.Message}";
+            this.ErrorMessage = $"Failed to load dashboard statistics: {ex.Message}";
         }
         finally
         {
-            this.isLoading = false;
+            this.IsLoading = false;
         }
     }
 

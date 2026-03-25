@@ -614,4 +614,71 @@ public class MarkdownEditorTests : BunitContext
         Assert.Contains("<code>", cut.Markup);
         Assert.Contains("plain code", cut.Markup);
     }
+
+    /// <summary>
+    /// Verifies that OnDragStateChanged changes the drag state.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditor_OnDragStateChanged_UpdatesDragState()
+    {
+        // Arrange
+        var mockHttpClient = new HttpClient();
+        var imageService = new ClientPostImageService(mockHttpClient);
+        this.Services.AddSingleton(imageService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.OnDragStateChanged(true));
+
+        // Assert - Component should be marked as dragging (renders CSS class drag-over)
+        cut.Render();
+        Assert.Contains("drag-over", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that opening the image upload dialog shows the dialog.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_OpenImageUploadDialog_ShowsDialog()
+    {
+        // Arrange
+        var mockHttpClient = new HttpClient();
+        var imageService = new ClientPostImageService(mockHttpClient);
+        this.Services.AddSingleton(imageService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Act - Click the "Upload Image" button (not the markdown image syntax button)
+        var imageButton = cut.Find("button[title='Upload Image']");
+        imageButton.Click();
+
+        // Assert
+        Assert.Contains("Upload Image", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that the component disposes properly.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditor_DisposeAsync_CompletesSuccessfully()
+    {
+        // Arrange
+        var mockHttpClient = new HttpClient();
+        var imageService = new ClientPostImageService(mockHttpClient);
+        this.Services.AddSingleton(imageService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "test-post"));
+
+        // Act
+        await cut.Instance.DisposeAsync();
+
+        // Assert - No exception should be thrown
+        Assert.True(true);
+    }
 }

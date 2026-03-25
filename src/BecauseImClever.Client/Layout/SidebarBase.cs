@@ -11,17 +11,17 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class SidebarBase : ComponentBase
 {
-    [Inject]
-    private IAnnouncementService AnnouncementService { get; set; } = default!;
-
     /// <summary>
     /// Gets or sets the list of announcements to display.
     /// </summary>
-    protected IEnumerable<Announcement>? announcements;
+    protected IEnumerable<Announcement>? Announcements { get; set; }
+
+    [Inject]
+    private IAnnouncementService AnnouncementService { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        this.announcements = await this.AnnouncementService.GetLatestAnnouncementsAsync();
+        this.Announcements = await this.AnnouncementService.GetLatestAnnouncementsAsync();
     }
 }

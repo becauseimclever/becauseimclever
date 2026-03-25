@@ -1,9 +1,12 @@
+// Copyright (c) Fortinbra. All rights reserved.
+
 namespace BecauseImClever.Infrastructure.Tests.Services;
 
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using BecauseImClever.Infrastructure.Data;
 using BecauseImClever.Infrastructure.Services;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -45,6 +48,21 @@ public class PostImageServiceTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new PostImageService(context, null!));
+    }
+
+    /// <summary>
+    /// Verifies that UploadImageAsync throws when request is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImageAsync_WithNullRequest_ThrowsArgumentNullException()
+    {
+        // Arrange
+        using var context = this.CreateContext(Guid.NewGuid().ToString());
+        var service = new PostImageService(context, this.mockLogger.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.UploadImageAsync(null!, "user"));
     }
 
     /// <summary>
@@ -244,6 +262,25 @@ public class PostImageServiceTests
     }
 
     /// <summary>
+    /// Verifies that GenerateFilename truncates long base names.
+    /// </summary>
+    [Fact]
+    public void GenerateFilename_WithLongBaseName_TruncatesBaseName()
+    {
+        // Arrange
+        using var context = this.CreateContext(Guid.NewGuid().ToString());
+        var service = new PostImageService(context, this.mockLogger.Object);
+        var baseName = new string('a', 60);
+
+        // Act
+        var result = service.GenerateFilename($"{baseName}.png");
+
+        // Assert
+        result.Should().StartWith(baseName[..50]);
+        result.Should().EndWith(".png");
+    }
+
+    /// <summary>
     /// Verifies that GenerateFilename generates unique filenames.
     /// </summary>
     [Fact]
@@ -389,6 +426,33 @@ public class PostImageServiceTests
     }
 
     /// <summary>
+    /// Verifies that UploadImageAsync fails when image data is empty.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImageAsync_WhenImageIsEmpty_ReturnsFailure()
+    {
+        // Arrange
+        using var context = this.CreateContext(Guid.NewGuid().ToString());
+        var service = new PostImageService(context, this.mockLogger.Object);
+        var request = new UploadImageRequest(
+            PostSlug: "test-post",
+            Filename: "empty.png",
+            OriginalFilename: "empty.png",
+            ContentType: "image/png",
+            Data: Array.Empty<byte>(),
+            AltText: null);
+
+        // Act
+        var result = await service.UploadImageAsync(request, "admin");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Error.Should().ContainEquivalentOf("empty");
+        (await context.PostImages.CountAsync()).Should().Be(0);
+    }
+
+    /// <summary>
     /// Verifies that GetImageAsync returns null when post does not exist.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
@@ -515,6 +579,36 @@ public class PostImageServiceTests
 
         // Assert
         Assert.Equal(2, result.Count);
+    }
+
+    /// <summary>
+    /// Verifies that GetImagesForPostAsync returns images in descending upload order.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetImagesForPostAsync_WithMultipleImages_ReturnsNewestFirst()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var post = this.CreateTestPost("test-post", "Test Post");
+        var olderImage = this.CreateTestImage(post.Id, "old.png");
+        olderImage.UploadedAt = DateTime.UtcNow.AddMinutes(-10);
+        var newerImage = this.CreateTestImage(post.Id, "new.png");
+        newerImage.UploadedAt = DateTime.UtcNow.AddMinutes(-1);
+        context.Posts.Add(post);
+        context.PostImages.AddRange(olderImage, newerImage);
+        await context.SaveChangesAsync();
+
+        var service = new PostImageService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetImagesForPostAsync("test-post")).ToList();
+
+        // Assert
+        result.Should().HaveCount(2);
+        result[0].Filename.Should().Be("new.png");
+        result[1].Filename.Should().Be("old.png");
     }
 
     /// <summary>

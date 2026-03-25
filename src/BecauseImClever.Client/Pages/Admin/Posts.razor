@@ -19,19 +19,19 @@
         </div>
     </div>
 
-    @if (errorMessage is not null)
+    @if (ErrorMessage is not null)
     {
         <div class="alert alert-error">
-            <span>@errorMessage</span>
-            <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+            <span>@ErrorMessage</span>
+            <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
         </div>
     }
 
-    @if (successMessage is not null)
+    @if (SuccessMessage is not null)
     {
         <div class="alert alert-success">
-            <span>@successMessage</span>
-            <button class="alert-close" @onclick="() => successMessage = null">&times;</button>
+            <span>@SuccessMessage</span>
+            <button class="alert-close" @onclick="() => SuccessMessage = null">&times;</button>
         </div>
     }
 
@@ -39,7 +39,7 @@
     <div class="admin-filters">
         <div class="filter-group">
             <label for="status-filter">Status:</label>
-            <select id="status-filter" @bind="statusFilter" @bind:after="ApplyFilters">
+            <select id="status-filter" @bind="StatusFilter" @bind:after="ApplyFilters">
                 <option value="">All</option>
                 <option value="Published">Published</option>
                 <option value="Draft">Draft</option>
@@ -48,21 +48,21 @@
         </div>
         <div class="filter-group">
             <label for="search">Search:</label>
-            <input type="text" id="search" placeholder="Search posts..." @bind="searchQuery" @bind:after="ApplyFilters" />
+            <input type="text" id="search" placeholder="Search posts..." @bind="SearchQuery" @bind:after="ApplyFilters" />
         </div>
         <div class="filter-stats">
-            Showing @filteredPosts.Count() of @posts.Count() posts
+            Showing @FilteredPosts.Count() of @Posts.Count() posts
         </div>
     </div>
 
     <!-- Posts Table -->
-    @if (isLoading)
+    @if (IsLoading)
     {
         <div class="loading-indicator">
             <span>Loading posts...</span>
         </div>
     }
-    else if (!filteredPosts.Any())
+    else if (!FilteredPosts.Any())
     {
         <div class="empty-state">
             <p>No posts found matching your criteria.</p>
@@ -82,7 +82,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var post in filteredPosts)
+                    @foreach (var post in FilteredPosts)
                     {
                         <tr>
                             <td class="col-title">
@@ -109,12 +109,12 @@
                                     <a href="@($"admin/posts/edit/{post.Slug}")" class="btn-action btn-edit" title="Edit post">
                                         ✏️
                                     </a>
-                                    <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@updatingPosts.Contains(post.Slug)">
+                                    <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@UpdatingPosts.Contains(post.Slug)">
                                         <option value="Published" selected="@(post.Status == PostStatus.Published)">Published</option>
                                         <option value="Draft" selected="@(post.Status == PostStatus.Draft)">Draft</option>
                                         <option value="Debug" selected="@(post.Status == PostStatus.Debug)">Debug</option>
                                     </select>
-                                    @if (updatingPosts.Contains(post.Slug))
+                                    @if (UpdatingPosts.Contains(post.Slug))
                                     {
                                         <span class="updating-indicator">⏳</span>
                                     }

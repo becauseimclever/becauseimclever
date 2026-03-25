@@ -4,13 +4,13 @@
     <!-- Announcements Widget -->
     <div class="sidebar-widget">
         <h3>Announcements</h3>
-        @if (announcements == null)
+        @if (Announcements == null)
         {
             <p>Loading announcements...</p>
         }
         else
         {
-            @foreach (var announcement in announcements)
+            @foreach (var announcement in Announcements)
             {
                 <div class="announcement-item">
                     <span class="announcement-date">@announcement.Date.ToString("MMM dd")</span>

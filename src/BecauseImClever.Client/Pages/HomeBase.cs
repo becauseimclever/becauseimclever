@@ -11,17 +11,17 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class HomeBase : ComponentBase
 {
-    [Inject]
-    private IBlogService BlogService { get; set; } = default!;
-
     /// <summary>
     /// Gets or sets the latest blog posts to display.
     /// </summary>
-    protected IEnumerable<BlogPost>? posts;
+    protected IEnumerable<BlogPost>? Posts { get; set; }
+
+    [Inject]
+    private IBlogService BlogService { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        this.posts = await this.BlogService.GetPostsAsync(1, 4);
+        this.Posts = await this.BlogService.GetPostsAsync(1, 4);
     }
 }

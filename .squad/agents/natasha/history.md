@@ -20,3 +20,12 @@
 - **Cleanup pattern**: Test posts use a Unix timestamp in both title and slug (`e2e-*-{timestamp}`) to avoid collisions. Tests that create posts use `try/finally` with a `TryDeleteTestPostAsync(slug)` helper to guarantee cleanup even on assertion failures.
 - **Blazor input timing**: Always `await Task.Delay(500)` after filling form fields before clicking submit to let Blazor's `@oninput` handlers process and update the component state.
 - **E2E test CRUD suite**: Four tests implement full CRUD coverage: `CanCreatePost` (create), `CanEditOwnPost` (edit), `CanDeleteOwnPost` (delete), `CannotEditOthersPost` (defensive negative test). All tests use timestamp-based titles and `TryDeleteTestPostAsync` for cleanup; all follow skip-if-unconfigured guard pattern.
+
+### 2026 — Scheduled Post Visibility Fix (#032)
+
+- **Status filtering is at query level**: `GetPostsAsync()` and `GetPostsAsync(page, pageSize)` filter by `Status == PostStatus.Published` in the DB query — tests must seed posts with non-Published statuses to verify they are excluded.
+- **GetPostBySlugAsync is intentionally status-agnostic**: Returns any post regardless of status to support admin preview. Test this as positive behavior, not a missing filter.
+- **PublishedDate tolerance pattern**: When asserting `PublishedDate` was set to "now", compare `>= beforeUpdate` AND `<= DateTimeOffset.UtcNow.AddSeconds(5)` to avoid flakiness while proving freshness.
+- **UpdateStatusInternalAsync is private** — test it indirectly via `UpdateStatusesAsync` with a single-item update list; this exercises the same internal path as the scheduled publisher.
+- **`[Theory]` with `[InlineData]` needs `<param>` XML doc**: StyleCop SA1611 requires a `<param name="...">` doc entry for every parameter including data-driven ones — add it to the `<summary>` block.
+- **Banner's fix uses ScheduledPublishDate fallback**: When publishing, `PublishedDate` is set to `ScheduledPublishDate` if it is in the past, otherwise `DateTimeOffset.UtcNow`. Tests for `UpdateStatusAsync` should not set `ScheduledPublishDate` to avoid the fallback path (or account for it).

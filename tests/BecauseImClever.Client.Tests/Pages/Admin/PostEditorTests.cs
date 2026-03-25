@@ -199,6 +199,143 @@ public class PostEditorTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies that changing title generates a slug for new posts.
+    /// </summary>
+    [Fact]
+    public void PostEditor_OnTitleChanged_GeneratesSlug()
+    {
+        // Arrange
+        this.ConfigureServices();
+        var cut = this.Render<PostEditor>();
+
+        // Act
+        var titleInput = cut.Find("#title");
+        titleInput.Input(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "My New Post Title" });
+
+        // Assert
+        var slugInput = cut.Find("#slug");
+        Assert.Equal("my-new-post-title", slugInput.GetAttribute("value"));
+    }
+
+    /// <summary>
+    /// Verifies that slug generation removes special characters.
+    /// </summary>
+    [Fact]
+    public void PostEditor_GenerateSlug_RemovesSpecialCharacters()
+    {
+        // Arrange
+        this.ConfigureServices();
+        var cut = this.Render<PostEditor>();
+
+        // Act
+        var titleInput = cut.Find("#title");
+        titleInput.Input(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Post with @#$% Special!" });
+
+        // Assert
+        var slugInput = cut.Find("#slug");
+        var slugValue = slugInput.GetAttribute("value");
+        Assert.DoesNotContain("@", slugValue);
+        Assert.DoesNotContain("#", slugValue);
+        Assert.DoesNotContain("$", slugValue);
+        Assert.DoesNotContain("%", slugValue);
+        Assert.DoesNotContain("!", slugValue);
+    }
+
+    /// <summary>
+    /// Verifies that slug generation replaces spaces with hyphens.
+    /// </summary>
+    [Fact]
+    public void PostEditor_GenerateSlug_ReplacesSpacesWithHyphens()
+    {
+        // Arrange
+        this.ConfigureServices();
+        var cut = this.Render<PostEditor>();
+
+        // Act
+        var titleInput = cut.Find("#title");
+        titleInput.Input(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Multiple   Spaces  Here" });
+
+        // Assert
+        var slugInput = cut.Find("#slug");
+        var slugValue = slugInput.GetAttribute("value");
+        Assert.Contains("-", slugValue);
+        Assert.DoesNotContain("--", slugValue);
+    }
+
+    /// <summary>
+    /// Verifies that word count is calculated correctly.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WordCount_CalculatesCorrectly()
+    {
+        // Arrange
+        this.ConfigureServices();
+        var cut = this.Render<PostEditor>();
+
+        // Act - content is in MarkdownEditor with a dynamic ID, find by class
+        var contentTextarea = cut.Find(".editor-textarea");
+        contentTextarea.Input(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "This is a test content with exactly ten words here." });
+
+        // Assert
+        cut.Render();
+        Assert.Contains("10 words", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that reading time is estimated correctly.
+    /// </summary>
+    [Fact]
+    public void PostEditor_ReadingTime_EstimatesCorrectly()
+    {
+        // Arrange
+        this.ConfigureServices();
+        var cut = this.Render<PostEditor>();
+
+        // Act - Create content with 400 words (should be ~2 minutes at 200 wpm)
+        var words = string.Join(" ", Enumerable.Range(1, 400).Select(i => "word"));
+        var contentTextarea = cut.Find(".editor-textarea");
+        contentTextarea.Input(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = words });
+
+        // Assert
+        cut.Render();
+        Assert.Contains("2 min read", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that API error during post load shows error message.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WhenApiFailsToLoadPost_ShowsErrorMessage()
+    {
+        // Arrange
+        this.ConfigureServices(throwException: true);
+
+        // Act
+        var cut = this.Render<PostEditor>(parameters => parameters
+            .Add(p => p.Slug, "failing-post"));
+
+        // Assert
+        Assert.Contains("Failed to load post", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that null post from API shows not found message.
+    /// </summary>
+    [Fact]
+    public void PostEditor_WhenPostNotFound_ShowsErrorMessage()
+    {
+        // Arrange
+        this.ConfigureServices(returnNull: true);
+
+        // Act
+        var cut = this.Render<PostEditor>(parameters => parameters
+            .Add(p => p.Slug, "nonexistent-post"));
+
+        // Assert
+        Assert.Contains("Post not found", cut.Markup);
+    }
+
+    /// <summary>
     /// Verifies that the component displays metadata when editing.
     /// </summary>
     [Fact]
@@ -487,6 +624,8 @@ public class PostEditorTests : BunitContext
     private static HttpClient CreateMockHttpClient(
         PostForEdit? postForEdit,
         bool notFound,
+        bool throwException,
+        bool returnNull,
         Task<HttpResponseMessage>? pendingTask)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
@@ -499,6 +638,28 @@ public class PostEditorTests : BunitContext
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
                 .Returns(pendingTask);
+        }
+        else if (throwException)
+        {
+            mockHandler.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ThrowsAsync(new HttpRequestException("Network error"));
+        }
+        else if (returnNull)
+        {
+            mockHandler.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("null"),
+                });
         }
         else if (notFound)
         {
@@ -551,6 +712,8 @@ public class PostEditorTests : BunitContext
     private void ConfigureServices(
         PostForEdit? postForEdit = null,
         bool notFound = false,
+        bool throwException = false,
+        bool returnNull = false,
         Task<HttpResponseMessage>? pendingTask = null)
     {
         var mockThemeService = new Mock<IThemeService>();
@@ -560,7 +723,7 @@ public class PostEditorTests : BunitContext
 
         this.Services.AddSingleton(mockThemeService.Object);
 
-        var httpClient = CreateMockHttpClient(postForEdit, notFound, pendingTask);
+        var httpClient = CreateMockHttpClient(postForEdit, notFound, throwException, returnNull, pendingTask);
         this.Services.AddSingleton(httpClient);
 
         // Register ClientPostImageService for MarkdownEditor

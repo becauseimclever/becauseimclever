@@ -7,7 +7,7 @@
     <h1>Clock</h1>
 
     <div class="timezone-picker">
-        <select class="timezone-selector" value="@selectedTimeZone.Id" @onchange="OnTimezoneChanged">
+        <select class="timezone-selector" value="@SelectedTimeZone.Id" @onchange="OnTimezoneChanged">
             @foreach (var tz in TimeZoneInfo.GetSystemTimeZones())
             {
                 <option value="@tz.Id">@tz.DisplayName</option>
@@ -72,8 +72,8 @@
         <circle class="center-dot" cx="200" cy="200" r="8" />
     </svg>
     
-    <div class="digital-time">@currentTime.ToString("HH:mm:ss")</div>
-    <div class="timezone-display">@selectedTimeZone.DisplayName</div>
+    <div class="digital-time">@CurrentTime.ToString("HH:mm:ss")</div>
+    <div class="timezone-display">@SelectedTimeZone.DisplayName</div>
 </div>
 
 <style>

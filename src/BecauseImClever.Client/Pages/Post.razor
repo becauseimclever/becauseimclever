@@ -3,9 +3,9 @@
 
 <main class="main-content">
     <div class="content-area">
-        @if (post == null)
+        @if (Post == null)
         {
-            @if (notFound)
+            @if (NotFound)
             {
                 <PageTitle>Post Not Found</PageTitle>
                 <div class="card">
@@ -20,17 +20,17 @@
         }
         else
         {
-            <PageTitle>@post.Title</PageTitle>
+            <PageTitle>@Post.Title</PageTitle>
             <article class="card">
-                @if (!string.IsNullOrEmpty(post.Image))
+                @if (!string.IsNullOrEmpty(Post.Image))
                 {
-                    <img src="@post.Image" alt="@post.Title" class="post-hero-image" />
+                    <img src="@Post.Image" alt="@Post.Title" class="post-hero-image" />
                 }
-                <h1>@post.Title</h1>
-                <div class="card-meta">@post.PublishedDate.ToString("MMMM dd, yyyy")</div>
+                <h1>@Post.Title</h1>
+                <div class="card-meta">@Post.PublishedDate.ToString("MMMM dd, yyyy")</div>
                 <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0;" />
                 <div>
-                    @((MarkupString)post.Content)
+                    @((MarkupString)Post.Content)
                 </div>
             </article>
         }

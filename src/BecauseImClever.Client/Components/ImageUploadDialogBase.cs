@@ -14,12 +14,6 @@ using Microsoft.JSInterop;
 /// </summary>
 public class ImageUploadDialogBase : ComponentBase
 {
-    [Inject]
-    private ClientPostImageService ImageService { get; set; } = default!;
-
-    [Inject]
-    private IJSRuntime JS { get; set; } = default!;
-
     /// <summary>
     /// Gets or sets the slug of the post to upload images for.
     /// </summary>
@@ -41,37 +35,43 @@ public class ImageUploadDialogBase : ComponentBase
     /// <summary>
     /// Gets or sets the list of existing images for the post.
     /// </summary>
-    protected List<ImageSummary> images = new();
+    protected List<ImageSummary> Images { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the currently selected file.
     /// </summary>
-    protected IBrowserFile? selectedFile;
+    protected IBrowserFile? SelectedFile { get; set; }
 
     /// <summary>
     /// Gets or sets the preview URL of the selected file.
     /// </summary>
-    protected string? previewUrl;
+    protected string? PreviewUrl { get; set; }
 
     /// <summary>
     /// Gets or sets the alt text for the image.
     /// </summary>
-    protected string altText = string.Empty;
+    protected string AltText { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the error message to display.
     /// </summary>
-    protected string? errorMessage;
+    protected string? ErrorMessage { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether an upload is in progress.
     /// </summary>
-    protected bool isUploading;
+    protected bool IsUploading { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether a file is being dragged over the upload area.
     /// </summary>
-    protected bool isDragOver;
+    protected bool IsDragOver { get; set; }
+
+    [Inject]
+    private ClientPostImageService ImageService { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -87,7 +87,7 @@ public class ImageUploadDialogBase : ComponentBase
         try
         {
             var result = await this.ImageService.GetImagesAsync(this.PostSlug!);
-            this.images = result.ToList();
+            this.Images = result.ToList();
         }
         catch
         {
@@ -99,22 +99,22 @@ public class ImageUploadDialogBase : ComponentBase
     /// Handles the file selection event.
     /// </summary>
     /// <param name="e">The file change event args.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        this.errorMessage = null;
-        this.selectedFile = e.File;
+        this.ErrorMessage = null;
+        this.SelectedFile = e.File;
 
-        if (this.selectedFile.Size > 5 * 1024 * 1024)
+        if (this.SelectedFile.Size > 5 * 1024 * 1024)
         {
-            this.errorMessage = "File is too large. Maximum size is 5 MB.";
-            this.selectedFile = null;
+            this.ErrorMessage = "File is too large. Maximum size is 5 MB.";
+            this.SelectedFile = null;
             return;
         }
 
-        var buffer = new byte[this.selectedFile.Size];
-        await this.selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).ReadExactlyAsync(buffer);
-        this.previewUrl = $"data:{this.selectedFile.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        var buffer = new byte[this.SelectedFile.Size];
+        await this.SelectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).ReadExactlyAsync(buffer);
+        this.PreviewUrl = $"data:{this.SelectedFile.ContentType};base64,{Convert.ToBase64String(buffer)}";
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public class ImageUploadDialogBase : ComponentBase
     /// </summary>
     protected void HandleDragEnter()
     {
-        this.isDragOver = true;
+        this.IsDragOver = true;
     }
 
     /// <summary>
@@ -130,17 +130,17 @@ public class ImageUploadDialogBase : ComponentBase
     /// </summary>
     protected void HandleDragLeave()
     {
-        this.isDragOver = false;
+        this.IsDragOver = false;
     }
 
     /// <summary>
     /// Handles the drop event on the upload area.
     /// </summary>
     /// <param name="e">The drag event args.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task HandleDrop(DragEventArgs e)
     {
-        this.isDragOver = false;
+        this.IsDragOver = false;
 
         // Note: Blazor doesn't support getting files from drag events directly
         await Task.CompletedTask;
@@ -151,55 +151,55 @@ public class ImageUploadDialogBase : ComponentBase
     /// </summary>
     protected void ClearPreview()
     {
-        this.selectedFile = null;
-        this.previewUrl = null;
-        this.altText = string.Empty;
-        this.errorMessage = null;
+        this.SelectedFile = null;
+        this.PreviewUrl = null;
+        this.AltText = string.Empty;
+        this.ErrorMessage = null;
     }
 
     /// <summary>
     /// Uploads the selected file and inserts it into the post.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task UploadAndInsert()
     {
-        if (this.selectedFile is null || string.IsNullOrEmpty(this.PostSlug))
+        if (this.SelectedFile is null || string.IsNullOrEmpty(this.PostSlug))
         {
             return;
         }
 
-        this.isUploading = true;
-        this.errorMessage = null;
+        this.IsUploading = true;
+        this.ErrorMessage = null;
 
         try
         {
-            using var stream = this.selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var stream = this.SelectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
             var result = await this.ImageService.UploadImageAsync(
                 this.PostSlug,
                 stream,
-                this.selectedFile.Name,
-                this.selectedFile.ContentType,
-                string.IsNullOrWhiteSpace(this.altText) ? null : this.altText);
+                this.SelectedFile.Name,
+                this.SelectedFile.ContentType,
+                string.IsNullOrWhiteSpace(this.AltText) ? null : this.AltText);
 
             if (result.Success)
             {
-                var markdown = $"![{(string.IsNullOrWhiteSpace(this.altText) ? this.selectedFile.Name : this.altText)}]({result.ImageUrl})";
+                var markdown = $"![{(string.IsNullOrWhiteSpace(this.AltText) ? this.SelectedFile.Name : this.AltText)}]({result.ImageUrl})";
                 await this.OnImageInserted.InvokeAsync(markdown);
                 await this.LoadImagesAsync();
                 this.ClearPreview();
             }
             else
             {
-                this.errorMessage = result.Error ?? "Upload failed";
+                this.ErrorMessage = result.Error ?? "Upload failed";
             }
         }
         catch (Exception ex)
         {
-            this.errorMessage = $"Upload failed: {ex.Message}";
+            this.ErrorMessage = $"Upload failed: {ex.Message}";
         }
         finally
         {
-            this.isUploading = false;
+            this.IsUploading = false;
         }
     }
 
@@ -207,7 +207,7 @@ public class ImageUploadDialogBase : ComponentBase
     /// Inserts an existing image from the gallery.
     /// </summary>
     /// <param name="image">The image to insert.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task InsertExistingImage(ImageSummary image)
     {
         var markdown = $"![{image.AltText ?? image.Filename}]({image.Url})";
@@ -218,7 +218,7 @@ public class ImageUploadDialogBase : ComponentBase
     /// Deletes an image from the gallery.
     /// </summary>
     /// <param name="image">The image to delete.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task DeleteImage(ImageSummary image)
     {
         var result = await this.ImageService.DeleteImageAsync(this.PostSlug!, image.Filename);
@@ -228,14 +228,14 @@ public class ImageUploadDialogBase : ComponentBase
         }
         else
         {
-            this.errorMessage = result.Error ?? "Delete failed";
+            this.ErrorMessage = result.Error ?? "Delete failed";
         }
     }
 
     /// <summary>
     /// Closes the dialog.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task Close()
     {
         await this.OnClose.InvokeAsync();

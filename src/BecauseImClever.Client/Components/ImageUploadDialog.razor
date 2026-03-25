@@ -17,23 +17,23 @@
             else
             {
                 <!-- Upload Area -->
-                <div class="upload-area @(isDragOver ? "drag-over" : "")"
+                <div class="upload-area @(IsDragOver ? "drag-over" : "")"
                      @ondragenter="HandleDragEnter"
                      @ondragleave="HandleDragLeave"
                      @ondragover:preventDefault
                      @ondrop="HandleDrop"
                      @ondrop:preventDefault>
-                    @if (isUploading)
+                    @if (IsUploading)
                     {
                         <div class="upload-progress">
                             <div class="spinner"></div>
                             <p>Uploading...</p>
                         </div>
                     }
-                    else if (previewUrl is not null)
+                    else if (PreviewUrl is not null)
                     {
                         <div class="upload-preview">
-                            <img src="@previewUrl" alt="Preview" />
+                            <img src="@PreviewUrl" alt="Preview" />
                             <button type="button" class="btn-remove-preview" @onclick="ClearPreview">&times;</button>
                         </div>
                     }
@@ -52,26 +52,26 @@
                     }
                 </div>
 
-                @if (errorMessage is not null)
+                @if (ErrorMessage is not null)
                 {
                     <div class="upload-error">
-                        <span>@errorMessage</span>
+                        <span>@ErrorMessage</span>
                     </div>
                 }
 
                 <!-- Alt Text Input -->
                 <div class="form-group">
                     <label for="altText">Alt Text (for accessibility)</label>
-                    <input type="text" id="altText" @bind="altText" placeholder="Describe the image..." />
+                    <input type="text" id="altText" @bind="AltText" placeholder="Describe the image..." />
                 </div>
 
                 <!-- Image Gallery -->
-                @if (images.Any())
+                @if (Images.Any())
                 {
                     <div class="image-gallery">
                         <h4>Existing Images</h4>
                         <div class="gallery-grid">
-                            @foreach (var image in images)
+                            @foreach (var image in Images)
                             {
                                 <div class="gallery-item">
                                     <img src="@image.Url" alt="@(image.AltText ?? image.Filename)" />
@@ -90,10 +90,10 @@
 
         <div class="dialog-footer">
             <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
-            @if (!string.IsNullOrEmpty(PostSlug) && selectedFile is not null)
+            @if (!string.IsNullOrEmpty(PostSlug) && SelectedFile is not null)
             {
-                <button type="button" class="btn btn-primary" @onclick="UploadAndInsert" disabled="@isUploading">
-                    @(isUploading ? "Uploading..." : "Upload & Insert")
+                <button type="button" class="btn btn-primary" @onclick="UploadAndInsert" disabled="@IsUploading">
+                    @(IsUploading ? "Uploading..." : "Upload & Insert")
                 </button>
             }
         </div>

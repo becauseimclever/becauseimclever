@@ -13,6 +13,25 @@ using Microsoft.AspNetCore.Components.Routing;
 /// </summary>
 public class AdminLayoutBase : LayoutComponentBase, IDisposable
 {
+    private string currentPath = string.Empty;
+
+    private bool isGuestWriter;
+
+    /// <summary>
+    /// Gets or sets the currently selected theme.
+    /// </summary>
+    protected Theme? CurrentTheme { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of available themes.
+    /// </summary>
+    protected IReadOnlyList<Theme> AvailableThemes { get; set; } = Array.Empty<Theme>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the current user is an admin.
+    /// </summary>
+    protected bool IsAdmin { get; set; }
+
     [Inject]
     private IThemeService ThemeService { get; set; } = default!;
 
@@ -22,37 +41,18 @@ public class AdminLayoutBase : LayoutComponentBase, IDisposable
     [Inject]
     private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
 
-    /// <summary>
-    /// Gets or sets the currently selected theme.
-    /// </summary>
-    protected Theme? currentTheme;
-
-    /// <summary>
-    /// Gets or sets the list of available themes.
-    /// </summary>
-    protected IReadOnlyList<Theme> availableThemes = Array.Empty<Theme>();
-
-    private string currentPath = string.Empty;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the current user is an admin.
-    /// </summary>
-    protected bool isAdmin;
-
-    private bool isGuestWriter;
-
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        this.availableThemes = this.ThemeService.GetAvailableThemes();
-        this.currentTheme = await this.ThemeService.GetCurrentThemeAsync();
-        await this.ThemeService.SetThemeAsync(this.currentTheme);
+        this.AvailableThemes = this.ThemeService.GetAvailableThemes();
+        this.CurrentTheme = await this.ThemeService.GetCurrentThemeAsync();
+        await this.ThemeService.SetThemeAsync(this.CurrentTheme);
         this.currentPath = new Uri(this.Navigation.Uri).AbsolutePath;
         this.Navigation.LocationChanged += this.OnLocationChanged;
 
         var authState = await this.AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        this.isAdmin = user.HasClaim("groups", "becauseimclever-admins");
+        this.IsAdmin = user.HasClaim("groups", "becauseimclever-admins");
         this.isGuestWriter = user.HasClaim("groups", "becauseimclever-writers");
     }
 
@@ -86,12 +86,12 @@ public class AdminLayoutBase : LayoutComponentBase, IDisposable
     /// Handles the theme selection change event.
     /// </summary>
     /// <param name="e">The change event args.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task OnThemeChanged(ChangeEventArgs e)
     {
         var selectedKey = e.Value?.ToString();
-        this.currentTheme = Theme.FromKey(selectedKey);
-        await this.ThemeService.SetThemeAsync(this.currentTheme);
+        this.CurrentTheme = Theme.FromKey(selectedKey);
+        await this.ThemeService.SetThemeAsync(this.CurrentTheme);
     }
 
     /// <summary>

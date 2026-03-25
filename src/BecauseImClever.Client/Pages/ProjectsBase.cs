@@ -11,17 +11,17 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class ProjectsBase : ComponentBase
 {
-    [Inject]
-    private IProjectService ProjectService { get; set; } = default!;
-
     /// <summary>
     /// Gets or sets the list of projects to display.
     /// </summary>
-    protected IEnumerable<Project>? projects;
+    protected IEnumerable<Project>? Projects { get; set; }
+
+    [Inject]
+    private IProjectService ProjectService { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        this.projects = await this.ProjectService.GetProjectsAsync();
+        this.Projects = await this.ProjectService.GetProjectsAsync();
     }
 }

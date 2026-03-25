@@ -7,20 +7,20 @@
         Click the button below to delete all tracking data associated with this browser.
     </p>
     
-    @if (isProcessing)
+    @if (IsProcessing)
     {
         <p class="processing">Processing your request...</p>
     }
-    else if (result != null)
+    else if (Result != null)
     {
-        @if (result.Success)
+        @if (Result.Success)
         {
             <div class="success-message">
                 <span class="icon">✓</span>
-                <p>@result.Message</p>
-                @if (result.DeletedRecords > 0)
+                <p>@Result.Message</p>
+                @if (Result.DeletedRecords > 0)
                 {
-                    <p>@result.DeletedRecords record(s) were deleted.</p>
+                    <p>@Result.DeletedRecords record(s) were deleted.</p>
                 }
             </div>
         }

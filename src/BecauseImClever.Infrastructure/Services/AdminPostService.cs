@@ -264,6 +264,13 @@ public class AdminPostService : IAdminPostService
         post.UpdatedAt = DateTime.UtcNow;
         post.UpdatedBy = updatedBy;
 
+        if (newStatus == PostStatus.Published)
+        {
+            post.PublishedDate = post.ScheduledPublishDate.HasValue && post.ScheduledPublishDate.Value <= DateTimeOffset.UtcNow
+                ? post.ScheduledPublishDate.Value
+                : DateTimeOffset.UtcNow;
+        }
+
         await this.context.SaveChangesAsync();
 
         this.logger.LogInformation(
@@ -383,6 +390,13 @@ public class AdminPostService : IAdminPostService
         post.Status = newStatus;
         post.UpdatedAt = DateTime.UtcNow;
         post.UpdatedBy = updatedBy;
+
+        if (newStatus == PostStatus.Published)
+        {
+            post.PublishedDate = post.ScheduledPublishDate.HasValue && post.ScheduledPublishDate.Value <= DateTimeOffset.UtcNow
+                ? post.ScheduledPublishDate.Value
+                : DateTimeOffset.UtcNow;
+        }
 
         await this.context.SaveChangesAsync();
 

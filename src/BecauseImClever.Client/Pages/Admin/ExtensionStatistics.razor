@@ -4,17 +4,17 @@
 
 <h1>Extension Detection Statistics</h1>
 
-@if (isLoading)
+@if (IsLoading)
 {
     <p>Loading statistics...</p>
 }
-else if (statistics == null)
+else if (Statistics == null)
 {
     <div class="error-message">
         <p>Error loading statistics. Please try again later.</p>
     </div>
 }
-else if (statistics.TotalUniqueVisitors == 0)
+else if (Statistics.TotalUniqueVisitors == 0)
 {
     <div class="no-data-message">
         <p>No extension data collected yet.</p>
@@ -25,7 +25,7 @@ else
     <div class="statistics-container">
         <div class="stat-card total-visitors">
             <h2>Total Unique Visitors</h2>
-            <p class="stat-value">@statistics.TotalUniqueVisitors</p>
+            <p class="stat-value">@Statistics.TotalUniqueVisitors</p>
             <p class="stat-description">Visitors with detected extensions</p>
         </div>
 
@@ -40,10 +40,10 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var extension in statistics.ExtensionCounts.OrderByDescending(x => x.Value))
+                    @foreach (var extension in Statistics.ExtensionCounts.OrderByDescending(x => x.Value))
                     {
-                        var percentage = statistics.TotalUniqueVisitors > 0
-                            ? (extension.Value * 100.0 / statistics.TotalUniqueVisitors).ToString("F1")
+                        var percentage = Statistics.TotalUniqueVisitors > 0
+                            ? (extension.Value * 100.0 / Statistics.TotalUniqueVisitors).ToString("F1")
                             : "0";
                         <tr>
                             <td>@GetExtensionDisplayName(extension.Key)</td>

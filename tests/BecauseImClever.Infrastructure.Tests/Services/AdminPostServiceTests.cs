@@ -1191,6 +1191,272 @@ public class AdminPostServiceTests
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Verifies that UpdateStatusAsync sets PublishedDate when status changes to Published.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatusAsync_WhenStatusChangesToPublished_ShouldUpdatePublishedDate()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var originalPublishedDate = DateTimeOffset.UtcNow.AddDays(-30);
+        var post = this.CreateTestPost("test-post", "Test Post", DateTime.UtcNow.AddDays(-30), PostStatus.Draft);
+        post.PublishedDate = originalPublishedDate;
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+        var beforeUpdate = DateTimeOffset.UtcNow;
+
+        // Act
+        var result = await service.UpdateStatusAsync("test-post", PostStatus.Published, "admin@test.com");
+
+        // Assert
+        Assert.True(result.Success);
+        var updatedPost = await context.Posts.FirstAsync(p => p.Slug == "test-post");
+        Assert.True(updatedPost.PublishedDate >= beforeUpdate, "PublishedDate should be set to approximately now.");
+        Assert.True(updatedPost.PublishedDate <= DateTimeOffset.UtcNow.AddSeconds(5), "PublishedDate should not be in the future.");
+    }
+
+    /// <summary>
+    /// Verifies that UpdateStatusAsync does not update PublishedDate when status is not Published.
+    /// </summary>
+    /// <param name="newStatus">The non-published status to set.</param>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(PostStatus.Scheduled)]
+    [InlineData(PostStatus.Draft)]
+    public async Task UpdateStatusAsync_WhenStatusDoesNotChangeToPublished_ShouldNotUpdatePublishedDate(PostStatus newStatus)
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var originalPublishedDate = DateTimeOffset.UtcNow.AddDays(-30);
+        var post = this.CreateTestPost("test-post", "Test Post", DateTime.UtcNow.AddDays(-30), PostStatus.Published);
+        post.PublishedDate = originalPublishedDate;
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.UpdateStatusAsync("test-post", newStatus, "admin@test.com");
+
+        // Assert
+        Assert.True(result.Success);
+        var updatedPost = await context.Posts.FirstAsync(p => p.Slug == "test-post");
+        Assert.Equal(originalPublishedDate, updatedPost.PublishedDate);
+    }
+
+    /// <summary>
+    /// Verifies that UpdateStatusInternalAsync (via UpdateStatusesAsync) sets PublishedDate when status changes to Published.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatusInternalAsync_WhenStatusChangesToPublished_ShouldUpdatePublishedDate()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var originalPublishedDate = DateTimeOffset.UtcNow.AddDays(-30);
+        var post = this.CreateTestPost("batch-post", "Batch Post", DateTime.UtcNow.AddDays(-30), PostStatus.Scheduled);
+        post.PublishedDate = originalPublishedDate;
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+        var beforeUpdate = DateTimeOffset.UtcNow;
+
+        var updates = new List<StatusUpdate>
+        {
+            new StatusUpdate("batch-post", PostStatus.Published),
+        };
+
+        // Act
+        var result = await service.UpdateStatusesAsync(updates, "scheduler@system");
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(1, result.UpdatedCount);
+        var updatedPost = await context.Posts.FirstAsync(p => p.Slug == "batch-post");
+        Assert.True(updatedPost.PublishedDate >= beforeUpdate, "PublishedDate should be updated when published via batch update.");
+        Assert.True(updatedPost.PublishedDate <= DateTimeOffset.UtcNow.AddSeconds(5), "PublishedDate should not be in the future.");
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync returns empty collection when no posts exist for author.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WhenNoPostsForAuthor_ReturnsEmptyCollection()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetPostsByAuthorAsync("author@test.com");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync returns only posts by specified author.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithMultipleAuthors_ReturnsOnlyAuthorPosts()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var authorPost1 = this.CreateTestPost("author-post-1", "Author Post 1", DateTime.UtcNow, PostStatus.Published);
+        authorPost1.AuthorId = "author@test.com";
+
+        var authorPost2 = this.CreateTestPost("author-post-2", "Author Post 2", DateTime.UtcNow.AddDays(-1), PostStatus.Draft);
+        authorPost2.AuthorId = "author@test.com";
+
+        var otherPost = this.CreateTestPost("other-post", "Other Post", DateTime.UtcNow.AddDays(-2), PostStatus.Published);
+        otherPost.AuthorId = "other@test.com";
+
+        context.Posts.AddRange(authorPost1, authorPost2, otherPost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsByAuthorAsync("author@test.com")).ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.All(result, p => Assert.Equal("author@test.com", p.AuthorId));
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync returns posts ordered by published date descending.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithMultiplePosts_ReturnsOrderedByPublishedDateDescending()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var oldPost = this.CreateTestPost("old-post", "Old Post", DateTime.UtcNow.AddDays(-10), PostStatus.Published);
+        oldPost.AuthorId = "author@test.com";
+
+        var newPost = this.CreateTestPost("new-post", "New Post", DateTime.UtcNow, PostStatus.Published);
+        newPost.AuthorId = "author@test.com";
+
+        var middlePost = this.CreateTestPost("middle-post", "Middle Post", DateTime.UtcNow.AddDays(-5), PostStatus.Published);
+        middlePost.AuthorId = "author@test.com";
+
+        context.Posts.AddRange(oldPost, newPost, middlePost);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = (await service.GetPostsByAuthorAsync("author@test.com")).ToList();
+
+        // Assert
+        Assert.Equal(3, result.Count);
+        Assert.Equal("new-post", result[0].Slug);
+        Assert.Equal("middle-post", result[1].Slug);
+        Assert.Equal("old-post", result[2].Slug);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostsByAuthorAsync throws when authorId is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostsByAuthorAsync_WithNullAuthorId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            () => service.GetPostsByAuthorAsync(null!));
+        Assert.Equal("authorId", exception.ParamName);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostEntityAsync returns post when slug exists.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostEntityAsync_WhenPostExists_ReturnsPost()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+
+        var post = this.CreateTestPost("test-post", "Test Post", DateTime.UtcNow, PostStatus.Published);
+        context.Posts.Add(post);
+        await context.SaveChangesAsync();
+
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetPostEntityAsync("test-post");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("test-post", result.Slug);
+        Assert.Equal("Test Post", result.Title);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostEntityAsync returns null when slug does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostEntityAsync_WhenPostNotFound_ReturnsNull()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act
+        var result = await service.GetPostEntityAsync("non-existent");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostEntityAsync throws when slug is null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostEntityAsync_WithNullSlug_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        using var context = this.CreateContext(dbName);
+        var service = new AdminPostService(context, this.mockLogger.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            () => service.GetPostEntityAsync(null!));
+        Assert.Equal("slug", exception.ParamName);
+    }
+
     private BlogDbContext CreateContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<BlogDbContext>()

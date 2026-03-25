@@ -11,9 +11,6 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class PostBase : ComponentBase
 {
-    [Inject]
-    private IBlogService BlogService { get; set; } = default!;
-
     /// <summary>
     /// Gets or sets the slug of the post to display.
     /// </summary>
@@ -23,20 +20,23 @@ public class PostBase : ComponentBase
     /// <summary>
     /// Gets or sets the loaded blog post.
     /// </summary>
-    protected BlogPost? post;
+    protected BlogPost? Post { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the post was not found.
     /// </summary>
-    protected bool notFound = false;
+    protected bool NotFound { get; set; }
+
+    [Inject]
+    private IBlogService BlogService { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        this.post = await this.BlogService.GetPostBySlugAsync(this.Slug);
-        if (this.post == null)
+        this.Post = await this.BlogService.GetPostBySlugAsync(this.Slug);
+        if (this.Post == null)
         {
-            this.notFound = true;
+            this.NotFound = true;
         }
     }
 }

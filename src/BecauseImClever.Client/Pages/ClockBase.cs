@@ -9,17 +9,17 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class ClockBase : ComponentBase, IDisposable
 {
+    private Timer? timer;
+
     /// <summary>
     /// Gets or sets the current time to display.
     /// </summary>
-    protected DateTime currentTime = DateTime.Now;
+    protected DateTime CurrentTime { get; set; } = DateTime.Now;
 
     /// <summary>
     /// Gets or sets the currently selected time zone.
     /// </summary>
-    protected TimeZoneInfo selectedTimeZone = TimeZoneInfo.Local;
-
-    private Timer? timer;
+    protected TimeZoneInfo SelectedTimeZone { get; set; } = TimeZoneInfo.Local;
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -29,7 +29,7 @@ public class ClockBase : ComponentBase, IDisposable
 
     private void UpdateTime(object? state)
     {
-        this.currentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, this.selectedTimeZone);
+        this.CurrentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, this.SelectedTimeZone);
         this.InvokeAsync(this.StateHasChanged);
     }
 
@@ -42,8 +42,8 @@ public class ClockBase : ComponentBase, IDisposable
         var tzId = e.Value?.ToString();
         if (!string.IsNullOrEmpty(tzId))
         {
-            this.selectedTimeZone = TimeZoneInfo.FindSystemTimeZoneById(tzId);
-            this.currentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, this.selectedTimeZone);
+            this.SelectedTimeZone = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+            this.CurrentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, this.SelectedTimeZone);
         }
     }
 
@@ -53,7 +53,7 @@ public class ClockBase : ComponentBase, IDisposable
     /// <returns>The transform string.</returns>
     protected string GetHourHandTransform()
     {
-        var hourAngle = ((this.currentTime.Hour % 24) * 15) + (this.currentTime.Minute * 0.25);
+        var hourAngle = ((this.CurrentTime.Hour % 24) * 15) + (this.CurrentTime.Minute * 0.25);
         return $"rotate({hourAngle:F2}, 200, 200)";
     }
 
@@ -63,7 +63,7 @@ public class ClockBase : ComponentBase, IDisposable
     /// <returns>The transform string.</returns>
     protected string GetMinuteHandTransform()
     {
-        var minuteAngle = (this.currentTime.Minute * 6) + (this.currentTime.Second * 0.1);
+        var minuteAngle = (this.CurrentTime.Minute * 6) + (this.CurrentTime.Second * 0.1);
         return $"rotate({minuteAngle:F2}, 200, 200)";
     }
 
@@ -73,7 +73,7 @@ public class ClockBase : ComponentBase, IDisposable
     /// <returns>The transform string.</returns>
     protected string GetSecondHandTransform()
     {
-        var secondAngle = this.currentTime.Second * 6;
+        var secondAngle = this.CurrentTime.Second * 6;
         return $"rotate({secondAngle}, 200, 200)";
     }
 

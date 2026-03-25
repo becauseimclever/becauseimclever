@@ -77,17 +77,17 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     /// <summary>
     /// Gets or sets a value indicating whether the image upload dialog is shown.
     /// </summary>
-    protected bool showImageUploadDialog;
+    protected bool ShowImageUploadDialog { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether a file is being dragged over the editor.
     /// </summary>
-    protected bool isDraggingFile;
+    protected bool IsDraggingFile { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether an image is being uploaded.
     /// </summary>
-    protected bool isUploadingImage;
+    protected bool IsUploadingImage { get; set; }
 
     private DotNetObjectReference<MarkdownEditorBase>? dotNetRef;
 
@@ -155,7 +155,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public void OnDragStateChanged(bool isDragging)
     {
-        this.isDraggingFile = isDragging;
+        this.IsDraggingFile = isDragging;
         this.StateHasChanged();
     }
 
@@ -174,8 +174,8 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             return;
         }
 
-        this.isDraggingFile = false;
-        this.isUploadingImage = true;
+        this.IsDraggingFile = false;
+        this.IsUploadingImage = true;
         this.StateHasChanged();
 
         try
@@ -202,7 +202,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         }
         finally
         {
-            this.isUploadingImage = false;
+            this.IsUploadingImage = false;
             this.StateHasChanged();
         }
     }
@@ -257,7 +257,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     /// </summary>
     protected void OpenImageUploadDialog()
     {
-        this.showImageUploadDialog = true;
+        this.ShowImageUploadDialog = true;
     }
 
     /// <summary>
@@ -265,7 +265,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     /// </summary>
     protected void CloseImageUploadDialog()
     {
-        this.showImageUploadDialog = false;
+        this.ShowImageUploadDialog = false;
     }
 
     /// <summary>
@@ -284,7 +284,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         var newCursorPos = result.Start + markdown.Length;
         await this.JS.InvokeVoidAsync("markdownEditor.setSelection", this.TextAreaId, newCursorPos, newCursorPos);
 
-        this.showImageUploadDialog = false;
+        this.ShowImageUploadDialog = false;
     }
 
     /// <summary>

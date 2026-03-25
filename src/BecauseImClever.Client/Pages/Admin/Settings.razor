@@ -15,18 +15,18 @@
         <h2>Feature Toggles</h2>
         <p class="section-description">Enable or disable application features.</p>
 
-        @if (isLoading)
+        @if (IsLoading)
         {
             <div class="loading-container">
                 <div class="spinner"></div>
                 <p>Loading settings...</p>
             </div>
         }
-        else if (errorMessage is not null)
+        else if (ErrorMessage is not null)
         {
             <div class="alert alert-error">
-                <span>@errorMessage</span>
-                <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+                <span>@ErrorMessage</span>
+                <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
             </div>
         }
         else
@@ -36,20 +36,20 @@
                     <div class="feature-info">
                         <h3>Extension Detection</h3>
                         <p>Detect browser extensions (like Honey) and display warnings to users about potentially harmful extensions.</p>
-                        @if (extensionDetectionFeature is not null)
+                        @if (ExtensionDetectionFeature is not null)
                         {
                             <div class="feature-meta">
-                                <span class="status-badge @(extensionDetectionFeature.IsEnabled ? "enabled" : "disabled")">
-                                    @(extensionDetectionFeature.IsEnabled ? "Enabled" : "Disabled")
+                                <span class="status-badge @(ExtensionDetectionFeature.IsEnabled ? "Enabled" : "Disabled")">
+                                    @(ExtensionDetectionFeature.IsEnabled ? "Enabled" : "Disabled")
                                 </span>
                                 <span class="last-modified">
-                                    Last modified by @extensionDetectionFeature.LastModifiedBy 
-                                    on @extensionDetectionFeature.LastModifiedAt.ToString("g")
+                                    Last modified by @ExtensionDetectionFeature.LastModifiedBy 
+                                    on @ExtensionDetectionFeature.LastModifiedAt.ToString("g")
                                 </span>
                             </div>
-                            @if (!extensionDetectionFeature.IsEnabled && !string.IsNullOrEmpty(extensionDetectionFeature.DisabledReason))
+                            @if (!ExtensionDetectionFeature.IsEnabled && !string.IsNullOrEmpty(ExtensionDetectionFeature.DisabledReason))
                             {
-                                <p class="disabled-reason">Reason: @extensionDetectionFeature.DisabledReason</p>
+                                <p class="disabled-reason">Reason: @ExtensionDetectionFeature.DisabledReason</p>
                             }
                         }
                     </div>
@@ -57,9 +57,9 @@
                         <label class="toggle-switch">
                             <input type="checkbox" 
                                    id="extension-detection-toggle"
-                                   checked="@(extensionDetectionFeature?.IsEnabled ?? false)"
+                                   checked="@(ExtensionDetectionFeature?.IsEnabled ?? false)"
                                    @onchange="OnExtensionDetectionToggled"
-                                   disabled="@isSaving" />
+                                   disabled="@IsSaving" />
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -68,37 +68,37 @@
         }
     </section>
 
-    @if (showConfirmDialog)
+    @if (ShowConfirmDialog)
     {
         <div class="modal-overlay" @onclick="CloseConfirmDialog">
             <div class="modal-content" @onclick:stopPropagation="true">
-                <h3>@confirmDialogTitle</h3>
-                <p>@confirmDialogMessage</p>
+                <h3>@ConfirmDialogTitle</h3>
+                <p>@ConfirmDialogMessage</p>
                 
-                @if (!confirmDialogEnabling)
+                @if (!ConfirmDialogEnabling)
                 {
                     <div class="form-group">
                         <label for="disableReason">Reason (optional):</label>
                         <input type="text" 
                                id="disableReason" 
-                               @bind="disableReason" 
+                               @bind="DisableReason" 
                                placeholder="Enter a reason for disabling this feature" />
                     </div>
                 }
                 
                 <div class="modal-actions">
-                    <button class="btn btn-secondary" @onclick="CloseConfirmDialog" disabled="@isSaving">Cancel</button>
-                    <button class="btn @(confirmDialogEnabling ? "btn-success" : "btn-danger")" 
+                    <button class="btn btn-secondary" @onclick="CloseConfirmDialog" disabled="@IsSaving">Cancel</button>
+                    <button class="btn @(ConfirmDialogEnabling ? "btn-success" : "btn-danger")" 
                             @onclick="ConfirmToggle" 
-                            disabled="@isSaving">
-                        @if (isSaving)
+                            disabled="@IsSaving">
+                        @if (IsSaving)
                         {
                             <span class="spinner-small"></span>
                             <span>Saving...</span>
                         }
                         else
                         {
-                            @(confirmDialogEnabling ? "Enable" : "Disable")
+                            @(ConfirmDialogEnabling ? "Enable" : "Disable")
                         }
                     </button>
                 </div>

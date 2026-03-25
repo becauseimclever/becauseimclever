@@ -243,6 +243,102 @@ public class PostAuthorizationServiceTests
         Assert.Equal("post", exception.ParamName);
     }
 
+    /// <summary>
+    /// Verifies that CanEditPost returns false when userId is null.
+    /// </summary>
+    [Fact]
+    public void CanEditPost_WithNullUserId_ReturnsFalse()
+    {
+        // Arrange
+        var post = CreateTestPost(authorId: "author@test.com");
+
+        // Act
+        var result = this.service.CanEditPost(null!, isAdmin: false, post);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that CanEditPost returns false when userId is empty.
+    /// </summary>
+    [Fact]
+    public void CanEditPost_WithEmptyUserId_ReturnsFalse()
+    {
+        // Arrange
+        var post = CreateTestPost(authorId: "author@test.com");
+
+        // Act
+        var result = this.service.CanEditPost(string.Empty, isAdmin: false, post);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that CanDeletePost returns false when userId is null.
+    /// </summary>
+    [Fact]
+    public void CanDeletePost_WithNullUserId_ReturnsFalse()
+    {
+        // Arrange
+        var post = CreateTestPost(authorId: "author@test.com");
+
+        // Act
+        var result = this.service.CanDeletePost(null!, isAdmin: false, post);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that CanDeletePost returns false when userId is empty.
+    /// </summary>
+    [Fact]
+    public void CanDeletePost_WithEmptyUserId_ReturnsFalse()
+    {
+        // Arrange
+        var post = CreateTestPost(authorId: "author@test.com");
+
+        // Act
+        var result = this.service.CanDeletePost(string.Empty, isAdmin: false, post);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that CanViewPost returns false when userId is null.
+    /// </summary>
+    [Fact]
+    public void CanViewPost_WithNullUserId_ReturnsFalse()
+    {
+        // Arrange
+        var post = CreateTestPost(authorId: "author@test.com");
+
+        // Act
+        var result = this.service.CanViewPost(null!, isAdmin: false, post);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    /// <summary>
+    /// Verifies that CanViewPost returns false when userId is empty.
+    /// </summary>
+    [Fact]
+    public void CanViewPost_WithEmptyUserId_ReturnsFalse()
+    {
+        // Arrange
+        var post = CreateTestPost(authorId: "author@test.com");
+
+        // Act
+        var result = this.service.CanViewPost(string.Empty, isAdmin: false, post);
+
+        // Assert
+        Assert.False(result);
+    }
+
     private static BlogPost CreateTestPost(string? authorId)
     {
         return new BlogPost

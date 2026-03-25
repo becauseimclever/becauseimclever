@@ -9,52 +9,52 @@
             <h1>Contact Me</h1>
             <p>Have a question, project idea, or just want to say hello? Fill out the form below and I'll get back to you as soon as I can.</p>
             
-            @if (isSubmitted)
+            @if (IsSubmitted)
             {
                 <div class="alert alert-success" style="background-color: var(--accent-color); color: white; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
                     <strong>Thanks for reaching out!</strong> Your message has been sent successfully. I'll get back to you soon.
                 </div>
             }
-            else if (!string.IsNullOrEmpty(errorMessage))
+            else if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 <div class="alert alert-error" style="background-color: #dc3545; color: white; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
-                    <strong>Oops!</strong> @errorMessage
+                    <strong>Oops!</strong> @ErrorMessage
                 </div>
             }
 
-            @if (!isSubmitted)
+            @if (!IsSubmitted)
             {
                 <form @onsubmit="HandleSubmit" @onsubmit:preventDefault style="margin-top: 1.5rem;">
                     <div class="form-group" style="margin-bottom: 1rem;">
                         <label for="name" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Name *</label>
-                        <input type="text" id="name" @bind="contactMessage.Name" required
+                        <input type="text" id="name" @bind="ContactMessage.Name" required
                                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color);"
                                placeholder="Your name" />
                     </div>
 
                     <div class="form-group" style="margin-bottom: 1rem;">
                         <label for="email" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Email *</label>
-                        <input type="email" id="email" @bind="contactMessage.Email" required
+                        <input type="email" id="email" @bind="ContactMessage.Email" required
                                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color);"
                                placeholder="your.email@example.com" />
                     </div>
 
                     <div class="form-group" style="margin-bottom: 1rem;">
                         <label for="subject" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Subject *</label>
-                        <input type="text" id="subject" @bind="contactMessage.Subject" required
+                        <input type="text" id="subject" @bind="ContactMessage.Subject" required
                                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color);"
                                placeholder="What's this about?" />
                     </div>
 
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                         <label for="message" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Message *</label>
-                        <textarea id="message" @bind="contactMessage.Message" required rows="6"
+                        <textarea id="message" @bind="ContactMessage.Message" required rows="6"
                                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--bg-color); color: var(--text-color); resize: vertical;"
                                   placeholder="What's on your mind?"></textarea>
                     </div>
 
-                    <button type="submit" class="cta-button" disabled="@isSubmitting" style="width: 100%;">
-                        @if (isSubmitting)
+                    <button type="submit" class="cta-button" disabled="@IsSubmitting" style="width: 100%;">
+                        @if (IsSubmitting)
                         {
                             <span>Sending...</span>
                         }

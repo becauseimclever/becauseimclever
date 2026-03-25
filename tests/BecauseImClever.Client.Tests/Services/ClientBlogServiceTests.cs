@@ -137,6 +137,46 @@ public class ClientBlogServiceTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task GetPostBySlugAsync_WhenHttpThrowsExceptionWithNonNotFoundStatus_ThrowsException()
+    {
+        // Arrange
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Service unavailable", null, System.Net.HttpStatusCode.ServiceUnavailable));
+
+        var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("http://localhost/") };
+        var service = new ClientBlogService(httpClient);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() => service.GetPostBySlugAsync("test-post"));
+    }
+
+    [Fact]
+    public async Task GetPostsAsync_WhenHttpThrowsException_ThrowsHttpRequestException()
+    {
+        // Arrange
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("http://localhost/") };
+        var service = new ClientBlogService(httpClient);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() => service.GetPostsAsync());
+    }
+
     private static HttpClient CreateMockHttpClient<T>(T response, string expectedUri)
     {
         var mockHandler = new Mock<HttpMessageHandler>();

@@ -83,15 +83,15 @@
         <!-- Editor Pane -->
         @if (!IsPreviewOnly)
         {
-            <div class="editor-pane @(isDraggingFile ? "drag-over" : "")">
-                @if (isDraggingFile)
+            <div class="editor-pane @(IsDraggingFile ? "drag-over" : "")">
+                @if (IsDraggingFile)
                 {
                     <div class="drop-overlay">
                         <span class="drop-icon">📷</span>
                         <span>Drop image to upload</span>
                     </div>
                 }
-                @if (isUploadingImage)
+                @if (IsUploadingImage)
                 {
                     <div class="upload-overlay">
                         <div class="upload-spinner"></div>
@@ -124,7 +124,7 @@
     </div>
 </div>
 
-@if (showImageUploadDialog)
+@if (ShowImageUploadDialog)
 {
     <ImageUploadDialog PostSlug="@PostSlug"
                        OnImageInserted="HandleImageInserted"

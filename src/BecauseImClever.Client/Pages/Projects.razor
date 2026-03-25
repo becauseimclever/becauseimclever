@@ -7,14 +7,14 @@
     <div class="content-area">
         <h2 style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-color); padding-left: 1rem;">My Projects</h2>
         
-        @if (projects == null)
+        @if (Projects == null)
         {
             <p><em>Loading...</em></p>
         }
         else
         {
             <div class="blog-grid">
-                @foreach (var project in projects)
+                @foreach (var project in Projects)
                 {
                     <div class="card">
                         <div class="card-meta">@project.Owner • @project.Language</div>

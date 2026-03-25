@@ -12,6 +12,18 @@ using Microsoft.JSInterop;
 /// </summary>
 public class ExtensionWarningBannerBase : ComponentBase
 {
+    private bool isInitialized;
+
+    /// <summary>
+    /// Gets or sets the list of detected browser extensions.
+    /// </summary>
+    protected List<DetectedExtension> DetectedExtensions { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the warning banner is visible.
+    /// </summary>
+    protected bool ShowBanner { get; set; }
+
     [Inject]
     private IBrowserExtensionDetector ExtensionDetector { get; set; } = default!;
 
@@ -29,18 +41,6 @@ public class ExtensionWarningBannerBase : ComponentBase
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = default!;
-
-    /// <summary>
-    /// Gets or sets the list of detected browser extensions.
-    /// </summary>
-    protected List<DetectedExtension> detectedExtensions = new();
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the warning banner is visible.
-    /// </summary>
-    protected bool showBanner = false;
-
-    private bool isInitialized = false;
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -75,11 +75,11 @@ public class ExtensionWarningBannerBase : ComponentBase
             }
 
             var extensions = await this.ExtensionDetector.DetectExtensionsAsync();
-            this.detectedExtensions = extensions.Where(e => e.IsHarmful).ToList();
+            this.DetectedExtensions = extensions.Where(e => e.IsHarmful).ToList();
 
-            if (this.detectedExtensions.Any())
+            if (this.DetectedExtensions.Any())
             {
-                this.showBanner = true;
+                this.ShowBanner = true;
                 this.StateHasChanged();
 
                 await this.TrackExtensionsAsync();
@@ -98,7 +98,7 @@ public class ExtensionWarningBannerBase : ComponentBase
             var fingerprint = await this.FingerprintService.CollectFingerprintAsync();
             var hash = fingerprint.ComputeHash();
             var userAgent = await this.JSRuntime.InvokeAsync<string>("eval", "navigator.userAgent");
-            await this.TrackingService.TrackDetectedExtensionsAsync(hash, this.detectedExtensions, userAgent);
+            await this.TrackingService.TrackDetectedExtensionsAsync(hash, this.DetectedExtensions, userAgent);
         }
         catch
         {
@@ -109,10 +109,10 @@ public class ExtensionWarningBannerBase : ComponentBase
     /// <summary>
     /// Dismisses the extension warning banner.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <returns>A task representing the async operation.</returns>
     protected async Task DismissBanner()
     {
-        this.showBanner = false;
+        this.ShowBanner = false;
         await this.JSRuntime.InvokeVoidAsync("localStorage.setItem", "extensionWarningDismissed", "true");
         this.StateHasChanged();
     }

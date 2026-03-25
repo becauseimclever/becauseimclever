@@ -138,6 +138,93 @@ public class SettingsTests : BunitContext
         Assert.Contains("Loading", cut.Markup);
     }
 
+    /// <summary>
+    /// Verifies that toggling extension detection shows confirmation dialog.
+    /// </summary>
+    [Fact]
+    public void Settings_OnExtensionDetectionToggled_ShowsConfirmDialog()
+    {
+        // Arrange
+        var feature = new FeatureSettings
+        {
+            Id = Guid.NewGuid(),
+            FeatureName = "ExtensionDetection",
+            IsEnabled = false,
+            LastModifiedAt = DateTime.UtcNow,
+            LastModifiedBy = "admin",
+        };
+        this.ConfigureServices(feature);
+
+        // Act
+        var cut = this.Render<Settings>();
+        var toggle = cut.Find("#extension-detection-toggle");
+        toggle.Change(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
+
+        // Assert
+        Assert.Contains("Enable Extension Detection?", cut.Markup);
+        Assert.Contains("modal-overlay", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that toggling to disable shows correct message.
+    /// </summary>
+    [Fact]
+    public void Settings_OnExtensionDetectionToggledOff_ShowsDisableMessage()
+    {
+        // Arrange
+        var feature = new FeatureSettings
+        {
+            Id = Guid.NewGuid(),
+            FeatureName = "ExtensionDetection",
+            IsEnabled = true,
+            LastModifiedAt = DateTime.UtcNow,
+            LastModifiedBy = "admin",
+        };
+        this.ConfigureServices(feature);
+
+        // Act
+        var cut = this.Render<Settings>();
+        var toggle = cut.Find("#extension-detection-toggle");
+        toggle.Change(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = false });
+
+        // Assert
+        Assert.Contains("Disable Extension Detection?", cut.Markup);
+        Assert.Contains("stop all extension detection", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that the API returns NotFound and creates default feature.
+    /// </summary>
+    [Fact]
+    public void Settings_WhenFeatureNotFound_ShowsDefaultFeature()
+    {
+        // Arrange
+        this.ConfigureServices(feature: null);
+
+        // Act
+        var cut = this.Render<Settings>();
+
+        // Assert
+        Assert.Contains("Extension Detection", cut.Markup);
+        Assert.Contains("Disabled", cut.Markup);
+    }
+
+    /// <summary>
+    /// Verifies that API error shows error message.
+    /// </summary>
+    [Fact]
+    public void Settings_WhenApiFails_ShowsErrorMessage()
+    {
+        // Arrange
+        this.ConfigureServicesWithError();
+
+        // Act
+        var cut = this.Render<Settings>();
+
+        // Assert
+        Assert.Contains("Failed to load feature settings", cut.Markup);
+    }
+
     private void ConfigureServices(FeatureSettings? feature = null)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
@@ -198,6 +285,35 @@ public class SettingsTests : BunitContext
                 await Task.Delay(5000);
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
             });
+
+        var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("https://test.com/") };
+
+        this.Services.AddSingleton(httpClient);
+        this.Services.AddSingleton<IAuthorizationPolicyProvider, DefaultAuthorizationPolicyProvider>();
+        this.Services.AddSingleton<IAuthorizationService, DefaultAuthorizationService>();
+
+        var authState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(
+            new[]
+            {
+                new Claim(ClaimTypes.Name, "admin@test.com"),
+                new Claim("groups", "becauseimclever-admins"),
+            },
+            "test")));
+        this.Services.AddSingleton<AuthenticationStateProvider>(
+            new TestAuthStateProvider(authState));
+        this.Services.AddAuthorizationCore();
+    }
+
+    private void ConfigureServicesWithError()
+    {
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
         var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("https://test.com/") };
 
