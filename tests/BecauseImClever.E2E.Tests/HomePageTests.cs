@@ -40,10 +40,11 @@ public class HomePageTests : PlaywrightTestBase
         await this.Page.WaitForSelectorAsync("nav", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act
+        await this.DismissConsentBannerAsync();
         await this.Page.ClickAsync("nav >> text=Home");
 
         // Assert - Wait for URL to change (Blazor client-side routing)
-        await this.Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex(@"^https://becauseimclever\.com/?$"));
+        await this.Page.WaitForURLAsync(new System.Text.RegularExpressions.Regex($@"^{System.Text.RegularExpressions.Regex.Escape(this.BaseUrl)}/?$"));
         Assert.True(this.Page.Url == this.BaseUrl || this.Page.Url == $"{this.BaseUrl}/");
     }
 
@@ -59,6 +60,7 @@ public class HomePageTests : PlaywrightTestBase
         await this.Page.WaitForSelectorAsync("select.theme-switch", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Act - Select the "dungeon" theme (Dungeon Crawler)
+        await this.DismissConsentBannerAsync();
         await this.Page.SelectOptionAsync("select.theme-switch", "dungeon");
 
         // Assert - Wait for theme to be applied

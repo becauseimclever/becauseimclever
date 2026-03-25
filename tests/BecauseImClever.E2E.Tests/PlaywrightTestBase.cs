@@ -8,7 +8,7 @@ using Microsoft.Playwright;
 
 /// <summary>
 /// Base class for Playwright E2E tests providing browser lifecycle management.
-/// Tests run against the deployed site at https://becauseimclever.com/.
+/// Tests run against the URL configured via the <c>E2E_BASE_URL</c> environment variable (default: <c>https://becauseimclever.com/</c>).
 /// </summary>
 public abstract class PlaywrightTestBase : IAsyncLifetime
 {
@@ -34,8 +34,9 @@ public abstract class PlaywrightTestBase : IAsyncLifetime
 
     /// <summary>
     /// Gets the base URL for the application under test.
+    /// Reads from the <c>E2E_BASE_URL</c> environment variable, falling back to <c>https://becauseimclever.com</c>.
     /// </summary>
-    protected string BaseUrl => "https://becauseimclever.com";
+    protected string BaseUrl => Environment.GetEnvironmentVariable("E2E_BASE_URL") ?? "https://becauseimclever.com";
 
     /// <summary>
     /// Initializes the Playwright browser and page before each test.
@@ -65,5 +66,20 @@ public abstract class PlaywrightTestBase : IAsyncLifetime
         await this.Context.CloseAsync();
         await this.Browser.CloseAsync();
         this.Playwright.Dispose();
+    }
+
+    /// <summary>
+    /// Dismisses the consent banner if it is visible on the page.
+    /// Call this after navigating to a page before performing any click interactions.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected async Task DismissConsentBannerAsync()
+    {
+        var acceptBtn = this.Page.Locator(".accept-btn");
+        if (await acceptBtn.IsVisibleAsync())
+        {
+            await acceptBtn.ClickAsync();
+            await this.Page.WaitForSelectorAsync(".consent-overlay", new() { State = WaitForSelectorState.Hidden });
+        }
     }
 }
