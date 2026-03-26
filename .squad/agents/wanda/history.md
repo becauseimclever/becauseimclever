@@ -62,3 +62,55 @@
 - `Layout/MainLayoutBaseTests.cs` — 6 tests (theme population, theme change, init, fallback)
 
 **Coverage Impact:** Estimated push from ~70% to ~80%, moving toward `fail_below_min` re-enablement in CI.
+
+### 2026-03-26 — Medium-Priority Base Class Tests (feature #033 follow-up)
+
+**Status:** 16 new tests written, all 409 total tests passing.  
+**Branch:** `wanda/coverage-base-class-tests`  
+**PR:** https://github.com/becauseimclever/becauseimclever/pull/20
+
+- **`DashboardBase.DashboardStats` is a protected nested record** — cannot expose it as a public property from a `private sealed class` test helper. Instead expose boolean (`HasStats`) and individual scalar properties (`StatsTotalPosts`) to keep accessibility consistent.
+- **FluentAssertions `.Or` chaining does not exist** for `StringAssertions`. Use `.MatchRegex(...)` for pattern-based assertions instead.
+- **StyleCop SA1515** requires a blank line before single-line comments — always leave a blank line before `//` comments inside methods.
+- **`GetExtensionDisplayName` is a `protected static` method** — expose it from the test helper as a `public static` method (calling `GetExtensionDisplayName(...)`) for pure unit testing without bUnit rendering overhead.
+- **bUnit fake NavigationManager base URI is `http://localhost/`** — URL-encoded form contains `%3A`, `%2F`, etc. Test with `.MatchRegex("%[0-9A-Fa-f]{2}")` to verify percent-encoding without hardcoding the exact encoded string.
+
+**Files Created:**
+- `Pages/RedirectToLoginBaseTests.cs` — 3 tests (navigation call, returnUrl param, encoding)
+- `Pages/PostBaseTests.cs` — 2 tests (found post, not found)
+- `Pages/Admin/DashboardBaseTests.cs` — 2 tests (successful load, HTTP error)
+- `Pages/Admin/ExtensionStatisticsBaseTests.cs` — 6 tests (4 display name mappings, successful load, null return)
+- `Components/DataDeletionFormBaseTests.cs` — 3 tests (success, error handling, hash passthrough)
+
+**Coverage Impact:** Estimated push from ~80% to ~90%+, completing all base class test coverage.
+
+### 2026-03-26 — Natasha Review Fixes: Base Class Tests (PR #20 follow-up)
+
+**Status:** 6 fixes applied across 3 files, all 414 tests passing (up from 393 baseline + 21 new from previous pass = 414 total).  
+**Branch:** `wanda/coverage-base-class-tests`
+
+- **ClockBase — `TimeZoneNotFoundException` propagates**: Source has no guard in `OnTimezoneChanged`; passing an unrecognised timezone ID throws. Test verifies the exception propagates with `act.Should().Throw<TimeZoneNotFoundException>()`. Added `CurrentTimePublic` to TestClock and extended the valid-timezone test to assert `CurrentTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5))`.
+- **BlogBase — JS interop verified via `JSInterop.VerifyInvoke`**: Even with `JSRuntimeMode.Loose`, bUnit records all invocations. `VerifyInvoke("initIntersectionObserver")` throws if the call was never made. Added a dedicated `IsLoading` test: after `OnInitializedAsync` completes, `IsLoading` must be `false`.
+- **ExtensionWarningBanner — happy path**: New test sets fingerprint service to return valid `BrowserFingerprint`, sets `eval` JS interop for `navigator.userAgent`, then asserts `TrackDetectedExtensionsAsync` was called `Times.Once`. Silent-fail test made explicit: uses `ConfigureServices` (fingerprint throws by default), asserts banner shows AND `TrackDetectedExtensionsAsync` called `Times.Never`.
+
+**Key pattern:** `JSInterop.Setup<string>("eval", _ => true).SetResult(...)` is required for the `TrackExtensionsAsync` happy path — the `eval` call for `navigator.userAgent` must be set up or it hangs under strict mode (or silently swallows under loose).
+
+### 2026-03-26 — Team Review Cycle: Base Class Coverage PR (#20) — APPROVED
+
+**Status:** ✅ APPROVED FOR MERGE  
+**Campaign:** Wanda wrote 5 medium-priority test files → Natasha reviewed and flagged 3 files with 6 issues → Wanda fixed all 6 → Natasha re-reviewed and approved.  
+**PR:** https://github.com/becauseimclever/becauseimclever/pull/20  
+**Test Count:** 414 total (up from 393 baseline), 0 failures
+
+**Orchestration Timeline:**
+- **2026-03-26T06:00:00Z — Wanda opened PR #20** with 5 medium-priority test files (16 tests, 409 total)
+- **2026-03-26T06:15:00Z — Natasha reviewed**: ClockBase (invalid timezone, CurrentTime assertion), BlogBase (JS interop, IsLoading assertion), ExtensionWarningBannerBase (tracking success path, silent-fail explicit)
+- **2026-03-26T06:30:00Z — Wanda fixed all 6 issues**: 414 tests passing, 0 failures
+- **2026-03-26T06:45:00Z — Natasha approved for merge**: Issue-by-issue verification complete, all fixes non-accidental and intentional
+
+**Key Learnings from This Cycle:**
+- Coverage gaps are production defects waiting to happen — `TimeZoneNotFoundException` can occur in live code but was untested
+- JS interop in Loose mode silently swallows calls; use `VerifyInvoke` to force verification
+- Tracking happy paths can be accidentally never-tested if mocks throw unconditionally; both success AND silent-fail paths need explicit tests
+- `Times.Never` is a first-class assertion pattern, not a workaround
+

@@ -103,3 +103,68 @@ Natasha audited all 21 Blazor base classes and produced a detailed coverage gap 
 High-priority targets: ClockBase, BlogBase, ExtensionWarningBannerBase, MainLayoutBase — estimated 14 new tests to push from ~70% to ~80%.
 
 Handed off to Wanda for implementation.
+
+### 2026-03-26 — QA Review of Wanda's Base Class Tests
+
+**Date:** 2026-03-26  
+**Branch:** `wanda/coverage-base-class-tests`  
+**Status:** 3 of 4 files NEED WORK — feedback filed to `.squad/decisions/inbox/natasha-review-feedback.md`
+
+All 393 tests build and pass. Pattern compliance (TestXxx : XxxBase, empty BuildRenderTree, public wrappers) is correct across all 4 files.
+
+**MainLayoutBaseTests.cs** — APPROVED. All 6 logic paths covered.
+
+**ClockBaseTests.cs** — NEEDS WORK.
+- `OnTimezoneChanged` with invalid timezone ID not tested (`FindSystemTimeZoneById` throws `TimeZoneNotFoundException` with no guard in source).
+- Valid timezone test doesn't assert `CurrentTime` was updated (source updates both `SelectedTimeZone` and `CurrentTime`).
+
+**BlogBaseTests.cs** — NEEDS WORK.
+- `OnAfterRenderAsync` JS interop (`initIntersectionObserver`) is never verified — `JSInterop.Mode = Loose` silently swallows all calls.
+- `IsLoading` state is exposed via `IsLoadingPublic` but never asserted in any test.
+
+**ExtensionWarningBannerBaseTests.cs** — NEEDS WORK.
+- `TrackExtensionsAsync` happy path is untested — `ConfigureServices` always throws on fingerprint, so `TrackingService.TrackDetectedExtensionsAsync` is never called in any test.
+- Silent-fail when fingerprint throws is exercised accidentally (not by intent) — needs an explicit test with `TrackingService.Verify(Times.Never)`.
+
+**Key learning:** `JSInterop.Mode = Loose` is a test smell when the JS call being suppressed is meaningful behavior. Always pair Loose mode with explicit `Invocations` checks or use `Setup` with strict verification for calls that matter.
+
+### 2026-03-26 — Final Approval: Base Class Tests
+
+**Date:** 2026-03-26
+**Branch:** `wanda/coverage-base-class-tests`
+**Status:** ✅ APPROVED — all 3 flagged files fully fixed. 414 tests passing (21 new tests added by Wanda).
+
+**ClockBaseTests:** Invalid timezone test added (`TimeZoneNotFoundException`). Valid timezone test now asserts `CurrentTime` updated via `BeCloseTo(DateTime.UtcNow, 5s)`.
+
+**BlogBaseTests:** `initIntersectionObserver` now verified with `JSInterop.VerifyInvoke`. `IsLoading` asserted in dedicated test after init completes.
+
+**ExtensionWarningBannerBaseTests:** Tracking happy-path is a standalone test with fingerprint mock succeeding — verifies `TrackDetectedExtensionsAsync` called `Times.Once`. Silent-fail test is explicit with `Times.Never` and asserts banner still shows despite tracking skip.
+
+Approval filed to `.squad/decisions/inbox/natasha-final-approval.md`.
+
+### 2026-03-26 — Team Handoff: Base Class Coverage Complete (PR #20 APPROVED)
+
+**Status:** ✅ APPROVED FOR MERGE  
+**Campaign Duration:** 2026-03-26T06:00:00Z → 2026-03-26T06:45:00Z (45 minutes)  
+**Orchestration:** Wanda (5 medium tests) → Natasha review (3 files flagged) → Wanda fixes (all 6 issues) → Natasha approval  
+**PR:** https://github.com/becauseimclever/becauseimclever/pull/20  
+**Test Count:** 414 total (up from 393), 0 failures  
+**Coverage:** ~78% (next pass targets 80%+ for CI re-enable)
+
+**Handoff Checklist:**
+- ✅ Medium-priority test files written and merged to branch
+- ✅ 3 files reviewed and coverage gaps identified
+- ✅ All 6 gaps fixed with intentional, non-accidental tests
+- ✅ Issue-by-issue verification completed
+- ✅ Orchestration log entries recorded (4 entries)
+- ✅ Session log recorded
+- ✅ Decisions merged into decisions.md (inbox cleared)
+- ✅ Agent histories updated
+- ✅ Awaiting merge and CI confirmation of ≥80% coverage
+
+**Notable Outcomes:**
+- `TimeZoneNotFoundException` in ClockBase was a genuine production gap (source has no try/catch)
+- JS interop in Loose mode is a test smell — `VerifyInvoke` forces accountability
+- Tracking success paths need dedicated tests; `ConfigureServices` unconditional throws are error-prone
+- `Times.Never` is a first-class assertion pattern, locking in silent-fail contracts
+
