@@ -634,3 +634,177 @@ Created 4 new `*BaseTests.cs` files targeting the 4 highest-priority gaps identi
 **Estimated push from ~70% to ~80%** — on track for re-enabling `fail_below_min` in CI.
 
 **Branch:** `wanda/coverage-base-class-tests`
+
+---
+
+## Code Coverage Exclusions: Migration Handling & Attribute-Based Exclusion
+
+**Date:** 2026-03-26  
+**Authors:** Natasha (QA/Tester), Wanda (Developer)  
+**Feature:** #033 Code Coverage Expansion  
+**Status:** ✅ Implemented
+
+### Context
+
+After initial exclusion pattern attempts failed, the team completed a comprehensive investigation of coverlet's filter capabilities and identified the root cause: **coverlet cannot exclude specific types or namespaces within an assembly that has an `<Include>` filter**.
+
+### Decision
+
+**Use `[ExcludeFromCodeCoverage]` attribute for granular code exclusion instead of relying on `<Exclude>` filter patterns.**
+
+### Key Finding
+
+Through 13+ test variations, Natasha confirmed:
+- ✅ Assembly-level exclusion via patterns works perfectly
+- ❌ Namespace/type-level exclusion via patterns fails (even with exact class names)
+- ✅ ExcludeByAttribute mechanism works reliably in all cases
+- ⛔ SourceLink is NOT the cause (tested with `UseSourceLink=false`)
+
+### Implementation
+
+**Applied to all EF Core migrations:**
+1. Added `using System.Diagnostics.CodeAnalysis;`
+2. Added `[ExcludeFromCodeCoverage]` attribute to migration classes:
+   - 4 migration files: InitialCreate, AddPostImages, AddScheduledPublishDate, AddAuthorColumns
+   - 1 model snapshot: BlogDbContextModelSnapshot
+3. Attribute applied only to main `.cs` files (not Designer files) to avoid duplicate attribute compiler errors
+
+### Convention Established
+
+Created `docs/development/coverage-conventions.md` documenting:
+- All future EF migrations must include `[ExcludeFromCodeCoverage]` attribute
+- Workflow: Run `dotnet ef migrations add {Name}` → manually add attribute to main migration file
+- Same for ModelSnapshot.cs when it's regenerated
+
+### Impact
+
+- Infrastructure coverage: **40.2% → 98.7%** (migrations were dragging it down)
+- Overall project coverage: **~45% → ~60%** (accurate baseline)
+- Migration classes no longer appear in coverage reports
+- Real Infrastructure test quality (98.7%) now accurately reflected
+
+### Rationale
+
+- **Explicit over implicit:** Attributes are clearer than relying on complex filter patterns
+- **Reliable:** ExcludeByAttribute has proven to work correctly in all test cases
+- **Maintainable:** Future developers understand why migrations are excluded (attribute in code)
+- **Proven:** CompilerGeneratedAttribute already used successfully in this project
+
+### Related Decisions
+
+- Coverlet filter syntax limitations (see: Coverage Exclusion Pattern Syntax)
+- CI thresholds remain unenforced until Server coverage reaches 60%+
+- CI thresholds when enabled: line 55% (safety margin), branch 50% (safety margin)
+
+---
+
+## Blazor WASM Instrumentation: Architectural Limitation
+
+**Date:** 2026-03-26  
+**Author:** Natasha (QA/Tester)  
+**Feature:** #033 Code Coverage Expansion  
+**Status:** ✅ Resolved (no action needed)
+
+### Context
+
+Initial coverage measurements showed Client assembly at 0% line coverage in WASM builds, causing concern about missing tests.
+
+### Decision
+
+**Blazor WebAssembly Client assembly 0% instrumentation is an architectural limitation of coverlet, not a configuration bug.**
+
+### Finding
+
+Coverlet instruments .NET IL at the CLR level. Blazor WASM builds:
+- Compile to WebAssembly bytecode (not CLR IL)
+- Run in a browser JavaScript engine (not .NET runtime)
+- Cannot be instrumented by coverlet (which instruments CLR IL)
+
+Client assembly coverage is measured from **Release builds** (which use standard .NET SDK, not WASM), where coverage is correctly reported as 66.7% line / 62.9% branch.
+
+### Verification
+
+- ✅ Domain and Infrastructure assemble instrument correctly in isolation
+- ✅ Client assembly instruments correctly in Release builds (non-WASM)
+- ✅ This is a known, documented coverlet limitation
+- ✅ No bug in configuration or tooling
+
+### Impact
+
+- Client coverage measurement limited to Release builds (not WASM)
+- Current 66.7% line / 62.9% branch is accurate
+- No action needed — this is expected behavior
+
+### Related Decisions
+
+- Overall coverage baseline: 59.6% line / 55.4% branch
+- Client is not a critical gap (Server is the priority)
+
+---
+
+## Coverage Baseline & CI Enforcement Decision
+
+**Date:** 2026-03-26  
+**Author:** Natasha (QA/Tester)  
+**Feature:** #033 Code Coverage Expansion  
+**Status:** ✅ Baseline established, enforcement deferred
+
+### Context
+
+Team completed comprehensive coverage measurement after all exclusion fixes. Final baseline: 59.6% line / 55.4% branch with 899 passing tests.
+
+### Decision
+
+**DO NOT enable `fail_below_min: true` in CI until Server coverage reaches at least 60% line coverage.**
+
+### Baseline Coverage (2026-03-26)
+
+| Assembly | Line Coverage | Branch Coverage | Status |
+|----------|---------------|-----------------|--------|
+| **Application** | 100.0% | 100.0% | ✅ Excellent |
+| **Domain** | 97.3% | 88.5% | ✅ Excellent |
+| **Infrastructure** | 98.7% | 95.2% | ✅ Excellent |
+| **Client** | 66.7% | 62.9% | ⚠️ Moderate |
+| **Server** | 20.6% | 25.0% | ❌ **Critical Gap** |
+| **OVERALL** | **59.6%** | **55.4%** | ⚠️ |
+
+### Rationale
+
+**Server is the only critical gap** — 20.6% line coverage for API controllers, middleware, and authentication:
+- Low Server coverage is a production risk (API is primary attack surface)
+- Earlier CI thresholds (80/90) are too aggressive for current state
+- Must raise Server coverage before enforcing gates
+
+### Recommended CI Thresholds (When Enabled)
+
+```yaml
+fail_below_min: true
+line: 55
+branch: 50
+```
+
+**Rationale:**
+- 5% safety margin below current 59.6% line coverage
+- 5% safety margin below current 55.4% branch coverage
+- Prevents regression while allowing minor fluctuations
+
+### When to Enable Enforcement
+
+**Immediate prerequisites:**
+1. Server coverage must reach 60% line / 50% branch minimum
+2. New tests added to Server.Tests covering:
+   - Authentication/authorization endpoints
+   - Error handling middleware
+   - API controller action methods
+   - Request/response validation
+
+**Timeline:**
+- Current: Baseline established, enforcement disabled
+- After Server reaches 60%: Enable with line 55% / branch 50% thresholds
+- After overall reaches 80%: Increase thresholds to line 75% / branch 70%
+
+### Related Decisions
+
+- Migration exclusion via [ExcludeFromCodeCoverage] (ensures accurate measurement)
+- Blazor WASM is architectural limitation (Client 66.7% is accurate)
+- Infrastructure 98.7% is effectively complete (only edge cases remain)

@@ -312,3 +312,261 @@ If the reported issue was real, it would require:
 - ✅ Decision inbox cleared
 - ✅ All findings and recommendations documented
 
+---
+
+### 2026-03-26 — Infrastructure Test Coverage Audit
+
+**Date:** 2026-03-26  
+**Requested by:** Fortinbra  
+**Status:** ✅ COMPLETE — Audit delivered to inbox
+
+**Objective:** Audit Infrastructure test gaps, produce prioritized list for Wanda to implement tests against.
+
+**Key Findings:**
+
+Infrastructure coverage is **much better than reported**:
+- **Raw coverage:** 43.7% (includes 0% EF migrations and generated code)
+- **Actual coverage (excluding migrations/generated):** 98.2% — only **18 uncovered lines** out of 993 executable lines
+- **11 of 12 services are 92-100% covered** — excellent test quality
+
+**Coverage Gaps Identified:**
+
+1. **ScheduledPostPublisherService** (55.2%, 13 uncovered lines)
+   - Missing: Exception handling in `ExecuteAsync` background loop
+   - Priority: MEDIUM — defensive error handling, low business logic value
+   - Testability challenge: Background service with infinite loop, requires mocking time/delays
+
+2. **GitHubProjectService** (76.9%, 3 uncovered lines)
+   - Missing: User-Agent header fallback path (if `TryParseAdd` fails)
+   - Priority: MEDIUM — edge case, but trivial to test (1-line addition to existing test)
+
+3. **EmailService** (92.0%, 2 uncovered lines)
+   - Missing: Success path (SMTP send succeeds, logs success, returns true)
+   - Priority: LOW — only failure path tested, success is trivial
+   - Testability challenge: `SmtpClient` is sealed, requires test SMTP server or refactoring
+
+**Test Patterns Documented:**
+
+For Wanda's reference, documented the established Infrastructure test patterns:
+- In-memory EF for repository/DbContext tests (unique `Guid` DB names per test)
+- Moq for external dependencies (IAdminPostService, ILogger, etc.)
+- MockHttpMessageHandler for HTTP services (GitHubProjectService)
+- Protected method testing via derived test classes (ScheduledPostPublisherService)
+- Test naming: `{MethodName}_{Scenario}_{ExpectedOutcome}`
+
+**Recommendations:**
+
+1. **Consider Infrastructure "done" at 98.2%** — the 18-line gap is edge cases, not business logic
+2. **If pursuing 100%:** Implement MEDIUM priority tests (16 lines), skip LOW priority (2 lines, requires SMTP setup)
+3. **Exclude migrations from coverage reports** — add `[BecauseImClever.Infrastructure]*.Migrations.*` to exclusions in `coverage.runsettings`
+4. **Infrastructure is not the coverage blocker** — focus on Client (0% WASM limitation) and Application/Server gaps
+
+**Coverage Impact Estimates:**
+- After MEDIUM tests: **45.3%** (raw), **99.8%** (excluding migrations)
+- After ALL tests: **45.5%** (raw), **100.0%** (excluding migrations)
+- If migrations excluded from reporting: Infrastructure shows **~98%** today with no new tests
+
+**Deliverable:** Full audit report written to `.squad/decisions/inbox/natasha-infra-audit.md` with detailed gap analysis, test pattern documentation, and prioritized recommendations.
+
+**Key Learning:** Coverage % can be misleading when migrations and generated code are included. Infrastructure has **excellent test coverage** (98.2%) when non-testable code is excluded. The raw 43.7% is a reporting artifact, not a quality signal.
+
+### 2026-03-26 — Coverlet Exclude Pattern Diagnostic (#033 follow-up)
+
+**Task:** Diagnose why `<Exclude>` namespace patterns and `<ExcludeByFile>` patterns in `coverage.runsettings` are not excluding EF migrations from Infrastructure coverage.
+
+**Hypotheses Tested:**
+1. **SourceLink hypothesis:** SourceLink embeds GitHub URLs in PDB symbols, causing `ExcludeByFile` globs to fail
+2. **Namespace pattern syntax:** The exclude patterns may have incorrect syntax
+
+**Findings:**
+
+**SourceLink: REJECTED**
+- Tested with `UseSourceLink=false` — no change (Infrastructure still 39.52%)
+- File paths in cobertura.xml are local Windows paths (`BecauseImClever.Infrastructure\Data\Migrations\...`), not GitHub URLs
+- SourceLink is not the issue
+
+**Namespace Patterns: FUNDAMENTALLY BROKEN**
+- Tested 13+ pattern variations including:
+  - `[*]*.Data.Migrations.*`
+  - `[BecauseImClever.Infrastructure]*.Data.Migrations.*`
+  - `[BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.Migrations.*`
+  - Exact class names like `[BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.Migrations.InitialCreate`
+  - Pattern `[*]*Migration` (type ending wildcard)
+- **ALL FAILED** — migrations remained in coverage (39.52%)
+- Assembly-level exclusion DOES work: `[BecauseImClever.Infrastructure]*` completely removed Infrastructure from coverage
+- **Conclusion:** Coverlet can exclude entire assemblies but cannot exclude specific namespaces/types within an included assembly using tested syntax
+
+**ExcludeByFile: ALSO BROKEN**
+- Tested patterns: `**/Migrations/**/*.cs`, `**\Migrations\**\*.cs`, `*\Migrations\*.cs`
+- None worked despite file paths being local Windows paths
+
+**Root Cause:**
+Coverlet's filter engine appears to have a limitation or undocumented syntax requirement when trying to exclude specific types/namespaces within an assembly that is explicitly included via `<Include>[BecauseImClever.*]*</Include>`. The filter logic may be: `(Include AND NOT Exclude)` but when Include uses wildcards at assembly level, type-level Exclude patterns don't fire.
+
+**Solution:**
+Use `<ExcludeByAttribute>` mechanism, which is proven to work. Add `[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]` to migration classes.
+
+**Options:**
+- **Option A (Quick):** Manually add `[ExcludeFromCodeCoverage]` to 4 migrations + ModelSnapshot (5 files)
+- **Option B (Automated):** MSBuild target to inject attribute into migration files at build time
+- **Option C (EF-native):** Customize EF Core T4 template to include attribute by default
+
+**Expected Impact:**
+- Current: Infrastructure 39.52% (migrations drag down average)
+- After fix: Infrastructure **~98.7%** (real coverage of tested code)
+
+**Deliverable:** Full diagnostic report written to `.squad/decisions/inbox/natasha-exclude-debug.md` with 13 test results, migration class details, and implementation options.
+
+**Key Learning:** Coverlet's namespace/file exclusion patterns are fragile and unreliable. `ExcludeByAttribute` is the only robust mechanism for excluding specific code from coverage. When namespace patterns fail, attribute-based exclusion is the proven workaround.
+
+
+
+### 2026-03-26 — Final Coverage Baseline After All Exclusion Fixes (#033 complete)
+
+**Date:** 2026-03-26  
+**Requested by:** Fortinbra  
+**Status:** ✅ COMPLETE — Baseline measurement delivered
+
+**Task:** Run final full-solution coverage measurement after all exclusion fixes applied (async state machines, source generator namespaces, EF migration attributes).
+
+**Results:**
+
+- **Overall Coverage:** 59.6% line / 55.4% branch
+- **Total Tests:** 899 (0 failures, 0 skipped)
+
+**Per-Assembly Breakdown:**
+
+| Assembly | Line | Branch | Status |
+|----------|------|--------|--------|
+| Application | 100.0% | 100.0% | ✅ Excellent |
+| Domain | 97.3% | 88.5% | ✅ Excellent |
+| Infrastructure | 98.7% | 95.2% | ✅ Excellent |
+| Client | 66.7% | 62.9% | ⚠️ Moderate |
+| Server | 20.6% | 25.0% | ❌ Critical Gap |
+
+**Analysis:**
+
+- **Server at 20.6%** is the critical gap — API controllers, middleware, and auth endpoints have minimal test coverage
+- **Client at 66.7%** is measured correctly in Release builds (previous 0% was due to WASM limitation in Debug builds)
+- **Core layers (Application, Domain, Infrastructure) are production-ready** with 97-100% coverage
+
+**CI Threshold Recommendations:**
+
+Recommended thresholds for .github/workflows/ci.yml when enabling ail_below_min: true:
+
+`yaml
+line: 55
+branch: 50
+`
+
+**5% safety margin** below current baseline to prevent flakiness while still catching regressions.
+
+**⚠️ DO NOT enable ail_below_min: true yet** — Server coverage must reach at least 60% before enforcing gates.
+
+**Next Steps:**
+
+1. **Immediate:** Add Server.Tests for API controllers and middleware
+2. **Short-term goal:** Server 60% line / 50% branch (minimum acceptable)
+3. **Long-term goal:** Server 80% line / 75% branch (production-ready)
+4. **After Server work:** Raise CI thresholds to line: 75, branch: 70 with 80%+ overall coverage
+
+**Exclusions Applied:**
+
+All coverage exclusions from #033 verified:
+- ✅ Async state machines (via CompilerGeneratedAttribute)
+- ✅ OpenAPI source generator (namespace pattern)
+- ✅ Regex source generator (namespace pattern)
+- ✅ EF migrations (wildcard patterns + attributes on 9 files)
+
+**Deliverable:** Full baseline report written to .squad/decisions/inbox/natasha-final-baseline.md
+
+**Key Learning:** The overall 59.6% is driven down by Server's 20.6% (largest assembly by LOC). Once Server coverage is addressed, overall coverage will rise dramatically since Application/Domain/Infrastructure are already 97-100%. Client's 66.7% represents real coverage — bUnit tests are measuring correctly.
+
+---
+
+## 2026-03-26 — Coverage Baseline & Lessons Learned (Team Cycle Final)
+
+**Date:** 2026-03-26T16:10:12Z  
+**Campaign Duration:** Full coverage exclusion investigation (8 subtasks across 2 agents)  
+**Status:** ✅ COMPLETE — Baseline established, decisions documented
+
+### Final Coverage Baseline (2026-03-26)
+
+| Assembly | Line Coverage | Branch Coverage | Tests | Assessment |
+|----------|---------------|-----------------|-------|------------|
+| **Application** | 100.0% | 100.0% | 254 | ✅ Complete |
+| **Domain** | 97.3% | 88.5% | 187 | ✅ Excellent |
+| **Infrastructure** | 98.7% | 95.2% | 325 | ✅ Excellent |
+| **Client** | 66.7% | 62.9% | 414 | ⚠️ Moderate |
+| **Server** | 20.6% | 25.0% | 45 | ❌ Critical Gap |
+| **OVERALL** | **59.6%** | **55.4%** | **899** | ⚠️ Mixed |
+
+### Critical Decisions Made
+
+1. **Coverlet Cannot Exclude Types Within Assemblies** — Only `[ExcludeFromCodeCoverage]` attribute works reliably; `<Exclude>` patterns work only at assembly level
+2. **All EF Migrations Must Have [ExcludeFromCodeCoverage]** — Documented in `docs/development/coverage-conventions.md`; convention applied to 9 existing files
+3. **Blazor WASM Client 0% is Architectural** — Not a bug; coverlet cannot instrument WASM bytecode
+4. **Server is the Critical Gap** — 20.6% coverage for API layer; must reach 60%+ before enabling CI enforcement
+5. **CI Thresholds When Enabled** — line: 55%, branch: 50% (5% safety margin below baseline)
+
+### Key Learnings for Future Work
+
+**Coverage Measurement:**
+- ExcludeByAttribute is the only reliable granular exclusion mechanism
+- Assembly-level exclusion works perfectly with patterns
+- Blazor WASM instrumentation is architecturally impossible with coverlet
+- Release builds measure Client correctly (66.7%); Debug WASM builds are not measurable
+- ReportGenerator uses additive merge (SUM-based deduplication); a line covered in ANY input counts as covered
+
+**Infrastructure Quality:**
+- Actual Infrastructure coverage is 98.2% (excluding non-testable migrations)
+- Only 18 uncovered lines are edge cases or defensive error handling
+- 11 of 12 services are 92-100% covered; infrastructure is production-ready
+
+**CI Enforcement Timing:**
+- Do NOT enable fail_below_min: true until Server reaches 60%+
+- Current aggressive thresholds (80/90) were unrealistic given Server gap
+- Conservative thresholds (55/50) prevent regression while allowing flexibility
+- After Server work raises overall to 70%+, thresholds can be increased to 75/70
+
+**Future Coverage Expansion:**
+- Server needs API controller and middleware tests (highest impact)
+- Client base classes can add 12-14% more coverage (21 base classes identified)
+- Infrastructure edge case tests are LOW priority (18 lines, mostly defensive)
+- Overall target: 80% line / 75% branch (production-ready threshold)
+
+### Files Modified & Created
+
+**Documentation:**
+- `.squad/log/20260326T161012Z-coverage-exclusions-final.md` — Session summary with baseline table
+- `.squad/orchestration-log/20260326T161012Z-natasha-*.md` (4 logs) — Individual task records
+- `.squad/decisions/decisions.md` — Merged 4 new decisions from inbox
+
+**Code:**
+- 9 EF migration files — Added `[ExcludeFromCodeCoverage]`
+- `docs/development/coverage-conventions.md` — Migration attribute convention
+
+### Team Orchestration Summary
+
+| Agent | Task | Status | Key Output |
+|-------|------|--------|-----------|
+| Natasha | Instrumentation audit | ✅ | Root cause: WASM limitation |
+| Natasha | Merge diagnosis | ✅ | ReportGenerator works correctly |
+| Wanda | Runsettings fixes (3 patterns) | ✅ | Async/OpenAPI/Regex excluded |
+| Wanda | Migrations wildcard patterns | ✅ | Patterns still don't work; deeper issue found |
+| Natasha | Exclude pattern debugging (13 tests) | ✅ | Coverlet limitation identified |
+| Natasha | Infrastructure audit (18-line gap) | ✅ | 98.2% actual coverage confirmed |
+| Wanda | Migration attributes (9 files) | ✅ | Infrastructure 40% → 98.7% |
+| Natasha | Final baseline (899 tests) | ✅ | 59.6% line / 55.4% branch baseline |
+
+### Campaign Outcomes
+
+✅ Root cause of migration coverage leakage identified and fixed  
+✅ Accurate baseline measurement established  
+✅ CI enforcement timing decision made (defer to after Server work)  
+✅ Convention documented for future migrations  
+✅ 4 decisions merged into permanent record  
+✅ Team handoff checklist complete  
+✅ 899 tests passing, 0 failures  
+✅ All findings documented for future reference  
+
