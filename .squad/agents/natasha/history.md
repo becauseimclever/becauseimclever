@@ -58,3 +58,113 @@
 **Diagnosis:** This is **not a test issue**. The site is down or the reverse proxy/load balancer is misconfigured. HTTP 502 means the gateway received an invalid response from the upstream server — likely the .NET app isn't running, the container crashed, or Nginx can't reach it.
 
 **Recommendation:** Check production deployment health before rerunning E2E tests. Once site is live, all 10 failures should resolve (they're all "page won't load" symptoms, not logic bugs).
+
+### 2026 — Blazor Client Base Class Coverage Audit
+
+**Date:** 2026-03-24  
+**Status:** 364 tests passing, 9 of 21 base classes have gaps
+
+**Base Test Pattern:**
+- **Complete base tests** use a `TestXXX` derived class that inherits from the base class and exposes protected members as public properties/methods
+- **Test class** inherits from `BunitContext`, creates instance of `TestXXX`, invokes methods via the public wrappers
+- **Empty `BuildRenderTree`** in the test class (required override, but left blank since we're not rendering)
+- **Pattern example:** `SettingsBaseTests.cs`, `PostsBaseTests.cs`, `PostEditorBaseTests.cs`, `AdminLayoutBaseTests.cs`
+
+**Coverage Categories:**
+- **COVERED (6):** Have dedicated `*BaseTests.cs` files testing logic directly
+- **GAP (9):** Have testable logic but only markup tests exist
+- **TRIVIAL (6):** Empty or only simple service calls (not worth base tests)
+
+**High-Priority Gaps (4):**
+1. **ClockBase** — Timer, timezone conversion, SVG transform calculations (87 lines)
+2. **BlogBase** — Pagination, JS interop `LoadMore()`, dispose (101 lines)
+3. **ExtensionWarningBannerBase** — Feature flags, consent, localStorage, tracking (119 lines)
+4. **MainLayoutBase** — Theme initialization and change handling (46 lines)
+
+**Medium-Priority Gaps (5):**
+- RedirectToLoginBase, PostBase, DashboardBase, ExtensionStatisticsBase, DataDeletionFormBase
+
+**Key Finding:** Several existing `*Tests.cs` files (like `ContactTests.cs`, `ConsentBannerTests.cs`) DO test the base class logic through component rendering and behavior assertions. But they test from the UI/integration level, not isolated unit tests of the base class methods. This is acceptable for simple logic but insufficient for complex stateful logic (timers, JS interop, error handling).
+
+**Recommendation:** Add 14 base tests for the high-priority gaps to push coverage from ~70% to ~80%. Full coverage would add 21 tests total.
+
+---
+
+### 2026-03-26 — Base Class Coverage Audit Complete
+
+**Date:** 2026-03-26  
+**Status:** Audit deliverable submitted to Wanda for implementation.
+
+Natasha audited all 21 Blazor base classes and produced a detailed coverage gap analysis identifying:
+- 6 fully covered base classes
+- 9 base classes with testable logic gaps (4 high-priority, 5 medium-priority)
+- 6 trivial base classes (empty or service-call-only)
+
+High-priority targets: ClockBase, BlogBase, ExtensionWarningBannerBase, MainLayoutBase — estimated 14 new tests to push from ~70% to ~80%.
+
+Handed off to Wanda for implementation.
+
+### 2026-03-26 — QA Review of Wanda's Base Class Tests
+
+**Date:** 2026-03-26  
+**Branch:** `wanda/coverage-base-class-tests`  
+**Status:** 3 of 4 files NEED WORK — feedback filed to `.squad/decisions/inbox/natasha-review-feedback.md`
+
+All 393 tests build and pass. Pattern compliance (TestXxx : XxxBase, empty BuildRenderTree, public wrappers) is correct across all 4 files.
+
+**MainLayoutBaseTests.cs** — APPROVED. All 6 logic paths covered.
+
+**ClockBaseTests.cs** — NEEDS WORK.
+- `OnTimezoneChanged` with invalid timezone ID not tested (`FindSystemTimeZoneById` throws `TimeZoneNotFoundException` with no guard in source).
+- Valid timezone test doesn't assert `CurrentTime` was updated (source updates both `SelectedTimeZone` and `CurrentTime`).
+
+**BlogBaseTests.cs** — NEEDS WORK.
+- `OnAfterRenderAsync` JS interop (`initIntersectionObserver`) is never verified — `JSInterop.Mode = Loose` silently swallows all calls.
+- `IsLoading` state is exposed via `IsLoadingPublic` but never asserted in any test.
+
+**ExtensionWarningBannerBaseTests.cs** — NEEDS WORK.
+- `TrackExtensionsAsync` happy path is untested — `ConfigureServices` always throws on fingerprint, so `TrackingService.TrackDetectedExtensionsAsync` is never called in any test.
+- Silent-fail when fingerprint throws is exercised accidentally (not by intent) — needs an explicit test with `TrackingService.Verify(Times.Never)`.
+
+**Key learning:** `JSInterop.Mode = Loose` is a test smell when the JS call being suppressed is meaningful behavior. Always pair Loose mode with explicit `Invocations` checks or use `Setup` with strict verification for calls that matter.
+
+### 2026-03-26 — Final Approval: Base Class Tests
+
+**Date:** 2026-03-26
+**Branch:** `wanda/coverage-base-class-tests`
+**Status:** ✅ APPROVED — all 3 flagged files fully fixed. 414 tests passing (21 new tests added by Wanda).
+
+**ClockBaseTests:** Invalid timezone test added (`TimeZoneNotFoundException`). Valid timezone test now asserts `CurrentTime` updated via `BeCloseTo(DateTime.UtcNow, 5s)`.
+
+**BlogBaseTests:** `initIntersectionObserver` now verified with `JSInterop.VerifyInvoke`. `IsLoading` asserted in dedicated test after init completes.
+
+**ExtensionWarningBannerBaseTests:** Tracking happy-path is a standalone test with fingerprint mock succeeding — verifies `TrackDetectedExtensionsAsync` called `Times.Once`. Silent-fail test is explicit with `Times.Never` and asserts banner still shows despite tracking skip.
+
+Approval filed to `.squad/decisions/inbox/natasha-final-approval.md`.
+
+### 2026-03-26 — Team Handoff: Base Class Coverage Complete (PR #20 APPROVED)
+
+**Status:** ✅ APPROVED FOR MERGE  
+**Campaign Duration:** 2026-03-26T06:00:00Z → 2026-03-26T06:45:00Z (45 minutes)  
+**Orchestration:** Wanda (5 medium tests) → Natasha review (3 files flagged) → Wanda fixes (all 6 issues) → Natasha approval  
+**PR:** https://github.com/becauseimclever/becauseimclever/pull/20  
+**Test Count:** 414 total (up from 393), 0 failures  
+**Coverage:** ~78% (next pass targets 80%+ for CI re-enable)
+
+**Handoff Checklist:**
+- ✅ Medium-priority test files written and merged to branch
+- ✅ 3 files reviewed and coverage gaps identified
+- ✅ All 6 gaps fixed with intentional, non-accidental tests
+- ✅ Issue-by-issue verification completed
+- ✅ Orchestration log entries recorded (4 entries)
+- ✅ Session log recorded
+- ✅ Decisions merged into decisions.md (inbox cleared)
+- ✅ Agent histories updated
+- ✅ Awaiting merge and CI confirmation of ≥80% coverage
+
+**Notable Outcomes:**
+- `TimeZoneNotFoundException` in ClockBase was a genuine production gap (source has no try/catch)
+- JS interop in Loose mode is a test smell — `VerifyInvoke` forces accountability
+- Tracking success paths need dedicated tests; `ConfigureServices` unconditional throws are error-prone
+- `Times.Never` is a first-class assertion pattern, locking in silent-fail contracts
+
