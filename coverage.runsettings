@@ -29,14 +29,11 @@
             <!-- Source generators -->
             [*]System.Text.RegularExpressions.Generated.*
             [*]Microsoft.AspNetCore.OpenApi.Generated.*
-            <!-- EF Core Migrations - explicit namespace -->
-            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Migrations.*
-            <!-- EF Core infrastructure classes -->
-            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.BlogDbContext
-            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.BlogPostConfiguration
-            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.PostImageConfiguration
-            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.ExtensionDetectionEventConfiguration
-            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.BlogDbContextModelSnapshot
+            <!-- EF Core - migrations and generated scaffolding -->
+            [BecauseImClever.Infrastructure]*.Migrations.*
+            [BecauseImClever.Infrastructure]*ModelSnapshot
+            [BecauseImClever.Infrastructure]*DbContext
+            [BecauseImClever.Infrastructure]*Configuration
           </Exclude>
           <ExcludeByAttribute>
             Obsolete
