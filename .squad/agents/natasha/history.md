@@ -21,6 +21,10 @@
 - **Blazor input timing**: Always `await Task.Delay(500)` after filling form fields before clicking submit to let Blazor's `@oninput` handlers process and update the component state.
 - **E2E test CRUD suite**: Four tests implement full CRUD coverage: `CanCreatePost` (create), `CanEditOwnPost` (edit), `CanDeleteOwnPost` (delete), `CannotEditOthersPost` (defensive negative test). All tests use timestamp-based titles and `TryDeleteTestPostAsync` for cleanup; all follow skip-if-unconfigured guard pattern.
 
+### 2026 — E2E BaseUrl now env-var configurable
+
+- **`BaseUrl` in `PlaywrightTestBase`** reads from the `E2E_BASE_URL` environment variable, falling back to `https://becauseimclever.com`. Set `E2E_BASE_URL=http://localhost:5000` (or any URL) before running E2E tests to target a local or staging environment.
+
 ### 2026 — Scheduled Post Visibility Fix (#032)
 
 - **Status filtering is at query level**: `GetPostsAsync()` and `GetPostsAsync(page, pageSize)` filter by `Status == PostStatus.Published` in the DB query — tests must seed posts with non-Published statuses to verify they are excluded.
@@ -29,3 +33,28 @@
 - **UpdateStatusInternalAsync is private** — test it indirectly via `UpdateStatusesAsync` with a single-item update list; this exercises the same internal path as the scheduled publisher.
 - **`[Theory]` with `[InlineData]` needs `<param>` XML doc**: StyleCop SA1611 requires a `<param name="...">` doc entry for every parameter including data-driven ones — add it to the `<summary>` block.
 - **Banner's fix uses ScheduledPublishDate fallback**: When publishing, `PublishedDate` is set to `ScheduledPublishDate` if it is in the past, otherwise `DateTimeOffset.UtcNow`. Tests for `UpdateStatusAsync` should not set `ScheduledPublishDate` to avoid the fallback path (or account for it).
+
+### 2026 — E2E Test Run Against Production (becauseimclever.com)
+
+**Date:** 2026-03-24  
+**Status:** 10 failures, 17 passes, 0 skipped (27 total)
+
+**Root Cause:** Site is returning HTTP 502 (Bad Gateway). The very first test to hit the homepage (`HomePage_LoadsSuccessfully_DisplaysContent`) failed with "Expected successful response but got 502" in 357ms. All subsequent tests timed out waiting for UI elements (`nav`, theme switcher, etc.) that never loaded because the page never rendered.
+
+**Failed Tests (10):**
+- `HomePageTests.HomePage_LoadsSuccessfully_DisplaysContent` — HTTP 502 on GET
+- `HomePageTests.HomePage_LoadsSuccessfully_DisplaysAnnouncements` — Timeout waiting for page load
+- `HomePageTests.HomePage_ClickHomeNav_NavigatesToHome` — Timeout waiting for `nav`
+- `HomePageTests.ThemeSwitcher_SelectTheme_ChangesPageTheme` — Timeout waiting for `select.theme-switch`
+- `NavigationTests.Navigation_ClickClockLink_NavigatesToClockPage` — Timeout waiting for `nav`
+- `NavigationTests.Navigation_ClickAboutLink_NavigatesToAboutPage` — Timeout waiting for `nav`
+- `NavigationTests.Navigation_ClickBlogLink_NavigatesToPostsPage` — Timeout waiting for `nav`
+- `NavigationTests.Navigation_FromPostsPage_CanReturnHome` — Timeout waiting for `nav`
+- `NavigationTests.Navigation_MobileViewport_NavigationIsVisible` — Timeout waiting for `nav ul`
+- `PostEditorTests.BlogPostList_DisplaysPosts_WithProperFormatting` — Timeout waiting for page load (10s)
+
+**Passed Tests (17):** xUnit output doesn't log passed test names by default, but summary shows 17 succeeded. These are likely `GuestWriterTests` (10 tests exist in file) plus 7 other tests from PostEditor or other suites that don't make HTTP requests at startup.
+
+**Diagnosis:** This is **not a test issue**. The site is down or the reverse proxy/load balancer is misconfigured. HTTP 502 means the gateway received an invalid response from the upstream server — likely the .NET app isn't running, the container crashed, or Nginx can't reach it.
+
+**Recommendation:** Check production deployment health before rerunning E2E tests. Once site is live, all 10 failures should resolve (they're all "page won't load" symptoms, not logic bugs).
