@@ -570,3 +570,45 @@ All coverage exclusions from #033 verified:
 ✅ 899 tests passing, 0 failures  
 ✅ All findings documented for future reference  
 
+
+
+---
+
+### 2026-03-26 — Server Test Coverage Audit
+
+**Date:** 2026-03-26  
+**Status:** Audit complete, deliverable sent to Wanda
+
+Natasha audited BecauseImClever.Server test coverage at Fortinbra's request. Server is at 20.6% line / 25% branch — the only critical gap in the project.
+
+**Key Findings:**
+- Most controllers are **100% line coverage** (Posts, Projects, Contact, Stats, Features, ExtensionTracking)
+- **AdminPostsController** has 7 untested authorization paths (Forbid() returns when CanView/CanEdit/CanDelete = false)
+- **AdminPostsController** has 1 untested guest writer path (GetAllPosts calls GetPostsByAuthorAsync for non-admins)
+- **AuthController** has 1 untested guest writer claims scenario (IsGuestWriter, CanManagePosts properties)
+- **Program.cs** has 0% coverage (213 lines) — this is **expected and should be excluded** (startup config, not unit-testable)
+
+**Coverage Gaps Identified:**
+1. 7 authorization failure tests (AdminPostsController Forbid paths)
+2. 1 guest writer routing test (GetAllPosts non-admin path)
+3. 1 guest writer claims test (AuthController GetCurrentUser)
+4. 2 edge case tests (UploadImage zero-length file, Created location header)
+
+**Estimated Impact:**
+- HIGH priority (7 tests): ~25 lines, pushes coverage to ~32-35%
+- MEDIUM priority (2 tests): ~8 lines, pushes to ~35-40%
+- Program.cs exclusion: removes 213 lines from denominator, **final coverage ~55-65%**
+
+**Test Infrastructure:**
+- Server.Tests uses **direct controller instantiation** with Moq (no WebApplicationFactory)
+- Auth is mocked via ClaimsPrincipal setup
+- Pattern is clean, consistent, and easy to extend
+
+**Deliverable:** Comprehensive audit document delivered to .squad/decisions/inbox/natasha-server-audit.md with prioritized test list for Wanda.
+
+**Recommendation:** Wanda can implement all 9 high+medium tests in ~1 hour, add Program.cs exclusion, and reach **60%+ Server coverage** to re-enable CI gate.
+
+**Patterns Documented:**
+- Authorization test pattern: Override CanView/CanEdit/CanDelete mocks to return alse, assert ForbidResult
+- Guest writer test pattern: Call SetupUserContext(user, isAdmin: false, isGuestWriter: true), verify non-admin code paths
+- Coverage calculation: Each Forbid test = ~3-4 lines, guest writer paths = ~3-5 lines each

@@ -684,6 +684,149 @@ public class AdminPostsControllerTests
         Assert.Empty(tags);
     }
 
+    /// <summary>
+    /// Verifies that GetPostForEdit returns Forbid when user is not authorized to view.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetPostForEdit_WhenNotAuthorizedToView_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanViewPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+
+        // Act
+        var result = await this.controller.GetPostForEdit("test-post");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UpdatePost returns Forbid when user is not authorized to edit.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdatePost_WhenNotAuthorizedToEdit_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+        var request = new UpdatePostRequest(
+            "Title",
+            "Summary",
+            "Content",
+            DateTimeOffset.UtcNow,
+            PostStatus.Draft,
+            new List<string>());
+
+        // Act
+        var result = await this.controller.UpdatePost("test-post", request);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that DeletePost returns Forbid when user is not authorized to delete.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeletePost_WhenNotAuthorizedToDelete_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanDeletePost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+
+        // Act
+        var result = await this.controller.DeletePost("test-post");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UpdateStatus returns Forbid when user is not authorized to edit.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateStatus_WhenNotAuthorizedToEdit_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+        var request = new UpdateStatusRequest(PostStatus.Published);
+
+        // Act
+        var result = await this.controller.UpdateStatus("test-post", request);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that GetImages returns Forbid when user is not authorized to view.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetImages_WhenNotAuthorizedToView_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanViewPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+
+        // Act
+        var result = await this.controller.GetImages("test-post");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns Forbid when user is not authorized to edit.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenNotAuthorizedToEdit_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(1024);
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, null);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteImage returns Forbid when user is not authorized to edit.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteImage_WhenNotAuthorizedToEdit_ReturnsForbid()
+    {
+        // Arrange
+        this.mockPostAuthorizationService
+            .Setup(s => s.CanEditPost(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<BlogPost>()))
+            .Returns(false);
+
+        // Act
+        var result = await this.controller.DeleteImage("test-post", "image.png");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
     private void SetupUserContext(string userName, bool isAdmin = false, bool isGuestWriter = false)
     {
         var claims = new List<Claim>

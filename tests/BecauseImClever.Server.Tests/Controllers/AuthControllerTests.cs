@@ -151,6 +151,39 @@ public class AuthControllerTests
         Assert.NotNull(claimsProperty?.GetValue(userInfo));
     }
 
+    /// <summary>
+    /// Verifies that GetCurrentUser returns IsGuestWriter true when user has guest writer group claim.
+    /// </summary>
+    [Fact]
+    public void GetCurrentUser_WhenGuestWriter_ReturnsIsGuestWriterTrue()
+    {
+        // Arrange
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, "writer"),
+            new Claim(ClaimTypes.Email, "writer@example.com"),
+            new Claim("groups", "becauseimclever-writers"),
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        this.controller.HttpContext.User = new ClaimsPrincipal(identity);
+
+        // Act
+        var result = this.controller.GetCurrentUser();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var userInfo = okResult.Value;
+        Assert.NotNull(userInfo);
+
+        var isAdminProperty = userInfo.GetType().GetProperty("IsAdmin");
+        var isGuestWriterProperty = userInfo.GetType().GetProperty("IsGuestWriter");
+        var canManagePostsProperty = userInfo.GetType().GetProperty("CanManagePosts");
+
+        Assert.False((bool?)isAdminProperty?.GetValue(userInfo));
+        Assert.True((bool?)isGuestWriterProperty?.GetValue(userInfo));
+        Assert.True((bool?)canManagePostsProperty?.GetValue(userInfo));
+    }
+
     [Fact]
     public void GetCurrentUser_WhenNotInAdminGroup_IsAdminIsFalse()
     {

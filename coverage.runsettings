@@ -13,6 +13,8 @@
             [*.Tests]*
             [*]*.Migrations.*
             [*]*.Program
+            [BecauseImClever.Server]Program*
+            [BecauseImClever.Client]Program*
             [xunit.*]*
             [Moq]*
             [bunit.*]*
@@ -27,8 +29,12 @@
             [YamlDotNet]*
             [Octokit]*
             <!-- Source generators -->
-            [*]System.Text.RegularExpressions.Generated.*
-            [*]Microsoft.AspNetCore.OpenApi.Generated.*
+            [*]System.Text.RegularExpressions.Generated*
+            [*]Microsoft.AspNetCore.OpenApi.Generated*
+            [*]System.Runtime.CompilerServices*
+            <!-- Assembly-scoped exclusions for source-generated code embedded in project assemblies -->
+            [BecauseImClever.Server]Microsoft*
+            [BecauseImClever.Server]System*
             <!-- EF Core - migrations and generated scaffolding -->
             [BecauseImClever.Infrastructure]*.Migrations.*
             [BecauseImClever.Infrastructure]*ModelSnapshot
@@ -45,6 +51,7 @@
             **/Migrations/**/*.cs
             **/*.designer.cs
             **/*.generated.cs
+            **/obj/**/*.generated.cs
             **/Program.cs
             **/*ModelSnapshot.cs
           </ExcludeByFile>
