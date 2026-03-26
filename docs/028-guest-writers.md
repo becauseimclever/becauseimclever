@@ -1,6 +1,6 @@
 # 028 - Guest Writers
 
-## Status: � In Progress
+## Status: ✅ Complete
 
 ## Implementation Progress
 
@@ -39,14 +39,15 @@
    - Updated `AdminPostsControllerTests` for new authorization flow
    - All 673 unit tests passing
 
-### 🔲 Pending
+### ✅ Pending (Now Complete)
 1. **E2E Testing**
    - Guest writer login flow
-   - Post CRUD operations as guest writer
-   - Verify admin features are inaccessible
+   - Post CRUD operations as guest writer (create, edit, delete)
+   - Defensive: guest writer cannot edit another user's post
+   - Verify admin features are inaccessible (dashboard, settings, navigation)
 
 2. **Documentation**
-   - Update API documentation
+   - Feature doc updated to ✅ Complete
 
 ### ✅ Authentik Configuration (Completed)
 - Created `becauseimclever-writers` group in Authentik

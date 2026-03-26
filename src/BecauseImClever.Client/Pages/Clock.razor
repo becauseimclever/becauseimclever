@@ -1,5 +1,5 @@
 @page "/clock"
-@implements IDisposable
+@inherits ClockBase
 
 <PageTitle>Clock</PageTitle>
 
@@ -7,7 +7,7 @@
     <h1>Clock</h1>
 
     <div class="timezone-picker">
-        <select class="timezone-selector" value="@selectedTimeZone.Id" @onchange="OnTimezoneChanged">
+        <select class="timezone-selector" value="@SelectedTimeZone.Id" @onchange="OnTimezoneChanged">
             @foreach (var tz in TimeZoneInfo.GetSystemTimeZones())
             {
                 <option value="@tz.Id">@tz.DisplayName</option>
@@ -72,8 +72,8 @@
         <circle class="center-dot" cx="200" cy="200" r="8" />
     </svg>
     
-    <div class="digital-time">@currentTime.ToString("HH:mm:ss")</div>
-    <div class="timezone-display">@selectedTimeZone.DisplayName</div>
+    <div class="digital-time">@CurrentTime.ToString("HH:mm:ss")</div>
+    <div class="timezone-display">@SelectedTimeZone.DisplayName</div>
 </div>
 
 <style>
@@ -178,57 +178,3 @@
     }
 </style>
 
-@code {
-    private DateTime currentTime = DateTime.Now;
-    private TimeZoneInfo selectedTimeZone = TimeZoneInfo.Local;
-    private Timer? timer;
-
-    protected override void OnInitialized()
-    {
-        timer = new Timer(UpdateTime, null, 0, 1000);
-    }
-
-    private void UpdateTime(object? state)
-    {
-        currentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, selectedTimeZone);
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnTimezoneChanged(ChangeEventArgs e)
-    {
-        var tzId = e.Value?.ToString();
-        if (!string.IsNullOrEmpty(tzId))
-        {
-            selectedTimeZone = TimeZoneInfo.FindSystemTimeZoneById(tzId);
-            currentTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, selectedTimeZone);
-        }
-    }
-
-    private string GetHourHandTransform()
-    {
-        // For 24-hour clock: each hour is 15 degrees (360/24)
-        // Plus fractional movement based on minutes
-        var hourAngle = (currentTime.Hour % 24) * 15 + currentTime.Minute * 0.25;
-        return $"rotate({hourAngle:F2}, 200, 200)";
-    }
-
-    private string GetMinuteHandTransform()
-    {
-        // Each minute is 6 degrees (360/60)
-        // Plus fractional movement based on seconds
-        var minuteAngle = currentTime.Minute * 6 + currentTime.Second * 0.1;
-        return $"rotate({minuteAngle:F2}, 200, 200)";
-    }
-
-    private string GetSecondHandTransform()
-    {
-        // Each second is 6 degrees (360/60)
-        var secondAngle = currentTime.Second * 6;
-        return $"rotate({secondAngle}, 200, 200)";
-    }
-
-    public void Dispose()
-    {
-        timer?.Dispose();
-    }
-}

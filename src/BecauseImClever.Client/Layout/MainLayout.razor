@@ -1,8 +1,4 @@
-﻿@inherits LayoutComponentBase
-@using BecauseImClever.Application.Interfaces
-@using BecauseImClever.Domain.Entities
-@using BecauseImClever.Client.Components
-@inject IThemeService ThemeService
+﻿@inherits MainLayoutBase
 
 <div class="layout-container">
     <!-- Header -->
@@ -17,8 +13,8 @@
                 <li><a href="about">About</a></li>
             </ul>
         </nav>
-        <select class="theme-switch" @onchange="OnThemeChanged" value="@currentTheme?.Key">
-            @foreach (var theme in availableThemes)
+        <select class="theme-switch" @onchange="OnThemeChanged" value="@CurrentTheme?.Key">
+            @foreach (var theme in AvailableThemes)
             {
                 <option value="@theme.Key">@theme.DisplayName</option>
             }
@@ -38,22 +34,3 @@
     <!-- Consent Banner -->
     <ConsentBanner />
 </div>
-
-@code {
-    private Theme? currentTheme;
-    private IReadOnlyList<Theme> availableThemes = Array.Empty<Theme>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        availableThemes = ThemeService.GetAvailableThemes();
-        currentTheme = await ThemeService.GetCurrentThemeAsync();
-        await ThemeService.SetThemeAsync(currentTheme);
-    }
-
-    private async Task OnThemeChanged(ChangeEventArgs e)
-    {
-        var selectedKey = e.Value?.ToString();
-        currentTheme = Theme.FromKey(selectedKey);
-        await ThemeService.SetThemeAsync(currentTheme);
-    }
-}

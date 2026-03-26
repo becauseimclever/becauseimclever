@@ -1,11 +1,8 @@
 @page "/admin/posts"
-@using BecauseImClever.Application.Interfaces
 @using BecauseImClever.Domain.Entities
-@using System.Net.Http.Json
 @layout AdminLayout
 @attribute [Authorize(Policy = "PostManagement")]
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@inherits PostsBase
 
 <PageTitle>Admin - Posts</PageTitle>
 
@@ -22,19 +19,19 @@
         </div>
     </div>
 
-    @if (errorMessage is not null)
+    @if (ErrorMessage is not null)
     {
         <div class="alert alert-error">
-            <span>@errorMessage</span>
-            <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+            <span>@ErrorMessage</span>
+            <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
         </div>
     }
 
-    @if (successMessage is not null)
+    @if (SuccessMessage is not null)
     {
         <div class="alert alert-success">
-            <span>@successMessage</span>
-            <button class="alert-close" @onclick="() => successMessage = null">&times;</button>
+            <span>@SuccessMessage</span>
+            <button class="alert-close" @onclick="() => SuccessMessage = null">&times;</button>
         </div>
     }
 
@@ -42,7 +39,7 @@
     <div class="admin-filters">
         <div class="filter-group">
             <label for="status-filter">Status:</label>
-            <select id="status-filter" @bind="statusFilter" @bind:after="ApplyFilters">
+            <select id="status-filter" @bind="StatusFilter" @bind:after="ApplyFilters">
                 <option value="">All</option>
                 <option value="Published">Published</option>
                 <option value="Draft">Draft</option>
@@ -51,21 +48,21 @@
         </div>
         <div class="filter-group">
             <label for="search">Search:</label>
-            <input type="text" id="search" placeholder="Search posts..." @bind="searchQuery" @bind:after="ApplyFilters" />
+            <input type="text" id="search" placeholder="Search posts..." @bind="SearchQuery" @bind:after="ApplyFilters" />
         </div>
         <div class="filter-stats">
-            Showing @filteredPosts.Count() of @posts.Count() posts
+            Showing @FilteredPosts.Count() of @Posts.Count() posts
         </div>
     </div>
 
     <!-- Posts Table -->
-    @if (isLoading)
+    @if (IsLoading)
     {
         <div class="loading-indicator">
             <span>Loading posts...</span>
         </div>
     }
-    else if (!filteredPosts.Any())
+    else if (!FilteredPosts.Any())
     {
         <div class="empty-state">
             <p>No posts found matching your criteria.</p>
@@ -85,7 +82,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var post in filteredPosts)
+                    @foreach (var post in FilteredPosts)
                     {
                         <tr>
                             <td class="col-title">
@@ -112,12 +109,12 @@
                                     <a href="@($"admin/posts/edit/{post.Slug}")" class="btn-action btn-edit" title="Edit post">
                                         ✏️
                                     </a>
-                                    <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@updatingPosts.Contains(post.Slug)">
+                                    <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@UpdatingPosts.Contains(post.Slug)">
                                         <option value="Published" selected="@(post.Status == PostStatus.Published)">Published</option>
                                         <option value="Draft" selected="@(post.Status == PostStatus.Draft)">Draft</option>
                                         <option value="Debug" selected="@(post.Status == PostStatus.Debug)">Debug</option>
                                     </select>
-                                    @if (updatingPosts.Contains(post.Slug))
+                                    @if (UpdatingPosts.Contains(post.Slug))
                                     {
                                         <span class="updating-indicator">⏳</span>
                                     }
@@ -395,115 +392,3 @@
     }
 </style>
 
-@code {
-    private List<AdminPostSummary> posts = new();
-    private IEnumerable<AdminPostSummary> filteredPosts = Enumerable.Empty<AdminPostSummary>();
-    private HashSet<string> updatingPosts = new();
-    private bool isLoading = true;
-    private string? errorMessage;
-    private string? successMessage;
-    private string statusFilter = string.Empty;
-    private string searchQuery = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadPosts();
-    }
-
-    private async Task LoadPosts()
-    {
-        isLoading = true;
-        errorMessage = null;
-
-        try
-        {
-            var result = await Http.GetFromJsonAsync<List<AdminPostSummary>>("api/admin/posts");
-            posts = result ?? new List<AdminPostSummary>();
-            ApplyFilters();
-        }
-        catch (HttpRequestException ex)
-        {
-            errorMessage = $"Failed to load posts: {ex.Message}";
-            posts = new List<AdminPostSummary>();
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void ApplyFilters()
-    {
-        filteredPosts = posts;
-
-        if (!string.IsNullOrEmpty(statusFilter))
-        {
-            if (Enum.TryParse<PostStatus>(statusFilter, out var status))
-            {
-                filteredPosts = filteredPosts.Where(p => p.Status == status);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(searchQuery))
-        {
-            var query = searchQuery.ToLowerInvariant();
-            filteredPosts = filteredPosts.Where(p =>
-                p.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                p.Slug.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                p.Summary.Contains(query, StringComparison.OrdinalIgnoreCase));
-        }
-
-        filteredPosts = filteredPosts.OrderByDescending(p => p.PublishedDate);
-    }
-
-    private async Task OnStatusChange(string slug, ChangeEventArgs e)
-    {
-        var newStatusString = e.Value?.ToString();
-        if (string.IsNullOrEmpty(newStatusString) || !Enum.TryParse<PostStatus>(newStatusString, out var newStatus))
-        {
-            return;
-        }
-
-        var post = posts.FirstOrDefault(p => p.Slug == slug);
-        if (post is null || post.Status == newStatus)
-        {
-            return;
-        }
-
-        updatingPosts.Add(slug);
-        errorMessage = null;
-        successMessage = null;
-
-        try
-        {
-            var request = new { Status = (int)newStatus };
-            var response = await Http.PatchAsJsonAsync($"api/admin/posts/{slug}/status", request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<StatusUpdateResult>();
-                if (result?.Success == true)
-                {
-                    successMessage = $"Status for '{post.Title}' updated to {newStatus}";
-                    await LoadPosts();
-                }
-                else
-                {
-                    errorMessage = result?.Error ?? "Failed to update status";
-                }
-            }
-            else
-            {
-                errorMessage = $"Failed to update status: {response.ReasonPhrase}";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error updating status: {ex.Message}";
-        }
-        finally
-        {
-            updatingPosts.Remove(slug);
-        }
-    }
-}

@@ -1,7 +1,10 @@
+// Copyright (c) Fortinbra. All rights reserved.
+
 namespace BecauseImClever.Infrastructure.Tests.Services;
 
 using BecauseImClever.Domain.Entities;
 using BecauseImClever.Infrastructure.Services;
+using FluentAssertions;
 
 /// <summary>
 /// Unit tests for the <see cref="FileBlogService"/> class.
@@ -363,6 +366,30 @@ This is a **bold** paragraph.
 
         // Assert
         Assert.Null(post);
+    }
+
+    /// <summary>
+    /// Verifies that GetPostBySlugAsync returns null when YAML is invalid.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetPostBySlugAsync_ShouldReturnNull_WhenYamlInvalid()
+    {
+        // Arrange
+        var service = new FileBlogService(this.testPostsPath);
+        var invalidYamlPath = Path.Combine(this.testPostsPath, "invalid-post.md");
+        var invalidContent = @"---
+title: [invalid yaml
+summary: this is broken
+---
+# Content";
+        await File.WriteAllTextAsync(invalidYamlPath, invalidContent);
+
+        // Act
+        var post = await service.GetPostBySlugAsync("invalid-post");
+
+        // Assert
+        post.Should().BeNull();
     }
 
     [Fact]

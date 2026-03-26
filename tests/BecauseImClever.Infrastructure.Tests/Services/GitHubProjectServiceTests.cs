@@ -1,9 +1,12 @@
+// Copyright (c) Fortinbra. All rights reserved.
+
 namespace BecauseImClever.Infrastructure.Tests.Services;
 
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BecauseImClever.Infrastructure.Services;
+using FluentAssertions;
 
 /// <summary>
 /// Unit tests for the <see cref="GitHubProjectService"/> class.
@@ -268,6 +271,34 @@ public class GitHubProjectServiceTests
         // Assert
         Assert.Single(projects);
         Assert.Equal(string.Empty, projects[0].Owner);
+    }
+
+    /// <summary>
+    /// Verifies that GetProjectsAsync handles a null API payload.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetProjectsAsync_ShouldHandleNullApiResponse()
+    {
+        // Arrange
+        var userRepos = new[]
+        {
+            CreateGitHubRepoJson("user-repo", "User repo", "https://github.com/user/repo", 7, "C#", "Fortinbra"),
+        };
+        var handler = new MockHttpMessageHandler(new Dictionary<string, string>
+        {
+            ["https://api.github.com/users/becauseimclever/repos"] = "null",
+            ["https://api.github.com/users/Fortinbra/repos"] = JsonSerializer.Serialize(userRepos),
+        });
+        var httpClient = new HttpClient(handler);
+        var service = new GitHubProjectService(httpClient);
+
+        // Act
+        var projects = (await service.GetProjectsAsync()).ToList();
+
+        // Assert
+        projects.Should().HaveCount(1);
+        projects[0].Name.Should().Be("user-repo");
     }
 
     [Fact]

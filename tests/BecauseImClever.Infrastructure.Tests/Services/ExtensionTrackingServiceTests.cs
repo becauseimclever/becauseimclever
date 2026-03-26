@@ -1,3 +1,5 @@
+// Copyright (c) Fortinbra. All rights reserved.
+
 namespace BecauseImClever.Infrastructure.Tests.Services;
 
 using System;
@@ -6,6 +8,7 @@ using System.Threading.Tasks;
 using BecauseImClever.Domain.Entities;
 using BecauseImClever.Infrastructure.Data;
 using BecauseImClever.Infrastructure.Services;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -26,6 +29,17 @@ public class ExtensionTrackingServiceTests : IDisposable
             .Options;
 
         this.context = new BlogDbContext(options);
+    }
+
+    /// <summary>
+    /// Verifies that the constructor throws when context is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullContext_ThrowsArgumentNullException()
+    {
+        // Arrange, Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() => new ExtensionTrackingService(null!));
+        Assert.Equal("context", exception.ParamName);
     }
 
     /// <inheritdoc />
@@ -110,6 +124,43 @@ public class ExtensionTrackingServiceTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that GetDetectionsByFingerprintAsync returns events in descending order.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetDetectionsByFingerprintAsync_WithMultipleEvents_ReturnsNewestFirst()
+    {
+        // Arrange
+        var service = new ExtensionTrackingService(this.context);
+        var fingerprint = "target-hash";
+        var olderEvent = new ExtensionDetectionEvent
+        {
+            Id = Guid.NewGuid(),
+            FingerprintHash = fingerprint,
+            ExtensionId = "ext1",
+            ExtensionName = "Ext 1",
+            DetectedAt = DateTime.UtcNow.AddMinutes(-10),
+        };
+        var newerEvent = new ExtensionDetectionEvent
+        {
+            Id = Guid.NewGuid(),
+            FingerprintHash = fingerprint,
+            ExtensionId = "ext2",
+            ExtensionName = "Ext 2",
+            DetectedAt = DateTime.UtcNow.AddMinutes(-1),
+        };
+        this.context.ExtensionDetectionEvents.AddRange(olderEvent, newerEvent);
+        await this.context.SaveChangesAsync();
+
+        // Act
+        var result = (await service.GetDetectionsByFingerprintAsync(fingerprint)).ToList();
+
+        // Assert
+        result.Should().HaveCount(2);
+        result[0].DetectedAt.Should().BeAfter(result[1].DetectedAt);
+    }
+
+    /// <summary>
     /// Verifies that GetExtensionStatisticsAsync returns correct counts.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -132,6 +183,28 @@ public class ExtensionTrackingServiceTests : IDisposable
         // Assert
         Assert.Equal(2, result["honey"]);
         Assert.Equal(1, result["rakuten"]);
+    }
+
+    /// <summary>
+    /// Verifies that GetExtensionStatisticsAsync counts distinct fingerprints only.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task GetExtensionStatisticsAsync_WithDuplicateFingerprints_ReturnsDistinctCounts()
+    {
+        // Arrange
+        var service = new ExtensionTrackingService(this.context);
+        this.context.ExtensionDetectionEvents.AddRange(
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = "user1", ExtensionId = "honey", ExtensionName = "Honey", DetectedAt = DateTime.UtcNow },
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = "user1", ExtensionId = "honey", ExtensionName = "Honey", DetectedAt = DateTime.UtcNow.AddMinutes(1) },
+            new ExtensionDetectionEvent { Id = Guid.NewGuid(), FingerprintHash = "user2", ExtensionId = "honey", ExtensionName = "Honey", DetectedAt = DateTime.UtcNow });
+        await this.context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetExtensionStatisticsAsync();
+
+        // Assert
+        result["honey"].Should().Be(2);
     }
 
     /// <summary>

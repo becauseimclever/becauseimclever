@@ -1,18 +1,16 @@
-@using BecauseImClever.Application.Interfaces
-@using BecauseImClever.Domain.Entities
-@inject IAnnouncementService AnnouncementService
+@inherits SidebarBase
 
 <aside class="sidebar">
     <!-- Announcements Widget -->
     <div class="sidebar-widget">
         <h3>Announcements</h3>
-        @if (announcements == null)
+        @if (Announcements == null)
         {
             <p>Loading announcements...</p>
         }
         else
         {
-            @foreach (var announcement in announcements)
+            @foreach (var announcement in Announcements)
             {
                 <div class="announcement-item">
                     <span class="announcement-date">@announcement.Date.ToString("MMM dd")</span>
@@ -27,11 +25,3 @@
     </div>
 </aside>
 
-@code {
-    private IEnumerable<Announcement>? announcements;
-
-    protected override async Task OnInitializedAsync()
-    {
-        announcements = await AnnouncementService.GetLatestAnnouncementsAsync();
-    }
-}

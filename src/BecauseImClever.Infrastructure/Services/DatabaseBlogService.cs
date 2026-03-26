@@ -41,6 +41,7 @@ public class DatabaseBlogService : IBlogService
 
         var posts = await this.context.Posts
             .AsNoTracking()
+            .Where(p => p.Status == PostStatus.Published)
             .OrderByDescending(p => p.PublishedDate)
             .ToListAsync();
 
@@ -62,6 +63,7 @@ public class DatabaseBlogService : IBlogService
 
         var posts = await this.context.Posts
             .AsNoTracking()
+            .Where(p => p.Status == PostStatus.Published)
             .OrderByDescending(p => p.PublishedDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

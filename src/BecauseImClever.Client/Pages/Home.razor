@@ -1,7 +1,5 @@
 ﻿@page "/"
-@using BecauseImClever.Application.Interfaces
-@using BecauseImClever.Domain.Entities
-@inject IBlogService BlogService
+@inherits HomeBase
 
 <PageTitle>Home</PageTitle>
 
@@ -41,17 +39,17 @@
     <div class="content-area">
         <h2 style="margin-bottom: 1.5rem; border-left: 4px solid var(--accent-color); padding-left: 1rem;">Latest Posts</h2>
         <div class="blog-grid">
-            @if (posts == null)
+            @if (Posts == null)
             {
                 <p>Loading posts...</p>
             }
-            else if (!posts.Any())
+            else if (!Posts.Any())
             {
                 <p>No posts found.</p>
             }
             else
             {
-                @foreach (var post in posts)
+                @foreach (var post in Posts)
                 {
                     <article class="card">
                         <div class="card-meta">@post.PublishedDate.ToString("MMM dd, yyyy") &bull; Category</div>
@@ -76,12 +74,3 @@
     <Sidebar />
 
 </main>
-
-@code {
-    private IEnumerable<BlogPost>? posts;
-
-    protected override async Task OnInitializedAsync()
-    {
-        posts = await BlogService.GetPostsAsync(1, 4);
-    }
-}

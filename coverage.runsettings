@@ -26,6 +26,20 @@
             [Markdig]*
             [YamlDotNet]*
             [Octokit]*
+            <!-- Compiler-generated async state machines -->
+            [*]*&lt;*&gt;d__*
+            [*]*+&lt;*&gt;d__*
+            <!-- Source generators -->
+            [*]*&lt;RegexGenerator_g*&gt;*
+            [*]*&lt;OpenApiXmlCommentSupport_generated*&gt;*
+            <!-- EF Core Migrations - explicit namespace -->
+            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Migrations.*
+            <!-- EF Core infrastructure classes -->
+            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.BlogDbContext
+            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.BlogPostConfiguration
+            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.PostImageConfiguration
+            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.ExtensionDetectionEventConfiguration
+            [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Data.BlogDbContextModelSnapshot
           </Exclude>
           <ExcludeByAttribute>
             Obsolete
@@ -37,6 +51,8 @@
             **/Migrations/**/*.cs
             **/*.designer.cs
             **/*.generated.cs
+            **/Program.cs
+            **/*ModelSnapshot.cs
           </ExcludeByFile>
           <IncludeDirectory>
             src/**/*.cs

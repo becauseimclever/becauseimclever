@@ -196,6 +196,89 @@ public class HostAuthenticationStateProviderTests
         Assert.False(state.User.Identity?.IsAuthenticated);
     }
 
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WhenGuestWriter_SetsWriterGroupClaim()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "writer",
+            Email = "writer@example.com",
+            IsAdmin = false,
+            IsGuestWriter = true,
+            Claims = Array.Empty<object>(),
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert
+        Assert.Equal("becauseimclever-writers", state.User.FindFirst("groups")?.Value);
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WhenHasAdditionalClaims_IncludesClaims()
+    {
+        // Arrange
+        var userInfo = new
+        {
+            Name = "user",
+            Email = "user@example.com",
+            IsAdmin = false,
+            IsGuestWriter = false,
+            Claims = new[] { new { Type = "sub", Value = "99999" } },
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert
+        Assert.Equal("99999", state.User.FindFirst("sub")?.Value);
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_WhenAdditionalClaimsMatchReservedTypes_FiltersOutDuplicates()
+    {
+        // Arrange - include claims with reserved types (Name, Email, groups) that should be filtered
+        var userInfo = new
+        {
+            Name = "user",
+            Email = "user@example.com",
+            IsAdmin = false,
+            IsGuestWriter = false,
+            Claims = new[]
+            {
+                new { Type = System.Security.Claims.ClaimTypes.Name, Value = "duplicate-name" },
+                new { Type = "sub", Value = "unique-sub" },
+            },
+        };
+        var httpClient = CreateMockHttpClient(HttpStatusCode.OK, userInfo);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act
+        var state = await provider.GetAuthenticationStateAsync();
+
+        // Assert - "sub" is added, but duplicate Name claim is filtered
+        Assert.Equal("unique-sub", state.User.FindFirst("sub")?.Value);
+        Assert.Single(state.User.FindAll(System.Security.Claims.ClaimTypes.Name));
+    }
+
+    [Fact]
+    public void NotifyAuthenticationStateChanged_DoesNotThrow()
+    {
+        // Arrange
+        var httpClient = CreateMockHttpClient(HttpStatusCode.Unauthorized);
+        var provider = new HostAuthenticationStateProvider(httpClient);
+
+        // Act & Assert - should not throw
+        var exception = Record.Exception(() => provider.NotifyAuthenticationStateChanged());
+        Assert.Null(exception);
+    }
+
     private static HttpClient CreateMockHttpClient(HttpStatusCode statusCode, object? responseContent = null)
     {
         var content = responseContent != null

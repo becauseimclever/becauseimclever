@@ -1,10 +1,7 @@
 @page "/admin"
-@using BecauseImClever.Application.Interfaces
-@using System.Net.Http.Json
 @layout AdminLayout
 @attribute [Authorize(Policy = "Admin")]
-@inject HttpClient Http
-@inject NavigationManager Navigation
+@inherits DashboardBase
 
 <PageTitle>Admin - Dashboard</PageTitle>
 
@@ -14,41 +11,41 @@
         <p>Welcome to the admin panel. Here's an overview of your blog.</p>
     </div>
 
-    @if (isLoading)
+    @if (IsLoading)
     {
         <div class="loading-container">
             <div class="spinner"></div>
             <p>Loading statistics...</p>
         </div>
     }
-    else if (errorMessage is not null)
+    else if (ErrorMessage is not null)
     {
         <div class="alert alert-error">
-            <span>@errorMessage</span>
-            <button class="alert-close" @onclick="() => errorMessage = null">&times;</button>
+            <span>@ErrorMessage</span>
+            <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
         </div>
     }
-    else if (stats is not null)
+    else if (Stats is not null)
     {
         <div class="stats-grid">
             <div class="stat-card">
-                <p class="stat-value">@stats.TotalPosts</p>
+                <p class="stat-value">@Stats.TotalPosts</p>
                 <p class="stat-label">Total Posts</p>
             </div>
             <div class="stat-card published">
-                <p class="stat-value">@stats.PublishedPosts</p>
+                <p class="stat-value">@Stats.PublishedPosts</p>
                 <p class="stat-label">Published</p>
             </div>
             <div class="stat-card scheduled">
-                <p class="stat-value">@stats.ScheduledPosts</p>
+                <p class="stat-value">@Stats.ScheduledPosts</p>
                 <p class="stat-label">Scheduled</p>
             </div>
             <div class="stat-card draft">
-                <p class="stat-value">@stats.DraftPosts</p>
+                <p class="stat-value">@Stats.DraftPosts</p>
                 <p class="stat-label">Drafts</p>
             </div>
             <div class="stat-card debug">
-                <p class="stat-value">@stats.DebugPosts</p>
+                <p class="stat-value">@Stats.DebugPosts</p>
                 <p class="stat-label">Debug</p>
             </div>
         </div>
@@ -69,34 +66,3 @@
     }
 </div>
 
-@code {
-    private DashboardStats? stats;
-    private bool isLoading = true;
-    private string? errorMessage;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadStatsAsync();
-    }
-
-    private async Task LoadStatsAsync()
-    {
-        try
-        {
-            isLoading = true;
-            errorMessage = null;
-
-            stats = await Http.GetFromJsonAsync<DashboardStats>("api/stats");
-        }
-        catch (HttpRequestException ex)
-        {
-            errorMessage = $"Failed to load dashboard statistics: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private record DashboardStats(int TotalPosts, int PublishedPosts, int DraftPosts, int DebugPosts, int ScheduledPosts);
-}

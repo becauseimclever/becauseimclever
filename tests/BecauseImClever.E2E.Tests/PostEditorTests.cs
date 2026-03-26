@@ -20,7 +20,8 @@ public class PostEditorTests : PlaywrightTestBase
     {
         // Arrange & Act
         await this.Page.GotoAsync($"{this.BaseUrl}/posts");
-        await this.Page.WaitForSelectorAsync(".post-card, .blog-posts", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible, Timeout = 10000 });
+        await this.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
+        await this.Page.WaitForSelectorAsync("h2", new() { State = Microsoft.Playwright.WaitForSelectorState.Visible });
 
         // Assert - Verify the page loaded and contains blog content
         var content = await this.Page.ContentAsync();
@@ -47,6 +48,7 @@ public class PostEditorTests : PlaywrightTestBase
         }
 
         // Act - Click the first post
+        await this.DismissConsentBannerAsync();
         await postLinks[0].ClickAsync();
         await this.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
@@ -74,11 +76,12 @@ public class PostEditorTests : PlaywrightTestBase
         }
 
         // Act - Navigate to the first post
+        await this.DismissConsentBannerAsync();
         await postLinks[0].ClickAsync();
         await this.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
         // Assert - Verify the post content structure
-        var title = await this.Page.QuerySelectorAsync("h1");
+        var title = await this.Page.WaitForSelectorAsync("h1");
         Assert.NotNull(title);
 
         var content = await this.Page.ContentAsync();
@@ -103,6 +106,7 @@ public class PostEditorTests : PlaywrightTestBase
         }
 
         // Act - Navigate to the first post
+        await this.DismissConsentBannerAsync();
         await postLinks[0].ClickAsync();
         await this.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
@@ -131,6 +135,7 @@ public class PostEditorTests : PlaywrightTestBase
         }
 
         // Act - Navigate to the first post
+        await this.DismissConsentBannerAsync();
         await postLinks[0].ClickAsync();
         await this.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 

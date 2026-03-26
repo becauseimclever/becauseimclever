@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Blazor code-behind base classes use camelCase protected fields/properties (SA1300, SA1401)
+         and member ordering that follows Blazor conventions (SA1201, SA1202, SA1203, SA1204) -->
+    <NoWarn>$(NoWarn);SA1300;SA1401;SA1201;SA1202;SA1203;SA1204</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

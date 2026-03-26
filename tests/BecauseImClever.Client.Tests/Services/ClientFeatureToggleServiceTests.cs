@@ -160,6 +160,29 @@ public class ClientFeatureToggleServiceTests
             ItExpr.IsAny<CancellationToken>());
     }
 
+    [Fact]
+    public async Task GetFeatureSettingsAsync_WhenHttpThrowsException_ReturnsNull()
+    {
+        // Arrange
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        var httpClient = new HttpClient(mockHandler.Object) { BaseAddress = new Uri("https://test.com/") };
+        var service = new ClientFeatureToggleService(httpClient);
+
+        // Act
+        var result = await service.GetFeatureSettingsAsync("ExtensionDetection");
+
+        // Assert
+        Assert.Null(result);
+    }
+
     private static Mock<HttpMessageHandler> CreateMockHandler<T>(HttpStatusCode statusCode, T content)
     {
         var mockHandler = new Mock<HttpMessageHandler>();
