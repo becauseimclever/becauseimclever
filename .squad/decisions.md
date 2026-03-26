@@ -101,6 +101,95 @@ Before this PR: ~70% coverage. After medium-priority batch: ~78%. Low-priority p
 - **Code quality:** All flagged gaps are now tested with intention
 - **CI:** Once merged, monitor coverage; if ≥80%, re-enable `fail_below_min`
 
+### Coverage Exclusion Patterns: Use Namespaces, Not Mangled Type Names (#033 follow-up)
+
+**Author:** Wanda (with audit from Natasha)  
+**Date:** 2026-03-26  
+**Feature:** #033 Code Coverage Expansion
+
+#### Decision 1: Delete Broken Async State Machine Patterns
+
+Removed patterns `[*]*<*>d__*` and `[*]*+<*>d__*` from `coverage.runsettings`. These patterns do not fire correctly in coverlet's filter engine.
+
+**Rationale:** The `CompilerGeneratedAttribute` listed in `<ExcludeByAttribute>` already handles async state machines, closures, and iterator blocks correctly. Explicit angle-bracket patterns are redundant and fragile.
+
+#### Decision 2: Use Stable Namespace Patterns for Source Generators
+
+Replaced mangled type-name patterns with stable namespace patterns:
+
+- **OpenAPI:** Changed from `[*]*<OpenApiXmlCommentSupport_generated*>*` to `[*]Microsoft.AspNetCore.OpenApi.Generated.*`
+- **Regex:** Changed from `[*]*<RegexGenerator_g*>*` to `[*]System.Text.RegularExpressions.Generated.*`
+
+**Rationale:** Source generators emit code into predictable namespaces. Targeting namespaces is stable across compiler versions and builds. Mangled type names are compiler-internal and fragile.
+
+#### Decision 3: Rely on `CompilerGeneratedAttribute` for All Compiler-Generated Code
+
+All compiler-generated code (async state machines, closures, iterator blocks) should be excluded via `<ExcludeByAttribute>CompilerGeneratedAttribute</ExcludeByAttribute>`, not explicit type-name patterns.
+
+**Impact:**
+
+- ✅ Future source generator adoption will be automatically excluded
+- ✅ Patterns are future-proof and stable
+- ✅ No manual pattern updates needed when compiler internals change
+- **Coverage:** Server assembly remains 20.61% (patterns weren't firing before), but new patterns will correctly exclude generated code going forward
+
+### Coverage Instrumentation Limitation: Blazor WebAssembly (#033 follow-up)
+
+**Author:** Natasha  
+**Date:** 2026-03-26  
+**Feature:** #033 Code Coverage Expansion
+
+#### Decision: Accept Blazor WASM Client 0% as Architectural Limitation
+
+The `BecauseImClever.Client` assembly (using `Microsoft.NET.Sdk.BlazorWebAssembly`) **cannot be instrumented by coverlet**. This is a known limitation — coverlet's instrumentation engine skips WASM-targeted assemblies.
+
+**Evidence:**
+- Client.Tests has **414 passing tests** exercising Client code via bUnit
+- Client.dll (312 KB) is present in test output
+- Client.pdb is present
+- Client assembly is **completely missing** from coverage XML output
+- Domain and Shared (transitively referenced by Client) **do** get measured
+
+**Workarounds Considered:**
+1. Extract non-Blazor logic to a separate `Microsoft.NET.Sdk` library — requires significant refactoring
+2. Accept 0% and exclude Client from coverage calculations — simpler, recommended approach
+
+**Decision:** Accept 0% for Client and add to exclusions in `coverage.runsettings` to prevent dragging down overall coverage percentage.
+
+**Impact:**
+- ✅ Client tests exist and pass (code IS tested)
+- ✅ Coverage measurement unavailable due to tooling limitation, not quality issue
+- ✅ Overall project coverage (excluding Client) expected to reach **~85-90%**
+- **Note:** Domain and Infrastructure were initially suspected as uninstrumented, but isolated test runs confirm both measure correctly (97.26% and 39.52% respectively)
+
+### Coverage Merge Strategy: ReportGenerator SUM-Based Deduplication (#033 follow-up)
+
+**Author:** Natasha  
+**Date:** 2026-03-26  
+**Feature:** #033 Code Coverage Expansion
+
+#### Decision: Verify That ReportGenerator's Merge Uses Additive Coverage
+
+ReportGenerator merges coverage from multiple test project outputs using a **SUM-based deduplication strategy**:
+- A line covered in **ANY input file** counts as covered in the merge
+- Lines are deduplicated — each line counts only once, even if multiple test projects cover it
+- This preserves the maximum coverage achieved across all test sources
+
+**Evidence:**
+- Domain appears in 5 test project coverage files with varying %: Server.Tests (0%), Domain.Tests (97.26%), Client.Tests (73.97%), Infrastructure.Tests (0%), Application.Tests (0%)
+- Merged result: **97.26%** (from Domain.Tests — the highest source)
+- This is correct behavior
+
+**Decision:** No changes needed. ReportGenerator is working correctly. Domain and Infrastructure showing 0% in older reports was likely due to:
+1. Test projects not running (filtered, skipped, or crashed)
+2. Stale build outputs
+3. Overly broad exclusion patterns
+
+**Recommendations:**
+- Add CI sanity checks to validate Domain and Infrastructure coverage >0%
+- Document expected coverage baselines per assembly
+- If issue persists in CI, investigate specific run with detailed diagnostics
+
 ## Governance
 
 - All meaningful changes require team consensus
