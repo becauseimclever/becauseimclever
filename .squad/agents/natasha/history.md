@@ -58,3 +58,48 @@
 **Diagnosis:** This is **not a test issue**. The site is down or the reverse proxy/load balancer is misconfigured. HTTP 502 means the gateway received an invalid response from the upstream server — likely the .NET app isn't running, the container crashed, or Nginx can't reach it.
 
 **Recommendation:** Check production deployment health before rerunning E2E tests. Once site is live, all 10 failures should resolve (they're all "page won't load" symptoms, not logic bugs).
+
+### 2026 — Blazor Client Base Class Coverage Audit
+
+**Date:** 2026-03-24  
+**Status:** 364 tests passing, 9 of 21 base classes have gaps
+
+**Base Test Pattern:**
+- **Complete base tests** use a `TestXXX` derived class that inherits from the base class and exposes protected members as public properties/methods
+- **Test class** inherits from `BunitContext`, creates instance of `TestXXX`, invokes methods via the public wrappers
+- **Empty `BuildRenderTree`** in the test class (required override, but left blank since we're not rendering)
+- **Pattern example:** `SettingsBaseTests.cs`, `PostsBaseTests.cs`, `PostEditorBaseTests.cs`, `AdminLayoutBaseTests.cs`
+
+**Coverage Categories:**
+- **COVERED (6):** Have dedicated `*BaseTests.cs` files testing logic directly
+- **GAP (9):** Have testable logic but only markup tests exist
+- **TRIVIAL (6):** Empty or only simple service calls (not worth base tests)
+
+**High-Priority Gaps (4):**
+1. **ClockBase** — Timer, timezone conversion, SVG transform calculations (87 lines)
+2. **BlogBase** — Pagination, JS interop `LoadMore()`, dispose (101 lines)
+3. **ExtensionWarningBannerBase** — Feature flags, consent, localStorage, tracking (119 lines)
+4. **MainLayoutBase** — Theme initialization and change handling (46 lines)
+
+**Medium-Priority Gaps (5):**
+- RedirectToLoginBase, PostBase, DashboardBase, ExtensionStatisticsBase, DataDeletionFormBase
+
+**Key Finding:** Several existing `*Tests.cs` files (like `ContactTests.cs`, `ConsentBannerTests.cs`) DO test the base class logic through component rendering and behavior assertions. But they test from the UI/integration level, not isolated unit tests of the base class methods. This is acceptable for simple logic but insufficient for complex stateful logic (timers, JS interop, error handling).
+
+**Recommendation:** Add 14 base tests for the high-priority gaps to push coverage from ~70% to ~80%. Full coverage would add 21 tests total.
+
+---
+
+### 2026-03-26 — Base Class Coverage Audit Complete
+
+**Date:** 2026-03-26  
+**Status:** Audit deliverable submitted to Wanda for implementation.
+
+Natasha audited all 21 Blazor base classes and produced a detailed coverage gap analysis identifying:
+- 6 fully covered base classes
+- 9 base classes with testable logic gaps (4 high-priority, 5 medium-priority)
+- 6 trivial base classes (empty or service-call-only)
+
+High-priority targets: ClockBase, BlogBase, ExtensionWarningBannerBase, MainLayoutBase — estimated 14 new tests to push from ~70% to ~80%.
+
+Handed off to Wanda for implementation.

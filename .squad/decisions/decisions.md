@@ -555,3 +555,82 @@ The following base classes now have direct tests for lifecycle methods and event
 - `PostEditorBase`
 - `MarkdownEditorBase`
 - `ImageUploadDialogBase`
+
+---
+
+## Blazor Base Class Coverage Audit (Natasha)
+
+**Author:** Natasha (QA Lead)  
+**Date:** 2026-03-26  
+**Feature:** #033 Client Test Coverage (Audit Phase)  
+**Related:** Feature #038 Client Base Class Coverage v2
+
+### Findings
+
+Audited all 21 Blazor base classes (`*Base.cs` files) in `src/BecauseImClever.Client/` for test coverage gaps.
+
+#### Summary
+
+- **COVERED (6 files):** Dedicated `*BaseTests.cs` files exist
+  - SettingsBase, PostsBase, PostEditorBase, AdminLayoutBase, MarkdownEditorBase, ImageUploadDialogBase
+- **GAP (9 files):** Have testable logic but lack dedicated base class tests
+  - **HIGH PRIORITY (4):** ClockBase (87 lines), BlogBase (101 lines), ExtensionWarningBannerBase (119 lines), MainLayoutBase (46 lines)
+  - **MEDIUM PRIORITY (5):** RedirectToLoginBase, PostBase, DashboardBase, ExtensionStatisticsBase, DataDeletionFormBase
+- **TRIVIAL (6 files):** Empty or only simple service calls (not worth base tests)
+  - AboutBase, HomeBase, ProjectsBase, SidebarBase
+
+#### Coverage Estimate
+
+- **Current:** ~70% (9 of 21 base classes have gaps)
+- **After immediate fixes (high-priority 4):** ~80%
+- **After all fixes (all 9 gaps):** ~90%+
+
+### Recommendations
+
+Implement base tests for the HIGH PRIORITY 4 (ClockBase, BlogBase, ExtensionWarningBannerBase, MainLayoutBase) to push coverage from ~70% to ~80% and unblock `fail_below_min` in CI.
+
+### Implementation Pattern
+
+All new base tests follow the established pattern:
+- Inherit from `BunitContext`
+- Use inner `TestXXX : XxxBase` class to expose protected members
+- Test isolated logic without rendering markup
+- Use FluentAssertions for assertions
+
+---
+
+## Feature #038 Client Base Class Coverage (Continuation) — Wanda
+
+**Author:** Wanda (Frontend Dev, Test Engineer)  
+**Date:** 2026-03-26  
+**Feature:** #038 Client Base Class Coverage to 80%  
+**Related:** Natasha's coverage audit (2026-03-26)
+
+### Work Done
+
+Created 4 new `*BaseTests.cs` files targeting the 4 highest-priority gaps identified by Natasha's coverage audit.
+
+### Files Created
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `Pages/ClockBaseTests.cs` | 8 | Hour/minute/second hand transforms, timezone change, dispose |
+| `Pages/BlogBaseTests.cs` | 7 | Init load, LoadMore pagination, HasMore/IsLoading guards, dispose |
+| `Components/ExtensionWarningBannerBaseTests.cs` | 6 | Feature toggle off, no consent, dismissed state, harmful extensions, dismiss action, init-once guard |
+| `Layout/MainLayoutBaseTests.cs` | 6 | Theme population, current theme set, apply on init, theme change updates, unknown/null fallback |
+
+**Total new tests: 27**  
+**All 393 tests pass** (0 failures)
+
+### Key Patterns Confirmed
+
+- `TestClock` overrides `OnInitialized()` to suppress timer (dueTime=0 fires immediately)
+- `LoadMore()` must be dispatched via `cut.InvokeAsync(...)` due to `StateHasChanged()` calls
+- `JSInterop.SetupVoid(...).SetVoidResult()` — both calls required to avoid hang
+- SA1100 resolved by overriding `OnAfterRenderAsync` in TestXxx class before using `base.` prefix
+
+### Coverage Impact
+
+**Estimated push from ~70% to ~80%** — on track for re-enabling `fail_below_min` in CI.
+
+**Branch:** `wanda/coverage-base-class-tests`

@@ -42,3 +42,23 @@
 
 - **Test-only components can inherit base classes** to expose protected methods and state for bUnit coverage without changing production code.
 - **Client test project now mirrors Infrastructure tests** by referencing FluentAssertions for expressive state assertions.
+
+### 2026-03-26 — Base class tests for Clock, Blog, ExtensionWarningBanner, MainLayout (High-Priority)
+
+**Status:** 27 new tests written, all passing (393 total tests passing).  
+**Branch:** `wanda/coverage-base-class-tests`
+
+- **ClockBase timer (dueTime=0) fires immediately** on component init — TestClock must override `OnInitialized()` with an empty body to prevent timer background-thread interference with `CurrentTime` during transform tests.
+- **`StateHasChanged()` must run on the renderer sync context** in bUnit. Calls to `LoadMore()` (or any method that calls `StateHasChanged()` directly) must be wrapped with `await cut.InvokeAsync(() => cut.Instance.Method())`, not called directly from test threads.
+- **bUnit `SetupVoid` requires `.SetVoidResult()`** — calling `this.JSInterop.SetupVoid("method", _ => true)` alone leaves the invocation handler unconfigured and causes hangs. Always chain `.SetVoidResult()`.
+- **SA1100: `base.` prefix is only valid when a local override exists.** To call a base class lifecycle method (`OnAfterRenderAsync`) from a test helper, the TestXxx class must override that method (calling `base.`), making the prefix valid. The public helper then calls `this.Method(...)`.
+- **`OnAfterRenderAsync` with `isInitialized` guard**: The guard in `ExtensionWarningBannerBase` means the second render (re-render triggered by `cut.Render()`) won't re-run initialization — verified by checking `DetectExtensionsAsync` was called exactly once.
+- **`MainLayoutBase` inherits `LayoutComponentBase`** but bUnit renders it without needing the `Body` parameter set — consistent with `AdminLayoutBase` test pattern.
+
+**Files Created:**
+- `Pages/ClockBaseTests.cs` — 8 tests (timer, timezone, SVG transforms, dispose)
+- `Pages/BlogBaseTests.cs` — 7 tests (pagination, LoadMore, guard, dispose)
+- `Components/ExtensionWarningBannerBaseTests.cs` — 6 tests (feature toggle, consent, localStorage, tracking, dismiss)
+- `Layout/MainLayoutBaseTests.cs` — 6 tests (theme population, theme change, init, fallback)
+
+**Coverage Impact:** Estimated push from ~70% to ~80%, moving toward `fail_below_min` re-enablement in CI.
