@@ -26,12 +26,9 @@
             [Markdig]*
             [YamlDotNet]*
             [Octokit]*
-            <!-- Compiler-generated async state machines -->
-            [*]*&lt;*&gt;d__*
-            [*]*+&lt;*&gt;d__*
             <!-- Source generators -->
-            [*]*&lt;RegexGenerator_g*&gt;*
-            [*]*&lt;OpenApiXmlCommentSupport_generated*&gt;*
+            [*]System.Text.RegularExpressions.Generated.*
+            [*]Microsoft.AspNetCore.OpenApi.Generated.*
             <!-- EF Core Migrations - explicit namespace -->
             [BecauseImClever.Infrastructure]BecauseImClever.Infrastructure.Migrations.*
             <!-- EF Core infrastructure classes -->
