@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/becauseimclever/becauseimclever:main
+    image: ghcr.io/becauseimclever/becauseimclever:1
     container_name: becauseimclever
     restart: unless-stopped
     ports:
