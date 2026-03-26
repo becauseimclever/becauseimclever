@@ -179,6 +179,85 @@ public class ExtensionWarningBannerBaseTests : BunitContext
         extensionDetector.Verify(d => d.DetectExtensionsAsync(), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that TrackDetectedExtensionsAsync is called when harmful extensions are detected
+    /// and fingerprint collection succeeds.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task ExtensionWarningBannerBase_WhenHarmfulExtensionsDetected_TracksExtensions()
+    {
+        // Arrange
+        var harmful = new List<DetectedExtension>
+        {
+            new DetectedExtension("ext-1", "Harmful Extension", true, "This extension is harmful"),
+        };
+
+        var featureToggle = new Mock<IFeatureToggleService>();
+        featureToggle.Setup(f => f.IsFeatureEnabledAsync("ExtensionTracking")).ReturnsAsync(true);
+
+        var consentService = new Mock<IConsentService>();
+        consentService.Setup(c => c.HasUserConsentedAsync()).ReturnsAsync(true);
+
+        var extensionDetector = new Mock<IBrowserExtensionDetector>();
+        extensionDetector.Setup(d => d.DetectExtensionsAsync()).ReturnsAsync(harmful);
+
+        var fingerprint = new BrowserFingerprint("canvas-hash", "GPU Renderer", "1920x1080", 24, "UTC", "en-US", "Win32", 8);
+        var fingerprintService = new Mock<IBrowserFingerprintService>();
+        fingerprintService.Setup(f => f.CollectFingerprintAsync()).ReturnsAsync(fingerprint);
+
+        var trackingService = new Mock<IClientExtensionTrackingService>();
+        trackingService
+            .Setup(t => t.TrackDetectedExtensionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DetectedExtension>>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+
+        this.Services.AddSingleton(featureToggle.Object);
+        this.Services.AddSingleton(consentService.Object);
+        this.Services.AddSingleton(extensionDetector.Object);
+        this.Services.AddSingleton(fingerprintService.Object);
+        this.Services.AddSingleton(trackingService.Object);
+
+        this.JSInterop.Setup<string?>("localStorage.getItem", _ => true).SetResult(null);
+        this.JSInterop.Setup<string>("eval", _ => true).SetResult("Mozilla/5.0 test-agent");
+
+        // Act
+        var cut = this.Render<TestExtensionWarningBanner>();
+        await cut.InvokeAsync(() => Task.CompletedTask);
+
+        // Assert — fingerprint collected and tracking called once
+        trackingService.Verify(
+            t => t.TrackDetectedExtensionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DetectedExtension>>(), It.IsAny<string>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that TrackDetectedExtensionsAsync is NOT called when FingerprintService throws —
+    /// explicitly documenting the silent-fail contract for the tracking path.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task ExtensionWarningBannerBase_WhenFingerprintServiceThrows_TrackingServiceIsNotCalled()
+    {
+        // Arrange — fingerprint service throws (configured in ConfigureServices); tracking must be skipped
+        var harmful = new List<DetectedExtension>
+        {
+            new DetectedExtension("ext-1", "Harmful Extension", true, "This extension is harmful"),
+        };
+
+        var (_, _, _, _, trackingService) = this.ConfigureServices(featureEnabled: true, hasConsented: true, extensions: harmful);
+        this.JSInterop.Setup<string?>("localStorage.getItem", _ => true).SetResult(null);
+
+        // Act
+        var cut = this.Render<TestExtensionWarningBanner>();
+        await cut.InvokeAsync(() => Task.CompletedTask);
+
+        // Assert — banner is shown but tracking was silently skipped due to fingerprint failure
+        cut.Instance.ShowBannerPublic.Should().BeTrue();
+        trackingService.Verify(
+            t => t.TrackDetectedExtensionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DetectedExtension>>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
     private (
         Mock<IFeatureToggleService> FeatureToggle,
         Mock<IConsentService> ConsentService,

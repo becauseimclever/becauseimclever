@@ -101,10 +101,10 @@ public class ClockBaseTests : BunitContext
     }
 
     /// <summary>
-    /// Verifies that a valid timezone ID updates SelectedTimeZone.
+    /// Verifies that a valid timezone ID updates SelectedTimeZone and converts CurrentTime.
     /// </summary>
     [Fact]
-    public void ClockBase_OnTimezoneChanged_WithValidTimezone_UpdatesSelectedTimezone()
+    public void ClockBase_OnTimezoneChanged_WithValidTimezone_UpdatesSelectedTimezoneAndCurrentTime()
     {
         // Arrange
         var cut = this.Render<TestClock>();
@@ -115,6 +115,21 @@ public class ClockBaseTests : BunitContext
 
         // Assert
         cut.Instance.SelectedTimeZonePublic.Id.Should().Be(utcId);
+        cut.Instance.CurrentTimePublic.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    /// <summary>
+    /// Verifies that an invalid timezone ID causes TimeZoneNotFoundException to propagate.
+    /// </summary>
+    [Fact]
+    public void ClockBase_OnTimezoneChanged_WithInvalidTimezoneId_ThrowsTimeZoneNotFoundException()
+    {
+        // Arrange
+        var cut = this.Render<TestClock>();
+
+        // Act & Assert — no guard in source; FindSystemTimeZoneById throws on unknown ID
+        var act = () => cut.Instance.InvokeOnTimezoneChanged(new ChangeEventArgs { Value = "Not/A/Real/Timezone" });
+        act.Should().Throw<TimeZoneNotFoundException>();
     }
 
     /// <summary>
@@ -168,6 +183,8 @@ public class ClockBaseTests : BunitContext
     private sealed class TestClock : ClockBase
     {
         public TimeZoneInfo SelectedTimeZonePublic => this.SelectedTimeZone;
+
+        public DateTime CurrentTimePublic => this.CurrentTime;
 
         public void SetCurrentTime(DateTime time)
         {

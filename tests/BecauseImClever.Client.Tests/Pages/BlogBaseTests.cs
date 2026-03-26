@@ -178,6 +178,46 @@ public class BlogBaseTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies that initIntersectionObserver is called on the first render.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task BlogBase_OnAfterRender_OnFirstRender_RegistersIntersectionObserver()
+    {
+        // Arrange
+        var blogService = new Mock<IBlogService>();
+        blogService.Setup(s => s.GetPostsAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new List<BlogPost>());
+        this.Services.AddSingleton(blogService.Object);
+
+        // Act
+        var cut = this.Render<TestBlog>();
+        await cut.InvokeAsync(() => Task.CompletedTask);
+
+        // Assert — infinite scroll observer must be registered on first render
+        this.JSInterop.VerifyInvoke("initIntersectionObserver");
+    }
+
+    /// <summary>
+    /// Verifies that IsLoading is false after initialization completes.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task BlogBase_OnInitialized_WhenInitComplete_IsLoadingIsFalse()
+    {
+        // Arrange
+        var blogService = new Mock<IBlogService>();
+        blogService.Setup(s => s.GetPostsAsync(It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new List<BlogPost>());
+        this.Services.AddSingleton(blogService.Object);
+
+        // Act
+        var cut = this.Render<TestBlog>();
+        await cut.InvokeAsync(() => Task.CompletedTask);
+
+        // Assert
+        cut.Instance.IsLoadingPublic.Should().BeFalse();
+    }
+
+    /// <summary>
     /// Verifies that Dispose does not throw.
     /// </summary>
     /// <returns>A task representing the async operation.</returns>
