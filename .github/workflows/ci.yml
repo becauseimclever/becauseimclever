@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    env:
+      COVERAGE_THRESHOLD: '80 90'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Build.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - run: dotnet restore BecauseImClever.sln
+
+      - run: dotnet build BecauseImClever.sln --configuration Release --no-restore
+
+      - run: |
+          dotnet test BecauseImClever.sln \
+            --configuration Release \
+            --no-build \
+            --filter "FullyQualifiedName!~E2E&Category!=ExternalDependency&Category!=Performance" \
+            --collect:"XPlat Code Coverage" \
+            --settings coverage.runsettings \
+            --logger "trx" \
+            --results-directory ./TestResults
+
+      - uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: ./TestResults/**/coverage.cobertura.xml
+          targetdir: ./CoverageReport
+          reporttypes: Cobertura;MarkdownSummaryGithub
+
+      - if: always()
+        run: cat ./CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ./CoverageReport/Cobertura.xml
+          fail_below_min: true
+          thresholds: ${{ env.COVERAGE_THRESHOLD }}
+          format: markdown
+          output: both
+
+      - uses: marocchino/sticky-pull-request-comment@v3
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: ./TestResults/*.trx
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-report
+          path: ./CoverageReport/Cobertura.xml
+          retention-days: 30
+
+      - uses: dorny/test-reporter@v2
+        if: always()
+        with:
+          name: Test Results
+          path: ./TestResults/*.trx
+          reporter: dotnet-trx
