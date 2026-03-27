@@ -599,6 +599,17 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,visualstudiocode,csharp
+# Test results and coverage output
+TestResults/
+TestResults-baseline/
+TestResults-infra/
+coverage-results/
+
+# Coverage and test result output (local only)
+coverage-results/
+CoverageReport-baseline/
+build-errors.txt
+
 # Squad: ignore runtime state (logs, inbox, sessions)
 .squad/orchestration-log/
 .squad/log/
