@@ -827,6 +827,114 @@ public class AdminPostsControllerTests
         Assert.IsType<ForbidResult>(result.Result);
     }
 
+    /// <summary>
+    /// Verifies that GetAllPosts returns only the author's posts for a guest writer.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetAllPosts_WhenGuestWriter_ReturnsOnlyAuthorPosts()
+    {
+        // Arrange
+        this.SetupUserContext("writer@test.com", isAdmin: false, isGuestWriter: true);
+        var authorPosts = new List<AdminPostSummary>
+        {
+            new AdminPostSummary("my-post", "My Post", "Summary", DateTimeOffset.UtcNow, new[] { "tag1" }, PostStatus.Draft, DateTime.UtcNow, null),
+        };
+        this.mockAdminPostService.Setup(s => s.GetPostsByAuthorAsync("writer@test.com")).ReturnsAsync(authorPosts);
+
+        // Act
+        var result = await this.controller.GetAllPosts();
+
+        // Assert
+        Assert.Single(result);
+        this.mockAdminPostService.Verify(s => s.GetPostsByAuthorAsync("writer@test.com"), Times.Once);
+        this.mockAdminPostService.Verify(s => s.GetAllPostsAsync(), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that GetImages returns NotFound when the post does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetImages_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
+
+        // Act
+        var result = await this.controller.GetImages("non-existent");
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns NotFound when the post does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
+
+        // Act
+        var result = await this.controller.UploadImage("non-existent", null!, null);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(notFoundResult.Value);
+        Assert.False(uploadResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that UploadImage returns BadRequest when the image service returns a failed result.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UploadImage_WhenServiceFails_ReturnsBadRequest()
+    {
+        // Arrange
+        var fileContent = new byte[] { 1, 2, 3, 4 };
+        var fileMock = new Mock<IFormFile>();
+        fileMock.Setup(f => f.Length).Returns(fileContent.Length);
+        fileMock.Setup(f => f.ContentType).Returns("image/png");
+        fileMock.Setup(f => f.FileName).Returns("test.png");
+        fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+            .Callback<Stream, CancellationToken>((stream, _) => stream.Write(fileContent));
+        this.mockPostImageService.Setup(s => s.ValidateImage("image/png", fileContent.Length)).Returns((string?)null);
+        this.mockPostImageService
+            .Setup(s => s.UploadImageAsync(It.IsAny<UploadImageRequest>(), "admin@test.com"))
+            .ReturnsAsync(UploadImageResult.Failed("Storage error."));
+
+        // Act
+        var result = await this.controller.UploadImage("test-post", fileMock.Object, null);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var uploadResult = Assert.IsType<UploadImageResult>(badRequestResult.Value);
+        Assert.False(uploadResult.Success);
+    }
+
+    /// <summary>
+    /// Verifies that DeleteImage returns NotFound when the post does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteImage_WhenPostNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        this.mockAdminPostService.Setup(s => s.GetPostEntityAsync("non-existent")).ReturnsAsync((BlogPost?)null);
+
+        // Act
+        var result = await this.controller.DeleteImage("non-existent", "image.png");
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var deleteResult = Assert.IsType<DeleteImageResult>(notFoundResult.Value);
+        Assert.False(deleteResult.Success);
+    }
+
     private void SetupUserContext(string userName, bool isAdmin = false, bool isGuestWriter = false)
     {
         var claims = new List<Claim>
