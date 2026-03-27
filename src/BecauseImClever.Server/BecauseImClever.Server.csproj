@@ -27,6 +27,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>becauseimclever-server</UserSecretsId>
+    <!-- Disables the OpenAPI XML comment source generator, which otherwise emits 900+ lines
+         of generated code that can't be excluded from coverage due to Coverlet's SourceLink
+         path matching limitation. CS1591 is already suppressed globally via Directory.Build.props.
+         SA0001 is suppressed because it requires GenerateDocumentationFile=true. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);SA0001</NoWarn>
   </PropertyGroup>
 
 </Project>
