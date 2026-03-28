@@ -25,3 +25,17 @@ Revamped the CI/CD pipeline to match BudgetExperiment's modern patterns:
   - Port 8580 preserved (app-specific, not changed to 8080)
   - coverage.runsettings (not coverlet.runsettings) for this repo
   - Removed `dotnet-quality: 'preview'` since .NET 10 is now released
+
+### Release Process Correction (2026-03-28)
+
+**WRONG:** After tagging, also run `gh release create` manually.  
+**CORRECT:** Push the tag only. The CI `release.yml` workflow creates the GitHub release automatically.
+
+Release steps going forward:
+1. `git checkout main && git pull`
+2. `git tag -a vX.Y.Z -m "chore: release vX.Y.Z"`
+3. `git push origin vX.Y.Z`
+4. ✅ Done — CI takes over and creates the GitHub release from the tag.
+
+Do NOT run `gh release create` as part of the release process.
+
