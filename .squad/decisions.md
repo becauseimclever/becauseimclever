@@ -249,3 +249,18 @@ Phase 1 is backend only: interface, service, controller, DI registration. Phases
 - All meaningful changes require team consensus
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
+
+---
+
+### 2026-03-28: Release process — tag-only, CI creates release
+**By:** Tony (corrected after v1.1.0 CI failure)
+**What:** Tony's release script must ONLY push the tag. The `release.yml` CI workflow owns GitHub release creation via `softprops/action-gh-release@v2`. Running `gh release create` manually after tagging creates a duplicate and causes the workflow to fail with `already_exists`.
+**Why:** v1.1.0 CI workflow failed because a release was created manually before CI ran.
+**Resolution:** Tag the commit, push the tag only. CI creates the release automatically.
+
+---
+
+### 2026-03-28: Branch protection — no direct pushes to main
+**By:** Fortinbra (via Copilot)
+**What:** All changes must go through a pull request. No direct pushes to main, under any circumstances. Branch protection enforced on GitHub.
+**Why:** User directive — captured for team memory
