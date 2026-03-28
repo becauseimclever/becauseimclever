@@ -190,6 +190,60 @@ ReportGenerator merges coverage from multiple test project outputs using a **SUM
 - Document expected coverage baselines per assembly
 - If issue persists in CI, investigate specific run with detailed diagnostics
 
+### Post Editor Spell Checker: Phase 1 Architecture (#034)
+
+**Author:** Tony  
+**Date:** 2026-03-26  
+**Feature:** 034 Post Editor Spell Checker
+
+#### Decision 1: Interface and DTOs in Application Layer
+
+`ISpellCheckService` interface and related DTOs (`SpellCheckRequest`, `SpellCheckResponse`, `WordCheckResult`) live in `src/BecauseImClever.Application/Interfaces/`.
+
+**Rationale:** Follows existing pattern (e.g., `IBlogService`, `IEmailService`). Application layer defines contracts; Infrastructure implements. Keeps dependencies pointing inward per DDD.
+
+#### Decision 2: Service Implementation in Infrastructure Layer
+
+`SpellCheckService` implementation lives in `src/BecauseImClever.Infrastructure/Services/`. Encapsulates `WeCantSpell.Hunspell` library and dictionary loading logic.
+
+**Rationale:** Infrastructure layer handles external dependencies and technical concerns. Spell checking is a technical concern, not domain logic.
+
+#### Decision 3: API Endpoint Structure
+
+`SpellCheckController` in `src/BecauseImClever.Server/Controllers/` with single `POST /api/spellcheck` endpoint.
+
+**Rationale:** Matches existing controller patterns. Thin controller delegates to service. Simple, stateless API contract.
+
+#### Decision 4: DI Registration in Program.cs
+
+Service registered as scoped: `builder.Services.AddScoped<ISpellCheckService, SpellCheckService>();`
+
+**Rationale:** Hunspell dictionary loading is lightweight; scoped lifetime is appropriate (no need for singleton overhead, no shared state across requests).
+
+#### Decision 5: Custom Dictionary Location
+
+Tech terms and brand names stored in `src/BecauseImClever.Server/wwwroot/dictionaries/custom.dic`. Format: one word per line.
+
+**Rationale:** wwwroot is included in deployment; custom.dic is discoverable and editable without code changes.
+
+#### Decision 6: NuGet Package
+
+`WeCantSpell.Hunspell` added to Infrastructure.csproj.
+
+**Rationale:** Mature, pure .NET implementation. No C++ interop. Active maintenance. Standard choice for .NET spell checking.
+
+#### Decision 7: Phase 1 Scope
+
+Phase 1 is backend only: interface, service, controller, DI registration. Phases 2-4 (client integration, markdown-aware tokenization, custom dictionary UI) follow once Phase 1 is tested.
+
+**Rationale:** Decouples backend from frontend work. Banner can complete Phase 1 in parallel with Wanda's prep for Phase 2.
+
+#### Impact
+
+- **Architecture:** Zero DDD violations. Clean layering. No infrastructure bleed.
+- **Testing:** Phase 1 unit and integration tests sufficient for validation. Client tests deferred to Phase 2.
+- **Handoff:** Exact file paths and checklist provided to Banner. Wanda can begin Phase 2 planning based on this API contract.
+
 ## Governance
 
 - All meaningful changes require team consensus
