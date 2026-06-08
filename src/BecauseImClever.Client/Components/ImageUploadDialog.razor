@@ -76,8 +76,8 @@
                                 <div class="gallery-item">
                                     <img src="@image.Url" alt="@(image.AltText ?? image.Filename)" />
                                     <div class="gallery-item-overlay">
-                                        <button type="button" class="btn-gallery-action" title="Insert" @onclick="() => InsertExistingImage(image)">📋</button>
-                                        <button type="button" class="btn-gallery-action btn-danger" title="Delete" @onclick="() => DeleteImage(image)">🗑️</button>
+                                        <button type="button" class="btn-gallery-action" title="Insert" @onclick="GetInsertExistingImageHandler(image)">📋</button>
+                                        <button type="button" class="btn-gallery-action btn-danger" title="Delete" @onclick="GetDeleteImageHandler(image)">🗑️</button>
                                     </div>
                                     <span class="gallery-item-name">@image.Filename</span>
                                 </div>

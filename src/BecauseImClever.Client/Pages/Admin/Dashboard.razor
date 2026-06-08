@@ -22,7 +22,7 @@
     {
         <div class="alert alert-error">
             <span>@ErrorMessage</span>
-            <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
+            <button class="alert-close" @onclick="ClearErrorMessage">&times;</button>
         </div>
     }
     else if (Stats is not null)

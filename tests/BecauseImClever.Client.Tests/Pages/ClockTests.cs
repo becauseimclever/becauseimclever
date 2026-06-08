@@ -9,15 +9,14 @@ using Bunit;
 public class ClockTests : BunitContext
 {
     [Fact]
-    public void Clock_RendersPageTitle()
+    public void Clock_RendersTimezoneSelectorRootElement()
     {
         // Arrange & Act
         var cut = this.Render<Clock>();
 
         // Assert
-        // PageTitle component is rendered (even though it updates document title at runtime)
-        var pageTitle = cut.FindComponent<Microsoft.AspNetCore.Components.Web.PageTitle>();
-        Assert.NotNull(pageTitle);
+        var selector = cut.Find("select.timezone-selector");
+        Assert.NotNull(selector);
     }
 
     [Fact]

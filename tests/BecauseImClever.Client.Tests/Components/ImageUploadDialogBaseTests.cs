@@ -13,10 +13,10 @@ using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
 using Bunit;
-using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Protected;
@@ -43,10 +43,10 @@ public class ImageUploadDialogBaseTests : BunitContext
         cut.Instance.InvokeClearPreview();
 
         // Assert
-        cut.Instance.SelectedFilePublic.Should().BeNull();
-        cut.Instance.PreviewUrlPublic.Should().BeNull();
-        cut.Instance.AltTextPublic.Should().Be(string.Empty);
-        cut.Instance.ErrorMessagePublic.Should().BeNull();
+        Assert.Null(cut.Instance.SelectedFilePublic);
+        Assert.Null(cut.Instance.PreviewUrlPublic);
+        Assert.Equal(string.Empty, cut.Instance.AltTextPublic);
+        Assert.Null(cut.Instance.ErrorMessagePublic);
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public class ImageUploadDialogBaseTests : BunitContext
         await cut.Instance.InvokeInsertExistingImageAsync(image);
 
         // Assert
-        insertedMarkdown.Should().Be("![Hero](/images/hero.jpg)");
+        Assert.Equal("![Hero](/images/hero.jpg)", insertedMarkdown);
     }
 
     /// <summary>
@@ -102,11 +102,161 @@ public class ImageUploadDialogBaseTests : BunitContext
         await cut.Instance.InvokeUploadAndInsertAsync();
 
         // Assert
-        insertedMarkdown.Should().Be("![Hero](https://cdn.test/hero.png)");
-        cut.Instance.SelectedFilePublic.Should().BeNull();
-        cut.Instance.PreviewUrlPublic.Should().BeNull();
-        cut.Instance.ErrorMessagePublic.Should().BeNull();
-        cut.Instance.IsUploadingPublic.Should().BeFalse();
+        Assert.Equal("![Hero](https://cdn.test/hero.png)", insertedMarkdown);
+        Assert.Null(cut.Instance.SelectedFilePublic);
+        Assert.Null(cut.Instance.PreviewUrlPublic);
+        Assert.Null(cut.Instance.ErrorMessagePublic);
+        Assert.False(cut.Instance.IsUploadingPublic);
+    }
+
+    /// <summary>
+    /// Verifies that drag handlers update drag-over state.
+    /// </summary>
+    [Fact]
+    public void ImageUploadDialogBase_DragHandlers_UpdateDragState()
+    {
+        // Arrange
+        this.Services.AddSingleton(CreateImageService());
+        var cut = this.Render<TestImageUploadDialog>();
+
+        // Act
+        cut.Instance.InvokeHandleDragEnter();
+        var isDragOverAfterEnter = cut.Instance.IsDragOverPublic;
+        cut.Instance.InvokeHandleDragLeave();
+
+        // Assert
+        Assert.True(isDragOverAfterEnter);
+        Assert.False(cut.Instance.IsDragOverPublic);
+    }
+
+    /// <summary>
+    /// Verifies that drop resets drag-over state.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task ImageUploadDialogBase_HandleDrop_ClearsDragState()
+    {
+        // Arrange
+        this.Services.AddSingleton(CreateImageService());
+        var cut = this.Render<TestImageUploadDialog>();
+        cut.Instance.InvokeHandleDragEnter();
+
+        // Act
+        await cut.Instance.InvokeHandleDropAsync(new DragEventArgs());
+
+        // Assert
+        Assert.False(cut.Instance.IsDragOverPublic);
+    }
+
+    /// <summary>
+    /// Verifies that close invokes the close callback.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task ImageUploadDialogBase_Close_InvokesCallback()
+    {
+        // Arrange
+        this.Services.AddSingleton(CreateImageService());
+        var closeCalled = false;
+        var cut = this.Render<TestImageUploadDialog>(parameters => parameters
+            .Add(p => p.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true)));
+
+        // Act
+        await cut.Instance.InvokeCloseAsync();
+
+        // Assert
+        Assert.True(closeCalled);
+    }
+
+    /// <summary>
+    /// Verifies that deleting an image surfaces API errors.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task ImageUploadDialogBase_DeleteImage_WhenDeleteFails_SetsErrorMessage()
+    {
+        // Arrange
+        this.Services.AddSingleton(CreateImageServiceWithDeleteError("Delete failed from API"));
+        var cut = this.Render<TestImageUploadDialog>(parameters => parameters
+            .Add(p => p.PostSlug, "my-post"));
+
+        var image = new ImageSummary(
+            Guid.NewGuid(),
+            "hero.jpg",
+            "hero.jpg",
+            "image/jpeg",
+            128,
+            "Hero",
+            "/images/hero.jpg",
+            DateTime.UtcNow);
+
+        // Act
+        await cut.Instance.InvokeDeleteImageAsync(image);
+
+        // Assert
+        Assert.Equal("Delete failed from API", cut.Instance.ErrorMessagePublic);
+    }
+
+    /// <summary>
+    /// Verifies that upload returns early when no file is selected.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task ImageUploadDialogBase_UploadAndInsert_WhenNoFile_DoesNothing()
+    {
+        // Arrange
+        this.Services.AddSingleton(CreateImageService());
+        var cut = this.Render<TestImageUploadDialog>(parameters => parameters
+            .Add(p => p.PostSlug, "my-post"));
+
+        // Act
+        await cut.Instance.InvokeUploadAndInsertAsync();
+
+        // Assert
+        Assert.False(cut.Instance.IsUploadingPublic);
+        Assert.Null(cut.Instance.ErrorMessagePublic);
+    }
+
+    private static ClientPostImageService CreateImageServiceWithDeleteError(string error)
+    {
+        var handler = new Mock<HttpMessageHandler>();
+
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Get),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]"),
+            });
+
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Delete),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() =>
+            {
+                var result = DeleteImageResult.Failed(error);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = JsonContent.Create(result),
+                };
+            });
+
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Post),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(UploadImageResult.Succeeded("https://cdn.test/hero.png", "hero.png")),
+            });
+
+        var httpClient = new HttpClient(handler.Object) { BaseAddress = new Uri("https://localhost/") };
+        return new ClientPostImageService(httpClient);
     }
 
     private static ClientPostImageService CreateImageService()
@@ -159,6 +309,8 @@ public class ImageUploadDialogBaseTests : BunitContext
 
         public bool IsUploadingPublic => this.IsUploading;
 
+        public bool IsDragOverPublic => this.IsDragOver;
+
         public string? PreviewUrlPublic => this.PreviewUrl;
 
         public IBrowserFile? SelectedFilePublic => this.SelectedFile;
@@ -176,6 +328,31 @@ public class ImageUploadDialogBaseTests : BunitContext
         public Task InvokeUploadAndInsertAsync()
         {
             return this.UploadAndInsert();
+        }
+
+        public void InvokeHandleDragEnter()
+        {
+            this.HandleDragEnter();
+        }
+
+        public void InvokeHandleDragLeave()
+        {
+            this.HandleDragLeave();
+        }
+
+        public Task InvokeHandleDropAsync(DragEventArgs e)
+        {
+            return this.HandleDrop(e);
+        }
+
+        public Task InvokeCloseAsync()
+        {
+            return this.Close();
+        }
+
+        public Task InvokeDeleteImageAsync(ImageSummary image)
+        {
+            return this.DeleteImage(image);
         }
 
         public void SetPreviewState(IBrowserFile file, string previewUrl, string altText, string? errorMessage)

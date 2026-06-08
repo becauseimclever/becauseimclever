@@ -26,6 +26,14 @@ public class DashboardBase : ComponentBase
     /// </summary>
     protected string? ErrorMessage { get; set; }
 
+    /// <summary>
+    /// Clears the dashboard error message.
+    /// </summary>
+    protected void ClearErrorMessage()
+    {
+        this.ErrorMessage = null;
+    }
+
     [Inject]
     private HttpClient Http { get; set; } = default!;
 

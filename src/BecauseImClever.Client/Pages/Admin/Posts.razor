@@ -23,7 +23,7 @@
     {
         <div class="alert alert-error">
             <span>@ErrorMessage</span>
-            <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
+            <button class="alert-close" @onclick="ClearErrorMessage">&times;</button>
         </div>
     }
 
@@ -31,7 +31,7 @@
     {
         <div class="alert alert-success">
             <span>@SuccessMessage</span>
-            <button class="alert-close" @onclick="() => SuccessMessage = null">&times;</button>
+            <button class="alert-close" @onclick="ClearSuccessMessage">&times;</button>
         </div>
     }
 
@@ -109,7 +109,7 @@
                                     <a href="@($"admin/posts/edit/{post.Slug}")" class="btn-action btn-edit" title="Edit post">
                                         ✏️
                                     </a>
-                                    <select @onchange="e => OnStatusChange(post.Slug, e)" disabled="@UpdatingPosts.Contains(post.Slug)">
+                                    <select @onchange="GetStatusChangeHandler(post.Slug)" disabled="@UpdatingPosts.Contains(post.Slug)">
                                         <option value="Published" selected="@(post.Status == PostStatus.Published)">Published</option>
                                         <option value="Draft" selected="@(post.Status == PostStatus.Draft)">Draft</option>
                                         <option value="Debug" selected="@(post.Status == PostStatus.Debug)">Debug</option>

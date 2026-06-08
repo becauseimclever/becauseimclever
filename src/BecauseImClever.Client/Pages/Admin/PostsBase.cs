@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 /// <summary>
 /// Base class for the <see cref="Posts"/> admin page.
@@ -42,6 +43,32 @@ public class PostsBase : ComponentBase
     /// Gets or sets the success message to display.
     /// </summary>
     protected string? SuccessMessage { get; set; }
+
+    /// <summary>
+    /// Clears the current error message.
+    /// </summary>
+    protected void ClearErrorMessage()
+    {
+        this.ErrorMessage = null;
+    }
+
+    /// <summary>
+    /// Clears the current success message.
+    /// </summary>
+    protected void ClearSuccessMessage()
+    {
+        this.SuccessMessage = null;
+    }
+
+    /// <summary>
+    /// Gets the status change handler for a post row.
+    /// </summary>
+    /// <param name="slug">The post slug.</param>
+    /// <returns>The event callback for the row.</returns>
+    protected EventCallback<ChangeEventArgs> GetStatusChangeHandler(string slug)
+    {
+        return EventCallback.Factory.Create<ChangeEventArgs>(this, e => this.OnStatusChange(slug, e));
+    }
 
     /// <summary>
     /// Gets or sets the status filter value.

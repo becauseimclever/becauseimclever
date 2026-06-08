@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
 using Bunit;
-using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -50,8 +50,8 @@ public class MarkdownEditorBaseTests : BunitContext
         await cut.Instance.InvokeOnValueChangedAsync(new ChangeEventArgs { Value = "Hello" });
 
         // Assert
-        cut.Instance.Value.Should().Be("Hello");
-        updatedValue.Should().Be("Hello");
+        Assert.Equal("Hello", cut.Instance.Value);
+        Assert.Equal("Hello", updatedValue);
     }
 
     /// <summary>
@@ -70,8 +70,8 @@ public class MarkdownEditorBaseTests : BunitContext
         await cut.Instance.InvokeTogglePreviewAsync();
 
         // Assert
-        cut.Instance.IsPreviewOnlyPublic.Should().BeTrue();
-        previewState.Should().BeTrue();
+        Assert.True(cut.Instance.IsPreviewOnlyPublic);
+        Assert.True(previewState);
     }
 
     /// <summary>
@@ -87,13 +87,13 @@ public class MarkdownEditorBaseTests : BunitContext
         cut.Instance.InvokeOpenImageDialog();
 
         // Assert
-        cut.Instance.ShowImageUploadDialogPublic.Should().BeTrue();
+        Assert.True(cut.Instance.ShowImageUploadDialogPublic);
 
         // Act
         cut.Instance.InvokeCloseImageDialog();
 
         // Assert
-        cut.Instance.ShowImageUploadDialogPublic.Should().BeFalse();
+        Assert.False(cut.Instance.ShowImageUploadDialogPublic);
     }
 
     /// <summary>
@@ -110,7 +110,88 @@ public class MarkdownEditorBaseTests : BunitContext
         await cut.InvokeAsync(() => cut.Instance.OnDragStateChanged(true));
 
         // Assert
-        cut.Instance.IsDraggingFilePublic.Should().BeTrue();
+        Assert.True(cut.Instance.IsDraggingFilePublic);
+    }
+
+    /// <summary>
+    /// Verifies that keyboard input without modifier keys does not change the value.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_HandleKeyDown_WithoutModifier_DoesNotChangeValue()
+    {
+        // Arrange
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters.Add(p => p.Value, "Existing"));
+
+        // Act
+        await cut.Instance.InvokeHandleKeyDownAsync(new KeyboardEventArgs
+        {
+            Key = "b",
+            CtrlKey = false,
+            MetaKey = false,
+            ShiftKey = false,
+        });
+
+        // Assert
+        Assert.Equal("Existing", cut.Instance.Value);
+    }
+
+    /// <summary>
+    /// Verifies that receiving image data without a post slug exits early.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_OnImageReceived_WithoutSlug_LeavesUploadStateUnchanged()
+    {
+        // Arrange
+        var cut = this.Render<TestMarkdownEditor>();
+
+        // Act
+        await cut.Instance.OnImageReceived("aGVsbG8=", "hero.png", "image/png");
+
+        // Assert
+        Assert.False(cut.Instance.IsUploadingImagePublic);
+    }
+
+    /// <summary>
+    /// Verifies that invalid image payloads are handled and upload state is reset.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_OnImageReceived_InvalidPayload_ResetsUploadingState()
+    {
+        // Arrange
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "my-post"));
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.OnImageReceived("not-base64", "hero.png", "image/png"));
+
+        // Assert
+        Assert.False(cut.Instance.IsUploadingImagePublic);
+        Assert.False(cut.Instance.IsDraggingFilePublic);
+    }
+
+    /// <summary>
+    /// Verifies that first render with a slug registers image handlers and disposal unregisters them.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_OnAfterRenderAndDispose_WithSlug_RegistersAndUnregistersHandlers()
+    {
+        // Arrange
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.PostSlug, "my-post"));
+
+        // Act
+        await cut.Instance.InvokeOnAfterRenderAsyncPublic(firstRender: true);
+        await cut.Instance.DisposeAsync();
+
+        // Assert
+        Assert.Contains(this.JSInterop.Invocations, invocation =>
+            invocation.Identifier == "markdownEditor.registerImageHandlers");
+        Assert.Contains(this.JSInterop.Invocations, invocation =>
+            invocation.Identifier == "markdownEditor.unregisterImageHandlers");
     }
 
     private sealed class TestMarkdownEditor : MarkdownEditorBase
@@ -118,6 +199,8 @@ public class MarkdownEditorBaseTests : BunitContext
         public bool IsDraggingFilePublic => this.IsDraggingFile;
 
         public bool IsPreviewOnlyPublic => this.IsPreviewOnly;
+
+        public bool IsUploadingImagePublic => this.IsUploadingImage;
 
         public bool ShowImageUploadDialogPublic => this.ShowImageUploadDialog;
 
@@ -129,6 +212,16 @@ public class MarkdownEditorBaseTests : BunitContext
         public Task InvokeTogglePreviewAsync()
         {
             return this.TogglePreview();
+        }
+
+        public Task InvokeHandleKeyDownAsync(KeyboardEventArgs e)
+        {
+            return this.HandleKeyDown(e);
+        }
+
+        public Task InvokeOnAfterRenderAsyncPublic(bool firstRender)
+        {
+            return this.OnAfterRenderAsync(firstRender);
         }
 
         public void InvokeCloseImageDialog()

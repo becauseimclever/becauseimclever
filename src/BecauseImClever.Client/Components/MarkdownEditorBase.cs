@@ -253,6 +253,78 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     }
 
     /// <summary>
+    /// Inserts bold formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertBold() => this.InsertFormatting(FormattingType.Bold);
+
+    /// <summary>
+    /// Inserts italic formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertItalic() => this.InsertFormatting(FormattingType.Italic);
+
+    /// <summary>
+    /// Inserts H1 formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertHeading1() => this.InsertFormatting(FormattingType.H1);
+
+    /// <summary>
+    /// Inserts H2 formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertHeading2() => this.InsertFormatting(FormattingType.H2);
+
+    /// <summary>
+    /// Inserts H3 formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertHeading3() => this.InsertFormatting(FormattingType.H3);
+
+    /// <summary>
+    /// Inserts link formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertLink() => this.InsertFormatting(FormattingType.Link);
+
+    /// <summary>
+    /// Inserts image formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertImage() => this.InsertFormatting(FormattingType.Image);
+
+    /// <summary>
+    /// Inserts inline code formatting at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertInlineCode() => this.InsertFormatting(FormattingType.InlineCode);
+
+    /// <summary>
+    /// Inserts a code block at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertCodeBlock() => this.InsertFormatting(FormattingType.CodeBlock);
+
+    /// <summary>
+    /// Inserts a block quote at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertQuote() => this.InsertFormatting(FormattingType.Quote);
+
+    /// <summary>
+    /// Inserts a bulleted list item at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertBulletList() => this.InsertFormatting(FormattingType.BulletList);
+
+    /// <summary>
+    /// Inserts a numbered list item at the current cursor position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task InsertNumberedList() => this.InsertFormatting(FormattingType.NumberedList);
+
+    /// <summary>
     /// Opens the image upload dialog.
     /// </summary>
     protected void OpenImageUploadDialog()

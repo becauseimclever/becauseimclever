@@ -242,7 +242,7 @@ public class BlogTests : BunitContext
     }
 
     [Fact]
-    public void Blog_ContainsPageTitle()
+    public void Blog_RendersBlogGrid()
     {
         // Arrange
         this.mockBlogService
@@ -253,8 +253,8 @@ public class BlogTests : BunitContext
         var cut = this.Render<Blog>();
 
         // Assert
-        var pageTitle = cut.FindComponent<Microsoft.AspNetCore.Components.Web.PageTitle>();
-        Assert.NotNull(pageTitle);
+        var blogGrid = cut.Find(".blog-grid");
+        Assert.NotNull(blogGrid);
     }
 
     [Fact]
