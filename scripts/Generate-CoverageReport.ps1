@@ -92,6 +92,7 @@ reportgenerator `
     -reports:"$CoverageFilePaths" `
     -targetdir:"$ReportPath" `
     -reporttypes:"Html;Badges;TextSummary" `
+    -classfilters:"-Microsoft.*;-System.*" `
     -title:"BecauseImClever Coverage Report"
 
 if ($LASTEXITCODE -ne 0) {

@@ -50,8 +50,12 @@
           <ExcludeByFile>
             **/Migrations/**/*.cs
             **/*.designer.cs
+            **/*.g.cs
             **/*.generated.cs
             **/obj/**/*.generated.cs
+            **/obj/**/*.g.cs
+            **/System.Text.RegularExpressions.Generator/**/*.cs
+            **/Microsoft.AspNetCore.OpenApi.SourceGenerators/**/*.cs
             **/Program.cs
             **/*ModelSnapshot.cs
           </ExcludeByFile>
@@ -59,7 +63,7 @@
             src/**/*.cs
           </IncludeDirectory>
           <SingleHit>false</SingleHit>
-          <UseSourceLink>true</UseSourceLink>
+          <UseSourceLink>false</UseSourceLink>
           <IncludeTestAssembly>false</IncludeTestAssembly>
           <SkipAutoProps>true</SkipAutoProps>
           <DeterministicReport>false</DeterministicReport>

@@ -66,6 +66,7 @@ jobs:
         with:
           reports: ./TestResults/**/coverage.cobertura.xml
           targetdir: ./CoverageReport
+          classfilters: -Microsoft.*;-System.*
           reporttypes: Cobertura;MarkdownSummaryGithub
 
       - if: always()

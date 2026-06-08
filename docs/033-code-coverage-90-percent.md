@@ -59,6 +59,8 @@ Update `coverage.runsettings` to properly exclude non-testable code:
 </ExcludeByFile>
 ```
 
+The final merged coverage report must also exclude source-generated classes that appear under `Microsoft.*` and `System.*` namespaces inside our assemblies. These are framework-generated artifacts, not repository-owned code, and should not count against the published coverage percentage.
+
 ### 2. Identify Coverage Gaps
 
 Run coverage locally and identify classes/methods with low coverage:
