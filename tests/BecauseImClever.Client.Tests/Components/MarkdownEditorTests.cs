@@ -730,12 +730,68 @@ public class MarkdownEditorTests : BunitContext
         Assert.True(true);
     }
 
+    /// <summary>
+    /// Verifies that the inline suggestion panel renders accessible actions.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WhenSpellCheckEnabled_ShowsSuggestionAndIgnoreButtons()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        // Act
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            var section = cut.Find("section[aria-label='Custom spell check suggestions']");
+            Assert.NotNull(section);
+
+            var suggestion = cut.Find("button[aria-label='Replace teh with the']");
+            Assert.NotNull(suggestion);
+
+            var ignore = cut.Find("button[aria-label='Ignore teh for this editing session']");
+            Assert.NotNull(ignore);
+        });
+    }
+
+    /// <summary>
+    /// Verifies that ignoring a word removes it from the current panel session.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_IgnoreAction_RemovesIssueFromPanel()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act
+        cut.WaitForAssertion(() =>
+        {
+            var ignore = cut.Find("button[aria-label='Ignore teh for this editing session']");
+            ignore.Click();
+        });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("Ignore teh for this editing session", cut.Markup, StringComparison.Ordinal));
+    }
+
     private sealed class FakeSpellCheckService : IClientSpellCheckService
     {
         public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
         {
             var results = words
-                .Select(word => new SpellCheckResult(word, !string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase), Array.Empty<string>()))
+                .Select(word => new SpellCheckResult(
+                    word,
+                    !string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase),
+                    string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase) ? ["the"] : Array.Empty<string>()))
                 .ToArray();
 
             return Task.FromResult(new SpellCheckResponse(results));

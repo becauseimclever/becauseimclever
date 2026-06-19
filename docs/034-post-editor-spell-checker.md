@@ -7,6 +7,8 @@
 - v1 API endpoint for spell checking
 - client service integration in markdown editor
 - baseline tests/build verification
+- markdown-aware tokenization implementation underway
+- inline suggestion UX in editor underway
 
 ## Feature Description
 
@@ -210,6 +212,8 @@ Add spell check toggle to MarkdownEditor toolbar:
 5. Include en-US dictionary files
 
 ### Phase 2: Client-Side Integration
+Phase 2 is now active.
+
 1. Create `ClientSpellCheckService` with debouncing and caching
 2. Create `SpellCheckOverlay` component
 3. Create `SpellSuggestionPopup` component

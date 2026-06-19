@@ -2,6 +2,8 @@
 
 namespace BecauseImClever.Client.Components;
 
+using System.Text;
+using System.Text.RegularExpressions;
 using BecauseImClever.Client.Services;
 using Markdig;
 using Microsoft.AspNetCore.Components;
@@ -16,6 +18,13 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseAdvancedExtensions()
         .Build();
+
+    private static readonly Regex FencedCodeBlockRegex = new("```[\\s\\S]*?```", RegexOptions.Compiled);
+    private static readonly Regex InlineCodeRegex = new("`[^`\\r\\n]+`", RegexOptions.Compiled);
+    private static readonly Regex ImageRegex = new("!\\[[^\\]]*\\]\\([^)]*\\)", RegexOptions.Compiled);
+    private static readonly Regex MarkdownLinkRegex = new("\\[[^\\]]*\\]\\((?<url>[^)]*)\\)", RegexOptions.Compiled);
+    private static readonly Regex RawUrlRegex = new("https?://\\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex WordRegex = new("\\p{L}[\\p{L}'’-]*", RegexOptions.Compiled);
 
     [Inject]
     private IJSRuntime JS { get; set; } = default!;
@@ -103,6 +112,11 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     protected IReadOnlyList<string> MisspelledWords { get; private set; } = Array.Empty<string>();
 
     /// <summary>
+    /// Gets misspelled words and suggestions for inline correction UI.
+    /// </summary>
+    protected IReadOnlyList<SpellCheckIssue> MisspelledIssues { get; private set; } = Array.Empty<SpellCheckIssue>();
+
+    /// <summary>
     /// Gets a value indicating whether browser native spellcheck should be enabled.
     /// </summary>
     protected bool IsNativeSpellcheckEnabled => !this.IsCustomSpellCheckEnabled;
@@ -114,6 +128,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         ? this.GetCustomSpellCheckStatusText()
         : "Custom spell check is off. Browser spell check is on.";
 
+    private readonly HashSet<string> ignoredWords = new(StringComparer.OrdinalIgnoreCase);
     private DotNetObjectReference<MarkdownEditorBase>? dotNetRef;
     private CancellationTokenSource? spellCheckDebounceCts;
     private int spellCheckVersion;
@@ -297,6 +312,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             this.spellCheckError = null;
             this.isCheckingSpelling = false;
             this.MisspelledWords = Array.Empty<string>();
+            this.MisspelledIssues = Array.Empty<SpellCheckIssue>();
         }
 
         return Task.CompletedTask;
@@ -582,6 +598,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             if (words.Count == 0)
             {
                 this.MisspelledWords = Array.Empty<string>();
+                this.MisspelledIssues = Array.Empty<SpellCheckIssue>();
                 this.spellCheckError = null;
                 this.isCheckingSpelling = false;
                 await this.InvokeAsync(this.StateHasChanged);
@@ -603,10 +620,26 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
                 return;
             }
 
-            this.MisspelledWords = response.Results
+            this.MisspelledIssues = response.Results
                 .Where(result => !result.Correct)
-                .Select(result => result.Word)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(result => !this.ignoredWords.Contains(result.Word))
+                .GroupBy(result => result.Word, StringComparer.OrdinalIgnoreCase)
+                .Select(group =>
+                {
+                    var first = group.First();
+                    var suggestions = group
+                        .SelectMany(item => item.Suggestions)
+                        .Where(static suggestion => !string.IsNullOrWhiteSpace(suggestion))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Take(4)
+                        .ToArray();
+
+                    return new SpellCheckIssue(first.Word, suggestions);
+                })
+                .ToArray();
+
+            this.MisspelledWords = this.MisspelledIssues
+                .Select(issue => issue.Word)
                 .ToArray();
 
             this.spellCheckError = null;
@@ -623,6 +656,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             }
 
             this.MisspelledWords = Array.Empty<string>();
+            this.MisspelledIssues = Array.Empty<SpellCheckIssue>();
             this.spellCheckError = ex.Message;
         }
         finally
@@ -635,6 +669,47 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Applies a spelling suggestion to all whole-word prose occurrences in the editor value.
+    /// </summary>
+    /// <param name="misspelledWord">The misspelled word to replace.</param>
+    /// <param name="suggestion">The replacement suggestion.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected async Task ApplySuggestionAsync(string misspelledWord, string suggestion)
+    {
+        if (string.IsNullOrWhiteSpace(misspelledWord) || string.IsNullOrWhiteSpace(suggestion))
+        {
+            return;
+        }
+
+        this.Value = ReplaceWholeWordInProse(this.Value, misspelledWord, suggestion);
+        await this.ValueChanged.InvokeAsync(this.Value);
+        this.ScheduleSpellCheck(immediate: true);
+    }
+
+    /// <summary>
+    /// Ignores a misspelled word for the current editor session.
+    /// </summary>
+    /// <param name="word">The word to ignore.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected async Task IgnoreWordForSessionAsync(string word)
+    {
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return;
+        }
+
+        this.ignoredWords.Add(word);
+        this.MisspelledIssues = this.MisspelledIssues
+            .Where(issue => !string.Equals(issue.Word, word, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        this.MisspelledWords = this.MisspelledIssues
+            .Select(issue => issue.Word)
+            .ToArray();
+
+        await this.InvokeAsync(this.StateHasChanged);
+    }
+
     private static IReadOnlyList<string> ExtractWords(string content)
     {
         if (string.IsNullOrWhiteSpace(content))
@@ -642,12 +717,149 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             return Array.Empty<string>();
         }
 
-        return content
-            .Split([' ', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(token => token.Trim('"', '\'', '.', ',', ';', ':', '!', '?', '(', ')', '[', ']', '{', '}', '*', '`', '#', '-', '_', '/'))
-            .Where(token => token.Length > 1)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        var mask = CreateIgnoredCharacterMask(content);
+        var extracted = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (Match match in WordRegex.Matches(content))
+        {
+            if (IsRangeIgnored(mask, match.Index, match.Length))
+            {
+                continue;
+            }
+
+            var token = NormalizeToken(match.Value);
+            if (token.Length <= 1)
+            {
+                continue;
+            }
+
+            if (seen.Add(token))
+            {
+                extracted.Add(token);
+            }
+        }
+
+        return extracted;
+    }
+
+    private static string ReplaceWholeWordInProse(string content, string word, string replacement)
+    {
+        if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(word))
+        {
+            return content;
+        }
+
+        var mask = CreateIgnoredCharacterMask(content);
+        var builder = new StringBuilder(content.Length);
+        var index = 0;
+
+        while (index < content.Length)
+        {
+            if (mask[index])
+            {
+                builder.Append(content[index]);
+                index++;
+                continue;
+            }
+
+            var segmentStart = index;
+            while (index < content.Length && !mask[index])
+            {
+                index++;
+            }
+
+            var segment = content[segmentStart..index];
+            builder.Append(ReplaceWholeWord(segment, word, replacement));
+        }
+
+        return builder.ToString();
+    }
+
+    private static string ReplaceWholeWord(string input, string word, string replacement)
+    {
+        var pattern = $"\\b{Regex.Escape(word)}\\b";
+        return Regex.Replace(input, pattern, replacement, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    }
+
+    private static bool[] CreateIgnoredCharacterMask(string content)
+    {
+        var mask = new bool[content.Length];
+
+        MarkRanges(mask, FencedCodeBlockRegex.Matches(content));
+        MarkRanges(mask, InlineCodeRegex.Matches(content));
+        MarkRanges(mask, ImageRegex.Matches(content));
+        MarkRanges(mask, RawUrlRegex.Matches(content));
+
+        foreach (Match match in MarkdownLinkRegex.Matches(content))
+        {
+            var urlGroup = match.Groups["url"];
+            if (!urlGroup.Success)
+            {
+                continue;
+            }
+
+            var start = Math.Max(0, urlGroup.Index - 1);
+            var length = Math.Min(content.Length - start, urlGroup.Length + 2);
+            MarkRange(mask, start, length);
+        }
+
+        return mask;
+    }
+
+    private static void MarkRanges(bool[] mask, MatchCollection matches)
+    {
+        foreach (Match match in matches)
+        {
+            MarkRange(mask, match.Index, match.Length);
+        }
+    }
+
+    private static void MarkRange(bool[] mask, int start, int length)
+    {
+        var end = Math.Min(mask.Length, start + length);
+        for (var i = Math.Max(0, start); i < end; i++)
+        {
+            mask[i] = true;
+        }
+    }
+
+    private static bool IsRangeIgnored(bool[] mask, int start, int length)
+    {
+        var end = Math.Min(mask.Length, start + length);
+        for (var i = start; i < end; i++)
+        {
+            if (mask[i])
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeToken(string token)
+    {
+        var trimmed = token.Trim('"', '\'', '’', '.', ',', ';', ':', '!', '?', '(', ')', '[', ']', '{', '}', '*', '`', '#', '-', '_', '/');
+        if (trimmed.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var start = 0;
+        var end = trimmed.Length - 1;
+
+        while (start <= end && !char.IsLetter(trimmed[start]))
+        {
+            start++;
+        }
+
+        while (end >= start && !char.IsLetter(trimmed[end]))
+        {
+            end--;
+        }
+
+        return start <= end ? trimmed[start..(end + 1)] : string.Empty;
     }
 
     /// <summary>
@@ -691,6 +903,13 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         /// <summary>Numbered list formatting.</summary>
         NumberedList,
     }
+
+    /// <summary>
+    /// Represents a misspelled word and candidate suggestions.
+    /// </summary>
+    /// <param name="Word">Misspelled word text.</param>
+    /// <param name="Suggestions">Suggested replacements.</param>
+    protected record SpellCheckIssue(string Word, IReadOnlyList<string> Suggestions);
 
     private record TextSelection(int Start, int End, string SelectedText);
 }

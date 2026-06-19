@@ -3,6 +3,8 @@
 namespace BecauseImClever.Client.Tests.Components;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BecauseImClever.Application;
@@ -196,8 +198,86 @@ public class MarkdownEditorBaseTests : BunitContext
             invocation.Identifier == "markdownEditor.unregisterImageHandlers");
     }
 
+    /// <summary>
+    /// Verifies markdown-aware tokenization ignores code, links, images, and URLs.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_CustomSpellCheck_UsesMarkdownAwareTokenization()
+    {
+        // Arrange
+        var spellCheckService = new RecordingSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh prose\n```\nblok\n```\ninline `snippit` [label](https://example.com/path) ![alt](image.png) http://example.org"));
+
+        // Act
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+        cut.WaitForAssertion(() => Assert.NotEmpty(spellCheckService.LastWords));
+
+        // Assert
+        Assert.Contains(spellCheckService.LastWords, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(spellCheckService.LastWords, word => string.Equals(word, "prose", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "blok", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "snippit", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "example", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "path", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "image", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Verifies applying a suggestion updates editor content and callback.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_ApplySuggestion_UpdatesValue()
+    {
+        // Arrange
+        string? updated = null;
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh quick fox and teh owl")
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, value => updated = value)));
+
+        // Act
+        await cut.Instance.InvokeApplySuggestionAsync("teh", "the");
+
+        // Assert
+        Assert.Equal("the quick fox and the owl", cut.Instance.Value);
+        Assert.Equal("the quick fox and the owl", updated);
+    }
+
+    /// <summary>
+    /// Verifies ignored words are suppressed for the current session.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_IgnoreWordForSession_SuppressesMisspelling()
+    {
+        // Arrange
+        var spellCheckService = new RecordingSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh and teh"));
+
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+        cut.WaitForAssertion(() =>
+            Assert.Contains(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+
+        // Act
+        await cut.Instance.InvokeIgnoreWordForSessionAsync("teh");
+        await cut.Instance.InvokeOnValueChangedAsync(new ChangeEventArgs { Value = "teh and still teh" });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+    }
+
     private sealed class TestMarkdownEditor : MarkdownEditorBase
     {
+        public IReadOnlyList<string> MisspelledWordsPublic => this.MisspelledWords;
+
         public bool IsDraggingFilePublic => this.IsDraggingFile;
 
         public bool IsPreviewOnlyPublic => this.IsPreviewOnly;
@@ -214,6 +294,21 @@ public class MarkdownEditorBaseTests : BunitContext
         public Task InvokeTogglePreviewAsync()
         {
             return this.TogglePreview();
+        }
+
+        public Task InvokeToggleCustomSpellCheckAsync()
+        {
+            return this.ToggleCustomSpellCheck();
+        }
+
+        public Task InvokeApplySuggestionAsync(string word, string suggestion)
+        {
+            return this.ApplySuggestionAsync(word, suggestion);
+        }
+
+        public Task InvokeIgnoreWordForSessionAsync(string word)
+        {
+            return this.IgnoreWordForSessionAsync(word);
         }
 
         public Task InvokeHandleKeyDownAsync(KeyboardEventArgs e)
@@ -247,6 +342,29 @@ public class MarkdownEditorBaseTests : BunitContext
         {
             var results = words
                 .Select(word => new SpellCheckResult(word, true, Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
+    }
+
+    private sealed class RecordingSpellCheckService : IClientSpellCheckService
+    {
+        public IReadOnlyList<string> LastWords { get; private set; } = Array.Empty<string>();
+
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            this.LastWords = words.ToArray();
+            var results = words
+                .Select(word =>
+                {
+                    if (string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new SpellCheckResult(word, false, ["the"]);
+                    }
+
+                    return new SpellCheckResult(word, true, Array.Empty<string>());
+                })
                 .ToArray();
 
             return Task.FromResult(new SpellCheckResponse(results));
