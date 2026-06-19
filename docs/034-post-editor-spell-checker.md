@@ -7,8 +7,9 @@
 - v1 API endpoint for spell checking
 - client service integration in markdown editor
 - baseline tests/build verification
-- markdown-aware tokenization implementation underway
-- inline suggestion UX in editor underway
+- markdown-aware tokenization implementation completed
+- inline suggestion UX in editor completed
+- persistent ignore preferences via LocalStorage in progress
 
 ## Feature Description
 

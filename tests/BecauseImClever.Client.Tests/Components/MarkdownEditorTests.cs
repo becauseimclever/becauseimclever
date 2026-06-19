@@ -24,6 +24,7 @@ public class MarkdownEditorTests : BunitContext
         var imageService = new ClientPostImageService(mockHttpClient);
         this.Services.AddSingleton(imageService);
         this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
+        this.Services.AddSingleton<ISpellCheckPreferencesStore>(new InMemorySpellCheckPreferencesStore());
     }
 
     /// <summary>
@@ -795,6 +796,29 @@ public class MarkdownEditorTests : BunitContext
                 .ToArray();
 
             return Task.FromResult(new SpellCheckResponse(results));
+        }
+    }
+
+    private sealed class InMemorySpellCheckPreferencesStore : ISpellCheckPreferencesStore
+    {
+        public Task<bool> GetCustomSpellCheckEnabledAsync()
+        {
+            return Task.FromResult(false);
+        }
+
+        public Task<IReadOnlyList<string>> GetIgnoredWordsAsync()
+        {
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        }
+
+        public Task SetCustomSpellCheckEnabledAsync(bool enabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task SetIgnoredWordsAsync(IEnumerable<string> words)
+        {
+            return Task.CompletedTask;
         }
     }
 }

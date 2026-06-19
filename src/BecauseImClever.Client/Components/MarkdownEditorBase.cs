@@ -35,6 +35,9 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     [Inject]
     private IClientSpellCheckService SpellCheckService { get; set; } = default!;
 
+    [Inject]
+    private ISpellCheckPreferencesStore SpellCheckPreferencesStore { get; set; } = default!;
+
     /// <summary>
     /// Gets or sets the markdown content value.
     /// </summary>
@@ -149,6 +152,17 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         catch
         {
             return "<p class=\"preview-error\">Error rendering preview</p>";
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        await this.LoadSpellCheckPreferencesAsync();
+
+        if (this.IsCustomSpellCheckEnabled)
+        {
+            this.ScheduleSpellCheck(immediate: true);
         }
     }
 
@@ -298,9 +312,17 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     /// Toggles custom spell check mode.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
-    protected Task ToggleCustomSpellCheck()
+    protected async Task ToggleCustomSpellCheck()
     {
         this.IsCustomSpellCheckEnabled = !this.IsCustomSpellCheckEnabled;
+        try
+        {
+            await this.SpellCheckPreferencesStore.SetCustomSpellCheckEnabledAsync(this.IsCustomSpellCheckEnabled);
+        }
+        catch
+        {
+            // Keep toggling resilient when persistence is unavailable.
+        }
 
         if (this.IsCustomSpellCheckEnabled)
         {
@@ -314,8 +336,6 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             this.MisspelledWords = Array.Empty<string>();
             this.MisspelledIssues = Array.Empty<SpellCheckIssue>();
         }
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -688,7 +708,7 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     }
 
     /// <summary>
-    /// Ignores a misspelled word for the current editor session.
+    /// Ignores a misspelled word for the current editor session and persists it.
     /// </summary>
     /// <param name="word">The word to ignore.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -707,7 +727,37 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
             .Select(issue => issue.Word)
             .ToArray();
 
+        try
+        {
+            await this.SpellCheckPreferencesStore.SetIgnoredWordsAsync(this.ignoredWords);
+        }
+        catch
+        {
+            // Keep editing resilient when persistence is unavailable.
+        }
+
         await this.InvokeAsync(this.StateHasChanged);
+    }
+
+    private async Task LoadSpellCheckPreferencesAsync()
+    {
+        try
+        {
+            var enabled = await this.SpellCheckPreferencesStore.GetCustomSpellCheckEnabledAsync();
+            var ignoredWords = await this.SpellCheckPreferencesStore.GetIgnoredWordsAsync();
+
+            this.IsCustomSpellCheckEnabled = enabled;
+            this.ignoredWords.Clear();
+            foreach (var word in ignoredWords)
+            {
+                this.ignoredWords.Add(word);
+            }
+        }
+        catch
+        {
+            this.IsCustomSpellCheckEnabled = false;
+            this.ignoredWords.Clear();
+        }
     }
 
     private static IReadOnlyList<string> ExtractWords(string content)

@@ -731,6 +731,7 @@ public class PostEditorTests : BunitContext
         var imageService = new ClientPostImageService(httpClient);
         this.Services.AddSingleton(imageService);
         this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
+        this.Services.AddSingleton<ISpellCheckPreferencesStore>(new InMemorySpellCheckPreferencesStore());
 
         // Setup authorization - mock the policy authorization
         this.Services.AddAuthorizationCore(options =>
@@ -763,6 +764,34 @@ public class PostEditorTests : BunitContext
                 .ToArray();
 
             return Task.FromResult(new SpellCheckResponse(results));
+        }
+    }
+
+    private sealed class InMemorySpellCheckPreferencesStore : ISpellCheckPreferencesStore
+    {
+        private bool enabled = true;
+        private List<string> ignoredWords = new();
+
+        public Task<bool> GetCustomSpellCheckEnabledAsync()
+        {
+            return Task.FromResult(this.enabled);
+        }
+
+        public Task SetCustomSpellCheckEnabledAsync(bool enabled)
+        {
+            this.enabled = enabled;
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<string>> GetIgnoredWordsAsync()
+        {
+            return Task.FromResult((IReadOnlyList<string>)this.ignoredWords);
+        }
+
+        public Task SetIgnoredWordsAsync(IEnumerable<string> words)
+        {
+            this.ignoredWords = words.ToList();
+            return Task.CompletedTask;
         }
     }
 }
