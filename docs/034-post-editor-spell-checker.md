@@ -1,6 +1,17 @@
 # 034 - Post Editor Spell Checker
 
-## Status: 📋 Planned
+## Status: 🚧 In Progress
+
+## Progress
+
+- v1 API endpoint for spell checking
+- client service integration in markdown editor
+- baseline tests/build verification
+- markdown-aware tokenization implementation completed
+- inline suggestion UX in editor completed
+- persistent ignore preferences via LocalStorage in progress
+- shared custom dictionary integration ("Add to Dictionary") in progress
+- Hunspell-backed infrastructure migration in progress
 
 ## Feature Description
 
@@ -204,6 +215,8 @@ Add spell check toggle to MarkdownEditor toolbar:
 5. Include en-US dictionary files
 
 ### Phase 2: Client-Side Integration
+Phase 2 is now active.
+
 1. Create `ClientSpellCheckService` with debouncing and caching
 2. Create `SpellCheckOverlay` component
 3. Create `SpellSuggestionPopup` component

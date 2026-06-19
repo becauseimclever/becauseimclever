@@ -1,11 +1,11 @@
 namespace BecauseImClever.Client.Tests.Components;
 
+using BecauseImClever.Application;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 
 /// <summary>
 /// Unit tests for the <see cref="MarkdownEditor"/> component.
@@ -23,6 +23,8 @@ public class MarkdownEditorTests : BunitContext
         var mockHttpClient = new HttpClient();
         var imageService = new ClientPostImageService(mockHttpClient);
         this.Services.AddSingleton(imageService);
+        this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
+        this.Services.AddSingleton<ISpellCheckPreferencesStore>(new InMemorySpellCheckPreferencesStore());
     }
 
     /// <summary>
@@ -64,7 +66,22 @@ public class MarkdownEditorTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll(".toolbar-btn");
-        Assert.True(buttons.Count >= 12, $"Expected at least 12 toolbar buttons, found {buttons.Count}");
+        Assert.True(buttons.Count >= 13, $"Expected at least 13 toolbar buttons, found {buttons.Count}");
+    }
+
+    /// <summary>
+    /// Verifies that custom spell-check toggle button is present with an accessible name.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_CustomSpellCheckToggleButton_IsPresentWithAccessibleName()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var button = cut.Find("button[title='Toggle custom spell check']");
+        Assert.NotNull(button);
+        Assert.Equal("Toggle custom spell check", button.GetAttribute("aria-label"));
     }
 
     /// <summary>
@@ -497,6 +514,38 @@ public class MarkdownEditorTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies that enabling custom spell check disables browser spellcheck.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WhenCustomSpellCheckEnabled_DisablesNativeSpellcheck()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>();
+
+        // Act
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Assert
+        var textarea = cut.Find(".editor-textarea");
+        Assert.Equal("false", textarea.GetAttribute("spellcheck"));
+    }
+
+    /// <summary>
+    /// Verifies that spell-check status text communicates state using words, not only color.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_SpellCheckStatusText_IsVisibleAndDescriptive()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var status = cut.Find(".spellcheck-status");
+        Assert.Contains("Custom spell check is off", status.TextContent);
+    }
+
+    /// <summary>
     /// Verifies that the preview content has markdown-body class.
     /// </summary>
     [Fact]
@@ -680,5 +729,221 @@ public class MarkdownEditorTests : BunitContext
 
         // Assert - No exception should be thrown
         Assert.True(true);
+    }
+
+    /// <summary>
+    /// Verifies that the inline suggestion panel renders accessible actions.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WhenSpellCheckEnabled_ShowsSuggestionAndIgnoreButtons()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        // Act
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            var section = cut.Find("section[aria-label='Custom spell check suggestions']");
+            Assert.NotNull(section);
+
+            var suggestion = cut.Find("button[aria-label='Replace teh with the']");
+            Assert.NotNull(suggestion);
+
+            var ignore = cut.Find("button[aria-label='Ignore teh for this editing session']");
+            Assert.NotNull(ignore);
+
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            Assert.NotNull(addToDictionary);
+        });
+    }
+
+    /// <summary>
+    /// Verifies that ignoring a word removes it from the current panel session.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_IgnoreAction_RemovesIssueFromPanel()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act
+        cut.WaitForAssertion(() =>
+        {
+            var ignore = cut.Find("button[aria-label='Ignore teh for this editing session']");
+            ignore.Click();
+        });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("Ignore teh for this editing session", cut.Markup, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Verifies that adding a word to dictionary removes it from current issues.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_AddToDictionaryAction_RemovesIssueFromPanel()
+    {
+        // Arrange
+        var spellCheckService = new FakeSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act
+        cut.WaitForAssertion(() =>
+        {
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            addToDictionary.Click();
+        });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("Add teh to dictionary", cut.Markup, StringComparison.Ordinal));
+
+        Assert.Equal(1, spellCheckService.AddToDictionaryCallCount);
+        Assert.Equal("teh", spellCheckService.LastAddedWord);
+    }
+
+    /// <summary>
+    /// Verifies duplicate dictionary add response does not break editor interaction.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_AddToDictionaryAction_DuplicateResponse_DoesNotCrash()
+    {
+        // Arrange
+        var duplicateService = new FakeSpellCheckService
+        {
+            AddResponse = new AddToDictionaryResponse("teh", false, "Word already exists in dictionary."),
+        };
+
+        this.Services.AddSingleton<IClientSpellCheckService>(duplicateService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act + Assert
+        cut.WaitForAssertion(() =>
+        {
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            addToDictionary.Click();
+        });
+
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("Add teh to dictionary", cut.Markup, StringComparison.Ordinal));
+
+        Assert.Equal(1, duplicateService.AddToDictionaryCallCount);
+        Assert.Equal("teh", duplicateService.LastAddedWord);
+    }
+
+    /// <summary>
+    /// Verifies non-duplicate dictionary failure response keeps issue visible.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_AddToDictionaryAction_NonDuplicateFailure_KeepsIssueVisible()
+    {
+        // Arrange
+        var failingService = new FakeSpellCheckService
+        {
+            AddResponse = new AddToDictionaryResponse("teh", false, "Validation failed."),
+        };
+
+        this.Services.AddSingleton<IClientSpellCheckService>(failingService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act
+        cut.WaitForAssertion(() =>
+        {
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            addToDictionary.Click();
+        });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.Contains("Add teh to dictionary", cut.Markup, StringComparison.Ordinal));
+
+        Assert.Equal(1, failingService.AddToDictionaryCallCount);
+        Assert.Equal("teh", failingService.LastAddedWord);
+    }
+
+    private sealed class FakeSpellCheckService : IClientSpellCheckService
+    {
+        private readonly HashSet<string> dictionaryWords = new(StringComparer.OrdinalIgnoreCase);
+
+        public AddToDictionaryResponse AddResponse { get; set; } = new("teh", true, "Added to dictionary.");
+
+        public int AddToDictionaryCallCount { get; private set; }
+
+        public string? LastAddedWord { get; private set; }
+
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            var results = words
+                .Select(word => new SpellCheckResult(
+                    word,
+                    this.dictionaryWords.Contains(word) || !string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase),
+                    string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase) ? ["the"] : Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            this.AddToDictionaryCallCount++;
+            this.LastAddedWord = word;
+
+            var response = this.AddResponse with { Word = word };
+            if (response.Added || response.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+            {
+                this.dictionaryWords.Add(word);
+            }
+
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class InMemorySpellCheckPreferencesStore : ISpellCheckPreferencesStore
+    {
+        public Task<bool> GetCustomSpellCheckEnabledAsync()
+        {
+            return Task.FromResult(false);
+        }
+
+        public Task<IReadOnlyList<string>> GetIgnoredWordsAsync()
+        {
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        }
+
+        public Task SetCustomSpellCheckEnabledAsync(bool enabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task SetIgnoredWordsAsync(IEnumerable<string> words)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

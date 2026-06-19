@@ -41,6 +41,8 @@ else
         new FileBlogService(Path.Combine(builder.Environment.ContentRootPath, "Posts")));
 }
 
+builder.Services.AddScoped<ISpellCheckService, InProcessSpellCheckService>();
+
 builder.Services.AddHttpClient<IProjectService, GitHubProjectService>();
 
 // Configure email settings

@@ -3,8 +3,11 @@
 namespace BecauseImClever.Client.Tests.Components;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using BecauseImClever.Application;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
 using Bunit;
@@ -20,6 +23,8 @@ using Xunit;
 /// </summary>
 public class MarkdownEditorBaseTests : BunitContext
 {
+    private readonly RecordingSpellCheckPreferencesStore spellCheckPreferencesStore;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MarkdownEditorBaseTests"/> class.
     /// </summary>
@@ -32,6 +37,9 @@ public class MarkdownEditorBaseTests : BunitContext
             BaseAddress = new Uri("https://localhost/"),
         };
         this.Services.AddSingleton(new ClientPostImageService(httpClient));
+        this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
+        this.spellCheckPreferencesStore = new RecordingSpellCheckPreferencesStore();
+        this.Services.AddSingleton<ISpellCheckPreferencesStore>(this.spellCheckPreferencesStore);
     }
 
     /// <summary>
@@ -194,8 +202,208 @@ public class MarkdownEditorBaseTests : BunitContext
             invocation.Identifier == "markdownEditor.unregisterImageHandlers");
     }
 
+    /// <summary>
+    /// Verifies markdown-aware tokenization ignores code, links, images, and URLs.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_CustomSpellCheck_UsesMarkdownAwareTokenization()
+    {
+        // Arrange
+        var spellCheckService = new RecordingSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh prose\n```\nblok\n```\ninline `snippit` [label](https://example.com/path) ![alt](image.png) http://example.org"));
+
+        // Act
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+        cut.WaitForAssertion(() => Assert.NotEmpty(spellCheckService.LastWords));
+
+        // Assert
+        Assert.Contains(spellCheckService.LastWords, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(spellCheckService.LastWords, word => string.Equals(word, "prose", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "blok", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "snippit", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "example", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "path", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(spellCheckService.LastWords, word => string.Equals(word, "image", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Verifies applying a suggestion updates editor content and callback.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_ApplySuggestion_UpdatesValue()
+    {
+        // Arrange
+        string? updated = null;
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh quick fox and teh owl")
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, value => updated = value)));
+
+        // Act
+        await cut.Instance.InvokeApplySuggestionAsync("teh", "the");
+
+        // Assert
+        Assert.Equal("the quick fox and the owl", cut.Instance.Value);
+        Assert.Equal("the quick fox and the owl", updated);
+    }
+
+    /// <summary>
+    /// Verifies ignored words are suppressed for the current session.
+    /// </summary>
+    /// <returns>A task representing the async operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_IgnoreWordForSession_SuppressesMisspelling()
+    {
+        // Arrange
+        var spellCheckService = new RecordingSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh and teh"));
+
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+        cut.WaitForAssertion(() =>
+            Assert.Contains(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+
+        // Act
+        await cut.Instance.InvokeIgnoreWordForSessionAsync("teh");
+        await cut.Instance.InvokeOnValueChangedAsync(new ChangeEventArgs { Value = "teh and still teh" });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// Verifies adding a word to dictionary removes it from active misspellings.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_AddWordToDictionary_RemovesIssueAndRechecks()
+    {
+        // Arrange
+        var spellCheckService = new RecordingSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh and teh"));
+
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+        cut.WaitForAssertion(() =>
+            Assert.Contains(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+
+        // Act
+        await cut.Instance.InvokeAddWordToDictionaryAsync("teh");
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// Verifies custom spell-check preference is loaded during initialization.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditorBase_OnInitialized_LoadsPersistedCustomSpellCheckPreference()
+    {
+        // Arrange
+        this.spellCheckPreferencesStore.Enabled = true;
+
+        // Act
+        var cut = this.Render<TestMarkdownEditor>();
+
+        // Assert
+        Assert.True(cut.Instance.IsCustomSpellCheckEnabledPublic);
+    }
+
+    /// <summary>
+    /// Verifies ignored words are loaded during initialization and suppress existing issues.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_OnInitialized_LoadsPersistedIgnoredWords()
+    {
+        // Arrange
+        this.spellCheckPreferencesStore.Enabled = true;
+        this.spellCheckPreferencesStore.IgnoredWords = new[] { "teh" };
+
+        // Act
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh and still teh"));
+
+        // Assert
+        cut.WaitForAssertion(() => Assert.Empty(cut.Instance.MisspelledWordsPublic));
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Verifies toggling custom spell-check persists the enabled state.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_ToggleCustomSpellCheck_PersistsEnabledState()
+    {
+        // Arrange
+        var cut = this.Render<TestMarkdownEditor>();
+
+        // Act
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+
+        // Assert
+        Assert.Single(this.spellCheckPreferencesStore.SavedEnabledValues);
+        Assert.True(this.spellCheckPreferencesStore.SavedEnabledValues[0]);
+    }
+
+    /// <summary>
+    /// Verifies ignoring a word persists the ignored list.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_IgnoreWordForSession_PersistsIgnoredWords()
+    {
+        // Arrange
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh and teh"));
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+
+        // Act
+        await cut.Instance.InvokeIgnoreWordForSessionAsync("teh");
+
+        // Assert
+        Assert.NotEmpty(this.spellCheckPreferencesStore.SavedIgnoredWordsSnapshots);
+        var lastSnapshot = this.spellCheckPreferencesStore.SavedIgnoredWordsSnapshots[^1];
+        Assert.Contains(lastSnapshot, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Verifies toggle remains functional if preference persistence throws.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_ToggleCustomSpellCheck_WhenPersistenceThrows_DoesNotThrow()
+    {
+        // Arrange
+        this.spellCheckPreferencesStore.ThrowOnSetEnabled = true;
+        var cut = this.Render<TestMarkdownEditor>();
+
+        // Act
+        var exception = await Record.ExceptionAsync(cut.Instance.InvokeToggleCustomSpellCheckAsync);
+
+        // Assert
+        Assert.Null(exception);
+        Assert.True(cut.Instance.IsCustomSpellCheckEnabledPublic);
+    }
+
     private sealed class TestMarkdownEditor : MarkdownEditorBase
     {
+        public IReadOnlyList<string> MisspelledWordsPublic => this.MisspelledWords;
+
+        public bool IsCustomSpellCheckEnabledPublic => this.IsCustomSpellCheckEnabled;
+
         public bool IsDraggingFilePublic => this.IsDraggingFile;
 
         public bool IsPreviewOnlyPublic => this.IsPreviewOnly;
@@ -212,6 +420,26 @@ public class MarkdownEditorBaseTests : BunitContext
         public Task InvokeTogglePreviewAsync()
         {
             return this.TogglePreview();
+        }
+
+        public Task InvokeToggleCustomSpellCheckAsync()
+        {
+            return this.ToggleCustomSpellCheck();
+        }
+
+        public Task InvokeApplySuggestionAsync(string word, string suggestion)
+        {
+            return this.ApplySuggestionAsync(word, suggestion);
+        }
+
+        public Task InvokeIgnoreWordForSessionAsync(string word)
+        {
+            return this.IgnoreWordForSessionAsync(word);
+        }
+
+        public Task InvokeAddWordToDictionaryAsync(string word)
+        {
+            return this.AddWordToDictionaryAsync(word);
         }
 
         public Task InvokeHandleKeyDownAsync(KeyboardEventArgs e)
@@ -236,6 +464,122 @@ public class MarkdownEditorBaseTests : BunitContext
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
+        }
+    }
+
+    private sealed class FakeSpellCheckService : IClientSpellCheckService
+    {
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            var results = words
+                .Select(word => new SpellCheckResult(word, true, Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            return Task.FromResult(new AddToDictionaryResponse(word, true, "Added to dictionary."));
+        }
+    }
+
+    private sealed class RecordingSpellCheckService : IClientSpellCheckService
+    {
+        private readonly HashSet<string> dictionaryWords = new(StringComparer.OrdinalIgnoreCase);
+
+        public IReadOnlyList<string> LastWords { get; private set; } = Array.Empty<string>();
+
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            this.LastWords = words.ToArray();
+            var results = words
+                .Select(word =>
+                {
+                    if (string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (this.dictionaryWords.Contains(word))
+                        {
+                            return new SpellCheckResult(word, true, Array.Empty<string>());
+                        }
+
+                        return new SpellCheckResult(word, false, ["the"]);
+                    }
+
+                    return new SpellCheckResult(word, true, Array.Empty<string>());
+                })
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            var added = this.dictionaryWords.Add(word);
+            var message = added ? "Added to dictionary." : "Word already exists in dictionary.";
+            return Task.FromResult(new AddToDictionaryResponse(word, added, message));
+        }
+    }
+
+    private sealed class RecordingSpellCheckPreferencesStore : ISpellCheckPreferencesStore
+    {
+        public bool Enabled { get; set; }
+
+        public IReadOnlyList<string> IgnoredWords { get; set; } = Array.Empty<string>();
+
+        public bool ThrowOnGet { get; set; }
+
+        public bool ThrowOnSetEnabled { get; set; }
+
+        public bool ThrowOnSetIgnoredWords { get; set; }
+
+        public List<bool> SavedEnabledValues { get; } = new();
+
+        public List<IReadOnlyList<string>> SavedIgnoredWordsSnapshots { get; } = new();
+
+        public Task<bool> GetCustomSpellCheckEnabledAsync()
+        {
+            if (this.ThrowOnGet)
+            {
+                throw new InvalidOperationException("Preference storage unavailable");
+            }
+
+            return Task.FromResult(this.Enabled);
+        }
+
+        public Task<IReadOnlyList<string>> GetIgnoredWordsAsync()
+        {
+            if (this.ThrowOnGet)
+            {
+                throw new InvalidOperationException("Preference storage unavailable");
+            }
+
+            return Task.FromResult(this.IgnoredWords);
+        }
+
+        public Task SetCustomSpellCheckEnabledAsync(bool enabled)
+        {
+            if (this.ThrowOnSetEnabled)
+            {
+                throw new InvalidOperationException("Preference storage unavailable");
+            }
+
+            this.Enabled = enabled;
+            this.SavedEnabledValues.Add(enabled);
+            return Task.CompletedTask;
+        }
+
+        public Task SetIgnoredWordsAsync(IEnumerable<string> words)
+        {
+            if (this.ThrowOnSetIgnoredWords)
+            {
+                throw new InvalidOperationException("Preference storage unavailable");
+            }
+
+            var snapshot = words.ToArray();
+            this.IgnoredWords = snapshot;
+            this.SavedIgnoredWordsSnapshots.Add(snapshot);
+            return Task.CompletedTask;
         }
     }
 }

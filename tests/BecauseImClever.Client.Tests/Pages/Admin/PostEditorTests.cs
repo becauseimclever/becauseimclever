@@ -3,6 +3,7 @@ namespace BecauseImClever.Client.Tests.Pages.Admin;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
+using BecauseImClever.Application;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Pages.Admin;
 using BecauseImClever.Client.Services;
@@ -729,6 +730,8 @@ public class PostEditorTests : BunitContext
         // Register ClientPostImageService for MarkdownEditor
         var imageService = new ClientPostImageService(httpClient);
         this.Services.AddSingleton(imageService);
+        this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
+        this.Services.AddSingleton<ISpellCheckPreferencesStore>(new InMemorySpellCheckPreferencesStore());
 
         // Setup authorization - mock the policy authorization
         this.Services.AddAuthorizationCore(options =>
@@ -750,5 +753,50 @@ public class PostEditorTests : BunitContext
         mockAuthStateProvider.Setup(p => p.GetAuthenticationStateAsync()).Returns(authState);
 
         this.Services.AddSingleton<AuthenticationStateProvider>(mockAuthStateProvider.Object);
+    }
+
+    private sealed class FakeSpellCheckService : IClientSpellCheckService
+    {
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            var results = words
+                .Select(word => new SpellCheckResult(word, true, Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            return Task.FromResult(new AddToDictionaryResponse(word, true, "Added to dictionary."));
+        }
+    }
+
+    private sealed class InMemorySpellCheckPreferencesStore : ISpellCheckPreferencesStore
+    {
+        private bool enabled = true;
+        private List<string> ignoredWords = new();
+
+        public Task<bool> GetCustomSpellCheckEnabledAsync()
+        {
+            return Task.FromResult(this.enabled);
+        }
+
+        public Task SetCustomSpellCheckEnabledAsync(bool enabled)
+        {
+            this.enabled = enabled;
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<string>> GetIgnoredWordsAsync()
+        {
+            return Task.FromResult((IReadOnlyList<string>)this.ignoredWords);
+        }
+
+        public Task SetIgnoredWordsAsync(IEnumerable<string> words)
+        {
+            this.ignoredWords = words.ToList();
+            return Task.CompletedTask;
+        }
     }
 }

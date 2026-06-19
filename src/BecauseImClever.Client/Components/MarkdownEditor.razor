@@ -72,6 +72,16 @@
             </div>
             <div class="toolbar-spacer"></div>
             <div class="toolbar-group">
+                <button type="button"
+                        class="toolbar-btn @(IsCustomSpellCheckEnabled ? "active" : "")"
+                        title="Toggle custom spell check"
+                        aria-label="Toggle custom spell check"
+                        @onclick="ToggleCustomSpellCheck">
+                    ABC
+                </button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <div class="toolbar-group">
                 <button type="button" class="toolbar-btn @(IsPreviewOnly ? "active" : "")" title="Toggle Preview" @onclick="TogglePreview">
                     👁️
                 </button>
@@ -98,13 +108,68 @@
                         <span>Uploading image...</span>
                     </div>
                 }
+                <p class="spellcheck-status" aria-live="polite">@SpellCheckStatusText</p>
                 <textarea id="@TextAreaId"
                           class="editor-textarea"
                           value="@Value"
                           @oninput="OnValueChanged"
                           @onkeydown="HandleKeyDown"
                           placeholder="@Placeholder"
-                          spellcheck="true"></textarea>
+                          spellcheck="@(IsNativeSpellcheckEnabled ? "true" : "false")"></textarea>
+                @if (IsCustomSpellCheckEnabled)
+                {
+                    <section class="spellcheck-panel" aria-label="Custom spell check suggestions">
+                        <h3 class="spellcheck-panel-title">Custom spell check suggestions</h3>
+                        @if (MisspelledIssues.Count == 0)
+                        {
+                            <p class="spellcheck-panel-empty">No misspelled words to review.</p>
+                        }
+                        else
+                        {
+                            <ul class="spellcheck-issues" role="list">
+                                @foreach (var issue in MisspelledIssues)
+                                {
+                                    <li class="spellcheck-issue-item">
+                                        <p class="spellcheck-word-text">
+                                            <strong>@issue.Word</strong>
+                                            <span class="spellcheck-issue-cue">Possible spelling issue</span>
+                                        </p>
+                                        <div class="spellcheck-actions" role="group" aria-label="Suggestions for @issue.Word">
+                                            @if (issue.Suggestions.Count == 0)
+                                            {
+                                                <span class="spellcheck-no-suggestions">No suggestions</span>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var suggestion in issue.Suggestions)
+                                                {
+                                                    <button type="button"
+                                                            class="spellcheck-action-btn"
+                                                            aria-label="Replace @issue.Word with @suggestion"
+                                                            @onclick="() => ApplySuggestionAsync(issue.Word, suggestion)">
+                                                        Use @suggestion
+                                                    </button>
+                                                }
+                                            }
+                                            <button type="button"
+                                                    class="spellcheck-action-btn spellcheck-ignore-btn"
+                                                    aria-label="Ignore @issue.Word for this editing session"
+                                                    @onclick="() => IgnoreWordForSessionAsync(issue.Word)">
+                                                Ignore for session
+                                            </button>
+                                            <button type="button"
+                                                    class="spellcheck-action-btn"
+                                                    aria-label="Add @issue.Word to dictionary"
+                                                    @onclick="() => AddWordToDictionaryAsync(issue.Word)">
+                                                Add to dictionary
+                                            </button>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </section>
+                }
             </div>
         }
 
@@ -308,8 +373,91 @@
         outline: none;
     }
 
+    .spellcheck-panel {
+        border-top: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+        background: var(--bg-secondary);
+    }
+
+    .spellcheck-panel-title {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .spellcheck-panel-empty {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .spellcheck-issues {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .spellcheck-issue-item {
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.625rem;
+        background: var(--bg-color);
+    }
+
+    .spellcheck-word-text {
+        margin: 0 0 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: baseline;
+        flex-wrap: wrap;
+    }
+
+    .spellcheck-issue-cue {
+        font-size: 0.85rem;
+    }
+
+    .spellcheck-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .spellcheck-action-btn {
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-color);
+        color: var(--text-color);
+        padding: 0.35rem 0.55rem;
+        cursor: pointer;
+    }
+
+    .spellcheck-action-btn:hover,
+    .spellcheck-action-btn:focus-visible {
+        border-color: var(--accent-color);
+        outline: 2px solid color-mix(in srgb, var(--accent-color) 35%, transparent);
+        outline-offset: 1px;
+    }
+
+    .spellcheck-ignore-btn {
+        font-style: italic;
+    }
+
+    .spellcheck-no-suggestions {
+        font-size: 0.9rem;
+    }
+
     .editor-textarea::placeholder {
         color: var(--text-muted);
+    }
+
+    .spellcheck-status {
+        margin: 0;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        font-size: 0.85rem;
     }
 
     .preview-pane {
