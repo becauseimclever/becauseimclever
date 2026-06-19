@@ -1,9 +1,9 @@
 ---
 name: "ASP.NET Web API Specialist"
 description: "Use for ASP.NET Core Web API controllers, middleware, filters, request/response contracts, routing, authentication, authorization, background services, hosted services, DI registration, and server-side configuration. Does not handle database access, EF migrations, or Blazor UI."
-tools: [read, edit, search, execute, todo]
+tools: [read, edit, search, execute, agent, todo]
 argument-hint: "Describe the Web API, middleware, or server-side service task"
-user-invocable: true
+user-invocable: false
 ---
 
 You are a specialist for ASP.NET Core Web API and server-side service work in the `BecauseImClever.Server` and `BecauseImClever.Application` layers.

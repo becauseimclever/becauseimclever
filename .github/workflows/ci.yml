@@ -54,6 +54,8 @@ jobs:
         with:
           reports: ./TestResults/**/coverage.cobertura.xml
           targetdir: ./CoverageReport
+          assemblyfilters: +BecauseImClever.Application;+BecauseImClever.Domain;+BecauseImClever.Infrastructure;+BecauseImClever.Server
+          filefilters: -*.g.cs;-*/Program.cs
           classfilters: -BecauseImClever.Client.*;-Microsoft.*;-System.*
           reporttypes: Cobertura;MarkdownSummaryGithub
 

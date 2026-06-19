@@ -62,7 +62,7 @@ Write-Host ""
 Write-Host "Running tests with code coverage..." -ForegroundColor Green
 Push-Location $SolutionRoot
 try {
-    dotnet test --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+    dotnet test --filter "FullyQualifiedName!~E2E&Category!=ExternalDependency&Category!=Performance" --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Tests failed! See output above for details." -ForegroundColor Red
