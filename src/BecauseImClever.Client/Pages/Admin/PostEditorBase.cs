@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
 /// <summary>
@@ -80,6 +81,34 @@ public class PostEditorBase : ComponentBase, IDisposable
     /// Gets or sets the error message to display.
     /// </summary>
     protected string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Clears the current error message.
+    /// </summary>
+    protected void ClearErrorMessage()
+    {
+        this.ErrorMessage = null;
+    }
+
+    /// <summary>
+    /// Gets the add-tag handler for a suggested tag.
+    /// </summary>
+    /// <param name="tag">The tag to add.</param>
+    /// <returns>The event callback for the tag suggestion button.</returns>
+    protected EventCallback<MouseEventArgs> GetAddTagHandler(string tag)
+    {
+        return EventCallback.Factory.Create<MouseEventArgs>(this, _ => this.AddTag(tag));
+    }
+
+    /// <summary>
+    /// Gets the remove-tag handler for an existing tag.
+    /// </summary>
+    /// <param name="tag">The tag to remove.</param>
+    /// <returns>The event callback for the remove button.</returns>
+    protected EventCallback<MouseEventArgs> GetRemoveTagHandler(string tag)
+    {
+        return EventCallback.Factory.Create<MouseEventArgs>(this, _ => this.RemoveTag(tag));
+    }
 
     /// <summary>
     /// Gets or sets the slug validation message.

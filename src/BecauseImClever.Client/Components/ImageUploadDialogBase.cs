@@ -134,6 +134,26 @@ public class ImageUploadDialogBase : ComponentBase
     }
 
     /// <summary>
+    /// Gets the insert handler for an image from the gallery.
+    /// </summary>
+    /// <param name="image">The image to insert.</param>
+    /// <returns>The event callback for the insert button.</returns>
+    protected EventCallback<MouseEventArgs> GetInsertExistingImageHandler(ImageSummary image)
+    {
+        return EventCallback.Factory.Create<MouseEventArgs>(this, _ => this.InsertExistingImage(image));
+    }
+
+    /// <summary>
+    /// Gets the delete handler for an image from the gallery.
+    /// </summary>
+    /// <param name="image">The image to delete.</param>
+    /// <returns>The event callback for the delete button.</returns>
+    protected EventCallback<MouseEventArgs> GetDeleteImageHandler(ImageSummary image)
+    {
+        return EventCallback.Factory.Create<MouseEventArgs>(this, _ => this.DeleteImage(image));
+    }
+
+    /// <summary>
     /// Handles the drop event on the upload area.
     /// </summary>
     /// <param name="e">The drag event args.</param>

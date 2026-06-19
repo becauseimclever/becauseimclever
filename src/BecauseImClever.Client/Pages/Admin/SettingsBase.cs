@@ -36,6 +36,14 @@ public class SettingsBase : ComponentBase
     protected string? ErrorMessage { get; set; }
 
     /// <summary>
+    /// Clears the settings error message.
+    /// </summary>
+    protected void ClearErrorMessage()
+    {
+        this.ErrorMessage = null;
+    }
+
+    /// <summary>
     /// Gets or sets a value indicating whether the confirm dialog is shown.
     /// </summary>
     protected bool ShowConfirmDialog { get; set; }

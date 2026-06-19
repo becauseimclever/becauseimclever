@@ -19,7 +19,7 @@ jobs:
       checks: write
       pull-requests: write
     env:
-      COVERAGE_THRESHOLD: '55 50'
+      COVERAGE_THRESHOLD: '95 85'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -54,7 +54,9 @@ jobs:
         with:
           reports: ./TestResults/**/coverage.cobertura.xml
           targetdir: ./CoverageReport
-          classfilters: -Microsoft.*;-System.*
+          assemblyfilters: +BecauseImClever.Application;+BecauseImClever.Domain;+BecauseImClever.Infrastructure;+BecauseImClever.Server
+          filefilters: -*.g.cs;-*/Program.cs
+          classfilters: -BecauseImClever.Client.*;-Microsoft.*;-System.*
           reporttypes: Cobertura;MarkdownSummaryGithub
 
       - if: always()

@@ -45,7 +45,7 @@
     {
         <div class="alert alert-error">
             <span>@ErrorMessage</span>
-            <button class="alert-close" @onclick="() => ErrorMessage = null">&times;</button>
+            <button class="alert-close" @onclick="ClearErrorMessage">&times;</button>
         </div>
     }
 
@@ -194,7 +194,7 @@
                                 <div class="tag-suggestions">
                                     @foreach (var tag in FilteredTags)
                                     {
-                                        <button type="button" class="tag-suggestion" @onmousedown="() => AddTag(tag)" @onmousedown:preventDefault>
+                                            <button type="button" class="tag-suggestion" @onmousedown="GetAddTagHandler(tag)" @onmousedown:preventDefault>
                                             @tag
                                         </button>
                                     }
@@ -206,7 +206,7 @@
                             {
                                 <span class="tag">
                                     @tag
-                                    <button type="button" class="tag-remove" @onclick="() => RemoveTag(tag)">&times;</button>
+                                    <button type="button" class="tag-remove" @onclick="GetRemoveTagHandler(tag)">&times;</button>
                                 </span>
                             }
                         </div>
@@ -949,4 +949,4 @@
         }
     }
 </style>
-
+
