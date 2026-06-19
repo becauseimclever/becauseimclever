@@ -54,4 +54,33 @@ public class SpellCheckController : ControllerBase
         var response = await this.spellCheckService.CheckAsync(normalizedRequest);
         return this.Ok(response);
     }
+
+    /// <summary>
+    /// Adds a custom word to the dictionary used by spell-check.
+    /// </summary>
+    /// <param name="request">The add-to-dictionary request.</param>
+    /// <returns>The outcome of the add operation.</returns>
+    [HttpPost("dictionary")]
+    [ProducesResponseType(typeof(AddToDictionaryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AddToDictionaryResponse>> AddToDictionary([FromBody] AddToDictionaryRequest request)
+    {
+        if (request is null)
+        {
+            return this.BadRequest("Request payload is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Word))
+        {
+            return this.BadRequest("Word is required.");
+        }
+
+        var normalizedRequest = request with
+        {
+            Language = string.IsNullOrWhiteSpace(request.Language) ? "en-US" : request.Language,
+        };
+
+        var response = await this.spellCheckService.AddToDictionaryAsync(normalizedRequest);
+        return this.Ok(response);
+    }
 }

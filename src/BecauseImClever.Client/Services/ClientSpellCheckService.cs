@@ -1,6 +1,7 @@
 namespace BecauseImClever.Client.Services;
 
 using System.Net.Http.Json;
+using System.Text.Json;
 using BecauseImClever.Application;
 
 /// <summary>
@@ -8,6 +9,8 @@ using BecauseImClever.Application;
 /// </summary>
 public class ClientSpellCheckService : IClientSpellCheckService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly HttpClient httpClient;
 
     /// <summary>
@@ -41,6 +44,40 @@ public class ClientSpellCheckService : IClientSpellCheckService
         catch (System.Text.Json.JsonException)
         {
             return new SpellCheckResponse(Array.Empty<SpellCheckResult>());
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+    {
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(word));
+        }
+
+        var request = new AddToDictionaryRequest(word, language);
+        var response = await this.httpClient.PostAsJsonAsync("api/v1/spell-check/dictionary", request);
+        response.EnsureSuccessStatusCode();
+
+        if (response.Content is null)
+        {
+            return new AddToDictionaryResponse(word, Added: false, "Dictionary add response was empty.");
+        }
+
+        try
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(responseContent))
+            {
+                return new AddToDictionaryResponse(word, Added: false, "Dictionary add response was empty.");
+            }
+
+            return JsonSerializer.Deserialize<AddToDictionaryResponse>(responseContent, JsonOptions)
+                ?? new AddToDictionaryResponse(word, Added: false, "Dictionary add response was empty.");
+        }
+        catch (JsonException)
+        {
+            return new AddToDictionaryResponse(word, Added: false, "Dictionary add response was invalid.");
         }
     }
 }

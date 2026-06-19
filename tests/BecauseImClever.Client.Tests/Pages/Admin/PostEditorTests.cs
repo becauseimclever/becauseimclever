@@ -765,6 +765,11 @@ public class PostEditorTests : BunitContext
 
             return Task.FromResult(new SpellCheckResponse(results));
         }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            return Task.FromResult(new AddToDictionaryResponse(word, true, "Added to dictionary."));
+        }
     }
 
     private sealed class InMemorySpellCheckPreferencesStore : ISpellCheckPreferencesStore

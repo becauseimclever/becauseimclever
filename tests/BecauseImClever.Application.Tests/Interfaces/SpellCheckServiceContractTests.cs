@@ -27,4 +27,22 @@ public class SpellCheckServiceContractTests
         Assert.Single(parameters);
         Assert.Equal(typeof(SpellCheckRequest), parameters[0].ParameterType);
     }
+
+    /// <summary>
+    /// Verifies that AddToDictionaryAsync is declared with the expected signature.
+    /// </summary>
+    [Fact]
+    public void Interface_DeclaresAddToDictionaryAsync_WithCorrectSignature()
+    {
+        // Arrange
+        var method = typeof(ISpellCheckService).GetMethod(nameof(ISpellCheckService.AddToDictionaryAsync));
+
+        // Assert
+        Assert.NotNull(method);
+        Assert.Equal(typeof(Task<AddToDictionaryResponse>), method!.ReturnType);
+
+        var parameters = method.GetParameters();
+        Assert.Single(parameters);
+        Assert.Equal(typeof(AddToDictionaryRequest), parameters[0].ParameterType);
+    }
 }

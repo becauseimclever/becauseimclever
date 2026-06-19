@@ -756,6 +756,9 @@ public class MarkdownEditorTests : BunitContext
 
             var ignore = cut.Find("button[aria-label='Ignore teh for this editing session']");
             Assert.NotNull(ignore);
+
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            Assert.NotNull(addToDictionary);
         });
     }
 
@@ -784,18 +787,140 @@ public class MarkdownEditorTests : BunitContext
             Assert.DoesNotContain("Ignore teh for this editing session", cut.Markup, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Verifies that adding a word to dictionary removes it from current issues.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_AddToDictionaryAction_RemovesIssueFromPanel()
+    {
+        // Arrange
+        var spellCheckService = new FakeSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act
+        cut.WaitForAssertion(() =>
+        {
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            addToDictionary.Click();
+        });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("Add teh to dictionary", cut.Markup, StringComparison.Ordinal));
+
+        Assert.Equal(1, spellCheckService.AddToDictionaryCallCount);
+        Assert.Equal("teh", spellCheckService.LastAddedWord);
+    }
+
+    /// <summary>
+    /// Verifies duplicate dictionary add response does not break editor interaction.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_AddToDictionaryAction_DuplicateResponse_DoesNotCrash()
+    {
+        // Arrange
+        var duplicateService = new FakeSpellCheckService
+        {
+            AddResponse = new AddToDictionaryResponse("teh", false, "Word already exists in dictionary."),
+        };
+
+        this.Services.AddSingleton<IClientSpellCheckService>(duplicateService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act + Assert
+        cut.WaitForAssertion(() =>
+        {
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            addToDictionary.Click();
+        });
+
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("Add teh to dictionary", cut.Markup, StringComparison.Ordinal));
+
+        Assert.Equal(1, duplicateService.AddToDictionaryCallCount);
+        Assert.Equal("teh", duplicateService.LastAddedWord);
+    }
+
+    /// <summary>
+    /// Verifies non-duplicate dictionary failure response keeps issue visible.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_AddToDictionaryAction_NonDuplicateFailure_KeepsIssueVisible()
+    {
+        // Arrange
+        var failingService = new FakeSpellCheckService
+        {
+            AddResponse = new AddToDictionaryResponse("teh", false, "Validation failed."),
+        };
+
+        this.Services.AddSingleton<IClientSpellCheckService>(failingService);
+
+        var cut = this.Render<MarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh"));
+
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Act
+        cut.WaitForAssertion(() =>
+        {
+            var addToDictionary = cut.Find("button[aria-label='Add teh to dictionary']");
+            addToDictionary.Click();
+        });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.Contains("Add teh to dictionary", cut.Markup, StringComparison.Ordinal));
+
+        Assert.Equal(1, failingService.AddToDictionaryCallCount);
+        Assert.Equal("teh", failingService.LastAddedWord);
+    }
+
     private sealed class FakeSpellCheckService : IClientSpellCheckService
     {
+        private readonly HashSet<string> dictionaryWords = new(StringComparer.OrdinalIgnoreCase);
+
+        public AddToDictionaryResponse AddResponse { get; set; } = new("teh", true, "Added to dictionary.");
+
+        public int AddToDictionaryCallCount { get; private set; }
+
+        public string? LastAddedWord { get; private set; }
+
         public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
         {
             var results = words
                 .Select(word => new SpellCheckResult(
                     word,
-                    !string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase),
+                    this.dictionaryWords.Contains(word) || !string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase),
                     string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase) ? ["the"] : Array.Empty<string>()))
                 .ToArray();
 
             return Task.FromResult(new SpellCheckResponse(results));
+        }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            this.AddToDictionaryCallCount++;
+            this.LastAddedWord = word;
+
+            var response = this.AddResponse with { Word = word };
+            if (response.Added || response.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+            {
+                this.dictionaryWords.Add(word);
+            }
+
+            return Task.FromResult(response);
         }
     }
 

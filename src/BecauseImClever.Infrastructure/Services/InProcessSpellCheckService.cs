@@ -35,6 +35,8 @@ public class InProcessSpellCheckService : ISpellCheckService
         "world",
     };
 
+    private static readonly object DictionaryLock = new();
+
     /// <inheritdoc />
     public Task<SpellCheckResponse> CheckAsync(SpellCheckRequest request)
     {
@@ -55,6 +57,36 @@ public class InProcessSpellCheckService : ISpellCheckService
             .ToList();
 
         return Task.FromResult(new SpellCheckResponse(results));
+    }
+
+    /// <inheritdoc />
+    public Task<AddToDictionaryResponse> AddToDictionaryAsync(AddToDictionaryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Word))
+        {
+            throw new ArgumentException("Word is required.", nameof(request));
+        }
+
+        var normalizedWord = Normalize(request.Word);
+
+        if (string.IsNullOrWhiteSpace(normalizedWord))
+        {
+            throw new ArgumentException("Word must contain at least one letter.", nameof(request));
+        }
+
+        var added = false;
+        lock (DictionaryLock)
+        {
+            added = Dictionary.Add(normalizedWord);
+        }
+
+        var message = added
+            ? "Word added to custom dictionary."
+            : "Word already exists in dictionary.";
+
+        return Task.FromResult(new AddToDictionaryResponse(normalizedWord, added, message));
     }
 
     private static bool IsCorrect(string word)

@@ -99,4 +99,71 @@ public class SpellCheckControllerTests
         var response = Assert.IsType<SpellCheckResponse>(okResult.Value);
         Assert.Same(expected, response);
     }
+
+    /// <summary>
+    /// Verifies that AddToDictionary returns bad request when word is missing.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AddToDictionary_WhenWordMissing_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new AddToDictionaryRequest(" ", "en-US");
+
+        // Act
+        var result = await this.controller.AddToDictionary(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    /// <summary>
+    /// Verifies that AddToDictionary defaults language to en-US when language is missing.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AddToDictionary_WhenLanguageMissing_DefaultsToEnUs()
+    {
+        // Arrange
+        var request = new AddToDictionaryRequest("newword", null);
+
+        AddToDictionaryRequest? capturedRequest = null;
+        this.spellCheckServiceMock
+            .Setup(x => x.AddToDictionaryAsync(It.IsAny<AddToDictionaryRequest>()))
+            .Callback<AddToDictionaryRequest>(value => capturedRequest = value)
+            .ReturnsAsync(new AddToDictionaryResponse("newword", true, "Word added to custom dictionary."));
+
+        // Act
+        var result = await this.controller.AddToDictionary(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.IsType<AddToDictionaryResponse>(okResult.Value);
+        Assert.NotNull(capturedRequest);
+        Assert.Equal("en-US", capturedRequest!.Language);
+    }
+
+    /// <summary>
+    /// Verifies that AddToDictionary returns service response when request is valid.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AddToDictionary_WhenValidRequest_ReturnsOkWithResponse()
+    {
+        // Arrange
+        var expected = new AddToDictionaryResponse("term", true, "Word added to custom dictionary.");
+        var request = new AddToDictionaryRequest("term", "en-US");
+
+        this.spellCheckServiceMock
+            .Setup(x => x.AddToDictionaryAsync(It.IsAny<AddToDictionaryRequest>()))
+            .ReturnsAsync(expected);
+
+        // Act
+        var result = await this.controller.AddToDictionary(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<AddToDictionaryResponse>(okResult.Value);
+        Assert.Same(expected, response);
+    }
 }

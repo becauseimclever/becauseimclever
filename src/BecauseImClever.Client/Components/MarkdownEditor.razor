@@ -157,6 +157,12 @@
                                                     @onclick="() => IgnoreWordForSessionAsync(issue.Word)">
                                                 Ignore for session
                                             </button>
+                                            <button type="button"
+                                                    class="spellcheck-action-btn"
+                                                    aria-label="Add @issue.Word to dictionary"
+                                                    @onclick="() => AddWordToDictionaryAsync(issue.Word)">
+                                                Add to dictionary
+                                            </button>
                                         </div>
                                     </li>
                                 }

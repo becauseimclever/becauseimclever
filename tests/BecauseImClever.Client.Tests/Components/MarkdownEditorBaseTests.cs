@@ -279,6 +279,32 @@ public class MarkdownEditorBaseTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies adding a word to dictionary removes it from active misspellings.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task MarkdownEditorBase_AddWordToDictionary_RemovesIssueAndRechecks()
+    {
+        // Arrange
+        var spellCheckService = new RecordingSpellCheckService();
+        this.Services.AddSingleton<IClientSpellCheckService>(spellCheckService);
+
+        var cut = this.Render<TestMarkdownEditor>(parameters => parameters
+            .Add(p => p.Value, "teh and teh"));
+
+        await cut.Instance.InvokeToggleCustomSpellCheckAsync();
+        cut.WaitForAssertion(() =>
+            Assert.Contains(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+
+        // Act
+        await cut.Instance.InvokeAddWordToDictionaryAsync("teh");
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain(cut.Instance.MisspelledWordsPublic, word => string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
     /// Verifies custom spell-check preference is loaded during initialization.
     /// </summary>
     [Fact]
@@ -411,6 +437,11 @@ public class MarkdownEditorBaseTests : BunitContext
             return this.IgnoreWordForSessionAsync(word);
         }
 
+        public Task InvokeAddWordToDictionaryAsync(string word)
+        {
+            return this.AddWordToDictionaryAsync(word);
+        }
+
         public Task InvokeHandleKeyDownAsync(KeyboardEventArgs e)
         {
             return this.HandleKeyDown(e);
@@ -446,10 +477,17 @@ public class MarkdownEditorBaseTests : BunitContext
 
             return Task.FromResult(new SpellCheckResponse(results));
         }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            return Task.FromResult(new AddToDictionaryResponse(word, true, "Added to dictionary."));
+        }
     }
 
     private sealed class RecordingSpellCheckService : IClientSpellCheckService
     {
+        private readonly HashSet<string> dictionaryWords = new(StringComparer.OrdinalIgnoreCase);
+
         public IReadOnlyList<string> LastWords { get; private set; } = Array.Empty<string>();
 
         public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
@@ -460,6 +498,11 @@ public class MarkdownEditorBaseTests : BunitContext
                 {
                     if (string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase))
                     {
+                        if (this.dictionaryWords.Contains(word))
+                        {
+                            return new SpellCheckResult(word, true, Array.Empty<string>());
+                        }
+
                         return new SpellCheckResult(word, false, ["the"]);
                     }
 
@@ -468,6 +511,13 @@ public class MarkdownEditorBaseTests : BunitContext
                 .ToArray();
 
             return Task.FromResult(new SpellCheckResponse(results));
+        }
+
+        public Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null)
+        {
+            var added = this.dictionaryWords.Add(word);
+            var message = added ? "Added to dictionary." : "Word already exists in dictionary.";
+            return Task.FromResult(new AddToDictionaryResponse(word, added, message));
         }
     }
 

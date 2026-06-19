@@ -14,4 +14,12 @@ public interface IClientSpellCheckService
     /// <param name="language">Optional language hint.</param>
     /// <returns>Spell-check response containing per-word results.</returns>
     Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null);
+
+    /// <summary>
+    /// Adds a word to the shared spell-check dictionary.
+    /// </summary>
+    /// <param name="word">Word to add to dictionary.</param>
+    /// <param name="language">Optional language hint.</param>
+    /// <returns>Dictionary add response containing add status and message.</returns>
+    Task<AddToDictionaryResponse> AddToDictionaryAsync(string word, string? language = null);
 }

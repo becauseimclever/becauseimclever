@@ -739,6 +739,42 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         await this.InvokeAsync(this.StateHasChanged);
     }
 
+    /// <summary>
+    /// Adds a misspelled word to the dictionary and updates the current issue list.
+    /// </summary>
+    /// <param name="word">The word to add.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected async Task AddWordToDictionaryAsync(string word)
+    {
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await this.SpellCheckService.AddToDictionaryAsync(word, language: null);
+
+            if (response.Added || IsDuplicateDictionaryResponse(response.Message))
+            {
+                this.MisspelledIssues = this.MisspelledIssues
+                    .Where(issue => !string.Equals(issue.Word, word, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                this.MisspelledWords = this.MisspelledIssues
+                    .Select(issue => issue.Word)
+                    .ToArray();
+
+                this.ScheduleSpellCheck(immediate: true);
+            }
+        }
+        catch
+        {
+            // Keep editor interaction resilient if dictionary add fails.
+        }
+
+        await this.InvokeAsync(this.StateHasChanged);
+    }
+
     private async Task LoadSpellCheckPreferencesAsync()
     {
         try
@@ -910,6 +946,18 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
         }
 
         return start <= end ? trimmed[start..(end + 1)] : string.Empty;
+    }
+
+    private static bool IsDuplicateDictionaryResponse(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return false;
+        }
+
+        return message.Contains("already exists", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("already in", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
