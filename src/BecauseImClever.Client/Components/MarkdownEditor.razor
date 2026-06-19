@@ -72,6 +72,16 @@
             </div>
             <div class="toolbar-spacer"></div>
             <div class="toolbar-group">
+                <button type="button"
+                        class="toolbar-btn @(IsCustomSpellCheckEnabled ? "active" : "")"
+                        title="Toggle custom spell check"
+                        aria-label="Toggle custom spell check"
+                        @onclick="ToggleCustomSpellCheck">
+                    ABC
+                </button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <div class="toolbar-group">
                 <button type="button" class="toolbar-btn @(IsPreviewOnly ? "active" : "")" title="Toggle Preview" @onclick="TogglePreview">
                     👁️
                 </button>
@@ -98,13 +108,14 @@
                         <span>Uploading image...</span>
                     </div>
                 }
+                <p class="spellcheck-status" aria-live="polite">@SpellCheckStatusText</p>
                 <textarea id="@TextAreaId"
                           class="editor-textarea"
                           value="@Value"
                           @oninput="OnValueChanged"
                           @onkeydown="HandleKeyDown"
                           placeholder="@Placeholder"
-                          spellcheck="true"></textarea>
+                          spellcheck="@(IsNativeSpellcheckEnabled ? "true" : "false")"></textarea>
             </div>
         }
 
@@ -310,6 +321,15 @@
 
     .editor-textarea::placeholder {
         color: var(--text-muted);
+    }
+
+    .spellcheck-status {
+        margin: 0;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        font-size: 0.85rem;
     }
 
     .preview-pane {

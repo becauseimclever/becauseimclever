@@ -1,6 +1,12 @@
 # 034 - Post Editor Spell Checker
 
-## Status: 📋 Planned
+## Status: 🚧 In Progress
+
+## Progress
+
+- v1 API endpoint for spell checking
+- client service integration in markdown editor
+- baseline tests/build verification
 
 ## Feature Description
 

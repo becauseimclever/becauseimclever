@@ -23,6 +23,9 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     [Inject]
     private ClientPostImageService ImageService { get; set; } = default!;
 
+    [Inject]
+    private IClientSpellCheckService SpellCheckService { get; set; } = default!;
+
     /// <summary>
     /// Gets or sets the markdown content value.
     /// </summary>
@@ -89,7 +92,33 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     /// </summary>
     protected bool IsUploadingImage { get; set; }
 
+    /// <summary>
+    /// Gets a value indicating whether custom spell check is enabled.
+    /// </summary>
+    protected bool IsCustomSpellCheckEnabled { get; private set; }
+
+    /// <summary>
+    /// Gets the words currently identified as misspelled.
+    /// </summary>
+    protected IReadOnlyList<string> MisspelledWords { get; private set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets a value indicating whether browser native spellcheck should be enabled.
+    /// </summary>
+    protected bool IsNativeSpellcheckEnabled => !this.IsCustomSpellCheckEnabled;
+
+    /// <summary>
+    /// Gets status text for custom spell-check state and result count.
+    /// </summary>
+    protected string SpellCheckStatusText => this.IsCustomSpellCheckEnabled
+        ? this.GetCustomSpellCheckStatusText()
+        : "Custom spell check is off. Browser spell check is on.";
+
     private DotNetObjectReference<MarkdownEditorBase>? dotNetRef;
+    private CancellationTokenSource? spellCheckDebounceCts;
+    private int spellCheckVersion;
+    private bool isCheckingSpelling;
+    private string? spellCheckError;
 
     private static string RenderMarkdown(string markdown)
     {
@@ -133,6 +162,9 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     /// <returns>A task representing the async operation.</returns>
     public async ValueTask DisposeAsync()
     {
+        this.spellCheckDebounceCts?.Cancel();
+        this.spellCheckDebounceCts?.Dispose();
+
         if (this.dotNetRef is not null)
         {
             try
@@ -240,6 +272,34 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     {
         this.Value = e.Value?.ToString() ?? string.Empty;
         await this.ValueChanged.InvokeAsync(this.Value);
+
+        if (this.IsCustomSpellCheckEnabled)
+        {
+            this.ScheduleSpellCheck();
+        }
+    }
+
+    /// <summary>
+    /// Toggles custom spell check mode.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected Task ToggleCustomSpellCheck()
+    {
+        this.IsCustomSpellCheckEnabled = !this.IsCustomSpellCheckEnabled;
+
+        if (this.IsCustomSpellCheckEnabled)
+        {
+            this.ScheduleSpellCheck(immediate: true);
+        }
+        else
+        {
+            this.CancelPendingSpellCheck();
+            this.spellCheckError = null;
+            this.isCheckingSpelling = false;
+            this.MisspelledWords = Array.Empty<string>();
+        }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -460,6 +520,134 @@ public class MarkdownEditorBase : ComponentBase, IAsyncDisposable
     protected async Task Redo()
     {
         await this.JS.InvokeVoidAsync("markdownEditor.redo", this.TextAreaId);
+    }
+
+    private string GetCustomSpellCheckStatusText()
+    {
+        if (this.isCheckingSpelling)
+        {
+            return "Custom spell check is on. Checking spelling...";
+        }
+
+        if (!string.IsNullOrWhiteSpace(this.spellCheckError))
+        {
+            return $"Custom spell check is on. Check failed: {this.spellCheckError}";
+        }
+
+        var misspelledCount = this.MisspelledWords.Count;
+        if (misspelledCount == 0)
+        {
+            return "Custom spell check is on. No misspellings found.";
+        }
+
+        return $"Custom spell check is on. Misspelled words found: {misspelledCount}.";
+    }
+
+    private void CancelPendingSpellCheck()
+    {
+        this.spellCheckDebounceCts?.Cancel();
+        this.spellCheckDebounceCts?.Dispose();
+        this.spellCheckDebounceCts = null;
+    }
+
+    private void ScheduleSpellCheck(bool immediate = false)
+    {
+        this.CancelPendingSpellCheck();
+
+        if (string.IsNullOrWhiteSpace(this.Value))
+        {
+            this.isCheckingSpelling = false;
+            this.spellCheckError = null;
+            this.MisspelledWords = Array.Empty<string>();
+            return;
+        }
+
+        this.spellCheckDebounceCts = new CancellationTokenSource();
+        var token = this.spellCheckDebounceCts.Token;
+        var version = ++this.spellCheckVersion;
+
+        _ = this.RunSpellCheckAsync(version, token, immediate);
+    }
+
+    private async Task RunSpellCheckAsync(int version, CancellationToken cancellationToken, bool immediate)
+    {
+        try
+        {
+            if (!immediate)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(450), cancellationToken);
+            }
+
+            var words = ExtractWords(this.Value);
+            if (words.Count == 0)
+            {
+                this.MisspelledWords = Array.Empty<string>();
+                this.spellCheckError = null;
+                this.isCheckingSpelling = false;
+                await this.InvokeAsync(this.StateHasChanged);
+                return;
+            }
+
+            await this.InvokeAsync(() =>
+            {
+                this.isCheckingSpelling = true;
+                this.spellCheckError = null;
+                this.StateHasChanged();
+            });
+
+            var response = await this.SpellCheckService.CheckAsync(words, language: null);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (version != this.spellCheckVersion)
+            {
+                return;
+            }
+
+            this.MisspelledWords = response.Results
+                .Where(result => !result.Correct)
+                .Select(result => result.Word)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            this.spellCheckError = null;
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancellation from debounce and toggle transitions.
+        }
+        catch (Exception ex)
+        {
+            if (version != this.spellCheckVersion)
+            {
+                return;
+            }
+
+            this.MisspelledWords = Array.Empty<string>();
+            this.spellCheckError = ex.Message;
+        }
+        finally
+        {
+            if (version == this.spellCheckVersion)
+            {
+                this.isCheckingSpelling = false;
+                await this.InvokeAsync(this.StateHasChanged);
+            }
+        }
+    }
+
+    private static IReadOnlyList<string> ExtractWords(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<string>();
+        }
+
+        return content
+            .Split([' ', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(token => token.Trim('"', '\'', '.', ',', ';', ':', '!', '?', '(', ')', '[', ']', '{', '}', '*', '`', '#', '-', '_', '/'))
+            .Where(token => token.Length > 1)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     /// <summary>

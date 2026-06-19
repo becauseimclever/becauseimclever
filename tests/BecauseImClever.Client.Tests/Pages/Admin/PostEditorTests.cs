@@ -3,6 +3,7 @@ namespace BecauseImClever.Client.Tests.Pages.Admin;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
+using BecauseImClever.Application;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Pages.Admin;
 using BecauseImClever.Client.Services;
@@ -729,6 +730,7 @@ public class PostEditorTests : BunitContext
         // Register ClientPostImageService for MarkdownEditor
         var imageService = new ClientPostImageService(httpClient);
         this.Services.AddSingleton(imageService);
+        this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
 
         // Setup authorization - mock the policy authorization
         this.Services.AddAuthorizationCore(options =>
@@ -750,5 +752,17 @@ public class PostEditorTests : BunitContext
         mockAuthStateProvider.Setup(p => p.GetAuthenticationStateAsync()).Returns(authState);
 
         this.Services.AddSingleton<AuthenticationStateProvider>(mockAuthStateProvider.Object);
+    }
+
+    private sealed class FakeSpellCheckService : IClientSpellCheckService
+    {
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            var results = words
+                .Select(word => new SpellCheckResult(word, true, Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
     }
 }

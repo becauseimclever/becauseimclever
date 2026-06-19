@@ -1,11 +1,11 @@
 namespace BecauseImClever.Client.Tests.Components;
 
+using BecauseImClever.Application;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 
 /// <summary>
 /// Unit tests for the <see cref="MarkdownEditor"/> component.
@@ -23,6 +23,7 @@ public class MarkdownEditorTests : BunitContext
         var mockHttpClient = new HttpClient();
         var imageService = new ClientPostImageService(mockHttpClient);
         this.Services.AddSingleton(imageService);
+        this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
     }
 
     /// <summary>
@@ -64,7 +65,22 @@ public class MarkdownEditorTests : BunitContext
 
         // Assert
         var buttons = cut.FindAll(".toolbar-btn");
-        Assert.True(buttons.Count >= 12, $"Expected at least 12 toolbar buttons, found {buttons.Count}");
+        Assert.True(buttons.Count >= 13, $"Expected at least 13 toolbar buttons, found {buttons.Count}");
+    }
+
+    /// <summary>
+    /// Verifies that custom spell-check toggle button is present with an accessible name.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_CustomSpellCheckToggleButton_IsPresentWithAccessibleName()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var button = cut.Find("button[title='Toggle custom spell check']");
+        Assert.NotNull(button);
+        Assert.Equal("Toggle custom spell check", button.GetAttribute("aria-label"));
     }
 
     /// <summary>
@@ -497,6 +513,38 @@ public class MarkdownEditorTests : BunitContext
     }
 
     /// <summary>
+    /// Verifies that enabling custom spell check disables browser spellcheck.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_WhenCustomSpellCheckEnabled_DisablesNativeSpellcheck()
+    {
+        // Arrange
+        var cut = this.Render<MarkdownEditor>();
+
+        // Act
+        var toggleButton = cut.Find("button[title='Toggle custom spell check']");
+        toggleButton.Click();
+
+        // Assert
+        var textarea = cut.Find(".editor-textarea");
+        Assert.Equal("false", textarea.GetAttribute("spellcheck"));
+    }
+
+    /// <summary>
+    /// Verifies that spell-check status text communicates state using words, not only color.
+    /// </summary>
+    [Fact]
+    public void MarkdownEditor_SpellCheckStatusText_IsVisibleAndDescriptive()
+    {
+        // Arrange & Act
+        var cut = this.Render<MarkdownEditor>();
+
+        // Assert
+        var status = cut.Find(".spellcheck-status");
+        Assert.Contains("Custom spell check is off", status.TextContent);
+    }
+
+    /// <summary>
     /// Verifies that the preview content has markdown-body class.
     /// </summary>
     [Fact]
@@ -680,5 +728,17 @@ public class MarkdownEditorTests : BunitContext
 
         // Assert - No exception should be thrown
         Assert.True(true);
+    }
+
+    private sealed class FakeSpellCheckService : IClientSpellCheckService
+    {
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            var results = words
+                .Select(word => new SpellCheckResult(word, !string.Equals(word, "teh", StringComparison.OrdinalIgnoreCase), Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
+        }
     }
 }

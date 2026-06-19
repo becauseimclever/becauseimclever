@@ -5,6 +5,7 @@ namespace BecauseImClever.Client.Tests.Components;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using BecauseImClever.Application;
 using BecauseImClever.Client.Components;
 using BecauseImClever.Client.Services;
 using Bunit;
@@ -32,6 +33,7 @@ public class MarkdownEditorBaseTests : BunitContext
             BaseAddress = new Uri("https://localhost/"),
         };
         this.Services.AddSingleton(new ClientPostImageService(httpClient));
+        this.Services.AddSingleton<IClientSpellCheckService>(new FakeSpellCheckService());
     }
 
     /// <summary>
@@ -236,6 +238,18 @@ public class MarkdownEditorBaseTests : BunitContext
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
+        }
+    }
+
+    private sealed class FakeSpellCheckService : IClientSpellCheckService
+    {
+        public Task<SpellCheckResponse> CheckAsync(IReadOnlyList<string> words, string? language = null)
+        {
+            var results = words
+                .Select(word => new SpellCheckResult(word, true, Array.Empty<string>()))
+                .ToArray();
+
+            return Task.FromResult(new SpellCheckResponse(results));
         }
     }
 }
