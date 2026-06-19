@@ -26,4 +26,6 @@ Add a minimal server-side API that allows post editors to add custom words to th
 ## Design Decisions
 
 - Duplicate dictionary additions are treated as idempotent and return a successful response indicating the word already existed.
-- In-process custom dictionary storage is used for this phase to align with the current in-process spell-check implementation and keep scope minimal.
+- The spell-check backend now loads Hunspell `.aff` and `.dic` assets from `src/BecauseImClever.Server/Spelling` at runtime.
+- In-process custom dictionary storage remains for this phase as an overlay so `AddToDictionary` works without changing API contracts.
+- If Hunspell assets are unavailable at runtime, the service falls back to a minimal built-in dictionary to preserve API availability.

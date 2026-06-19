@@ -2,17 +2,20 @@ namespace BecauseImClever.Infrastructure.Services;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BecauseImClever.Application;
 using BecauseImClever.Application.Interfaces;
+using Microsoft.Extensions.Hosting;
+using WeCantSpell.Hunspell;
 
 /// <summary>
-/// Provides an in-process spell checker for API v1.
+/// Provides a Hunspell-backed spell checker for API v1.
 /// </summary>
 public class InProcessSpellCheckService : ISpellCheckService
 {
-    private static readonly HashSet<string> Dictionary = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly string[] FallbackWords =
     {
         "a",
         "api",
@@ -35,7 +38,20 @@ public class InProcessSpellCheckService : ISpellCheckService
         "world",
     };
 
-    private static readonly object DictionaryLock = new();
+    private static readonly object SyncRoot = new();
+    private readonly WordList dictionary;
+    private readonly HashSet<string> customWords = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InProcessSpellCheckService"/> class.
+    /// </summary>
+    /// <param name="hostEnvironment">The host environment used to resolve dictionary file paths.</param>
+    public InProcessSpellCheckService(IHostEnvironment hostEnvironment)
+    {
+        ArgumentNullException.ThrowIfNull(hostEnvironment);
+
+        this.dictionary = LoadDictionary(hostEnvironment.ContentRootPath);
+    }
 
     /// <inheritdoc />
     public Task<SpellCheckResponse> CheckAsync(SpellCheckRequest request)
@@ -47,12 +63,12 @@ public class InProcessSpellCheckService : ISpellCheckService
             .Where(word => !string.IsNullOrWhiteSpace(word))
             .Select(word =>
             {
-                var isCorrect = IsCorrect(word);
+                var isCorrect = this.IsCorrect(word);
                 var suggestions = isCorrect
                     ? Array.Empty<string>()
-                    : GetSuggestions(word);
+                    : this.GetSuggestions(word);
 
-                return new SpellCheckResult(word, isCorrect, suggestions);
+                return new BecauseImClever.Application.SpellCheckResult(word, isCorrect, suggestions);
             })
             .ToList();
 
@@ -76,35 +92,32 @@ public class InProcessSpellCheckService : ISpellCheckService
             throw new ArgumentException("Word must contain at least one letter.", nameof(request));
         }
 
-        var added = false;
-        lock (DictionaryLock)
+        lock (SyncRoot)
         {
-            added = Dictionary.Add(normalizedWord);
+            if (this.dictionary.Check(normalizedWord) || this.customWords.Contains(normalizedWord))
+            {
+                return Task.FromResult(new AddToDictionaryResponse(normalizedWord, Added: false, "Word already exists in dictionary."));
+            }
+
+            this.customWords.Add(normalizedWord);
+            this.dictionary.Add(normalizedWord);
+
+            return Task.FromResult(new AddToDictionaryResponse(normalizedWord, Added: true, "Word added to custom dictionary."));
+        }
+    }
+
+    private static WordList LoadDictionary(string contentRootPath)
+    {
+        var basePath = Path.Combine(contentRootPath, "Spelling");
+        var dictionaryPath = Path.Combine(basePath, "en-US.dic");
+        var affixPath = Path.Combine(basePath, "en-US.aff");
+
+        if (File.Exists(dictionaryPath) && File.Exists(affixPath))
+        {
+            return WordList.CreateFromFiles(dictionaryPath, affixPath);
         }
 
-        var message = added
-            ? "Word added to custom dictionary."
-            : "Word already exists in dictionary.";
-
-        return Task.FromResult(new AddToDictionaryResponse(normalizedWord, added, message));
-    }
-
-    private static bool IsCorrect(string word)
-    {
-        return Dictionary.Contains(Normalize(word));
-    }
-
-    private static IReadOnlyList<string> GetSuggestions(string word)
-    {
-        var normalizedWord = Normalize(word);
-
-        return Dictionary
-            .Select(entry => new { Entry = entry, Distance = LevenshteinDistance(normalizedWord, entry) })
-            .OrderBy(candidate => candidate.Distance)
-            .ThenBy(candidate => candidate.Entry, StringComparer.OrdinalIgnoreCase)
-            .Take(3)
-            .Select(candidate => candidate.Entry)
-            .ToList();
+        return WordList.CreateFromWords(FallbackWords);
     }
 
     private static string Normalize(string value)
@@ -150,5 +163,53 @@ public class InProcessSpellCheckService : ISpellCheckService
         }
 
         return matrix[source.Length, target.Length];
+    }
+
+    private bool IsCorrect(string word)
+    {
+        var normalizedWord = Normalize(word);
+        if (string.IsNullOrWhiteSpace(normalizedWord))
+        {
+            return true;
+        }
+
+        lock (SyncRoot)
+        {
+            return this.customWords.Contains(normalizedWord) || this.dictionary.Check(normalizedWord);
+        }
+    }
+
+    private IReadOnlyList<string> GetSuggestions(string word)
+    {
+        var normalizedWord = Normalize(word);
+        if (string.IsNullOrWhiteSpace(normalizedWord))
+        {
+            return Array.Empty<string>();
+        }
+
+        lock (SyncRoot)
+        {
+            var hunspellSuggestions = this.dictionary
+                .Suggest(normalizedWord)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(3)
+                .ToList();
+
+            if (hunspellSuggestions.Count > 0)
+            {
+                return hunspellSuggestions;
+            }
+
+            return this.dictionary.RootWords
+                .Concat(this.customWords)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(entry => new { Entry = entry, Distance = LevenshteinDistance(normalizedWord, entry) })
+                .OrderBy(candidate => candidate.Distance)
+                .ThenBy(candidate => candidate.Entry, StringComparer.OrdinalIgnoreCase)
+                .Take(3)
+                .Select(candidate => candidate.Entry)
+                .ToList();
+        }
     }
 }

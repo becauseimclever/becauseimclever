@@ -11,6 +11,7 @@
 - inline suggestion UX in editor completed
 - persistent ignore preferences via LocalStorage in progress
 - shared custom dictionary integration ("Add to Dictionary") in progress
+- Hunspell-backed infrastructure migration in progress
 
 ## Feature Description
 
