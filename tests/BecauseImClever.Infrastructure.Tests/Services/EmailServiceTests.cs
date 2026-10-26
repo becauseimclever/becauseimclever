@@ -153,7 +153,7 @@ public class EmailServiceTests
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("john@example.com")),
+                It.Is<It.IsAnyType>((v, _) => v == null ? false : (v.ToString() ?? string.Empty).Contains("john@example.com")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

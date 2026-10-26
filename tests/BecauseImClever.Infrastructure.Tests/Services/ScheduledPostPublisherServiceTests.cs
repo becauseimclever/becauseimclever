@@ -5,7 +5,6 @@ namespace BecauseImClever.Infrastructure.Tests.Services;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using BecauseImClever.Infrastructure.Services;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -159,13 +158,13 @@ public class ScheduledPostPublisherServiceTests
         await executeTask;
 
         // Assert
-        executeTask.IsCompletedSuccessfully.Should().BeTrue();
+        Assert.True(executeTask.IsCompletedSuccessfully);
         mockScopeFactory.Verify(x => x.CreateScope(), Times.Never);
         this.mockLogger.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("service started", StringComparison.OrdinalIgnoreCase)),
+                It.Is<It.IsAnyType>((v, _) => v == null ? false : (v.ToString() ?? string.Empty).Contains("service started", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -173,7 +172,7 @@ public class ScheduledPostPublisherServiceTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("service stopped", StringComparison.OrdinalIgnoreCase)),
+                It.Is<It.IsAnyType>((v, _) => v == null ? false : (v.ToString() ?? string.Empty).Contains("service stopped", StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -222,7 +221,7 @@ public class ScheduledPostPublisherServiceTests
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("Failed to auto-publish")),
+                It.Is<It.IsAnyType>((v, _) => v == null ? false : (v.ToString() ?? string.Empty).Contains("Failed to auto-publish")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

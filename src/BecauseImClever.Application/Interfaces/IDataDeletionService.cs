@@ -16,11 +16,3 @@ public interface IDataDeletionService
     /// <returns>The result of the deletion request.</returns>
     Task<DeletionResult> DeleteMyDataAsync(string fingerprintHash);
 }
-
-/// <summary>
-/// Result of a data deletion request.
-/// </summary>
-/// <param name="Success">Whether the deletion was successful.</param>
-/// <param name="DeletedRecords">The number of records deleted.</param>
-/// <param name="Message">A message describing the outcome.</param>
-public record DeletionResult(bool Success, int DeletedRecords, string Message);
