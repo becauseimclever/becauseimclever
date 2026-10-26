@@ -102,57 +102,28 @@ New-Item -ItemType Directory -Path "src/BecauseImClever.Server/wwwroot/images/po
 
 ## Deployment
 
-The project includes an automated deployment script for production deployments on the Raspberry Pi host.
+Production runs one published application container with Docker Compose.
 
 ### Prerequisites
 
-- Docker and docker compose installed
+- Docker and Docker Compose installed
 - Existing `docker-compose.yml` and `.env` configured
-- Cloudflare API token with cache purge permissions (optional)
-
-### Environment Variables
-
-Add the following to your `.env` file on the deployment server:
-
-```bash
-# Required
-SITE_URL=https://becauseimclever.com
-
-# Optional (for Cloudflare cache purge)
-CLOUDFLARE_ZONE_ID=<your-zone-id>
-CLOUDFLARE_API_TOKEN=<your-api-token>
-
-# Optional (defaults to 60)
-HEALTH_CHECK_TIMEOUT=60
-```
 
 ### Running Deployment
 
 ```bash
-# Standard deployment
+# Pull the published image, start it, and check HTTP on port 8580
 ./scripts/deploy.sh
 
-# Skip Cloudflare cache purge
-./scripts/deploy.sh --skip-cache-purge
-
-# Skip Docker image cleanup
-./scripts/deploy.sh --skip-cleanup
-
-# Preview what would happen (no changes made)
-./scripts/deploy.sh --dry-run
-
-# Show help
-./scripts/deploy.sh --help
+# Optionally deploy a specific release
+APP_IMAGE=ghcr.io/becauseimclever/becauseimclever:1.1.1 ./scripts/deploy.sh
 ```
 
-### What the Script Does
-
-1. **Pre-flight checks**: Verifies Docker is running and configuration is valid
-2. **Pull image**: Runs `docker compose pull` to get the latest image
-3. **Restart container**: Runs `docker compose up -d` to start the new container
-4. **Health check**: Waits for the site to respond at `SITE_URL`
-5. **Cache purge**: Clears Cloudflare cache (if configured)
-6. **Cleanup**: Removes unused Docker images
+Docker Compose reads private settings from `.env`; keep that file out of Git.
+The existing `unless-stopped` policy restarts the container if its process exits.
+There is no BusyBox wrapper or custom watchdog. The script does not purge caches
+or remove old images. If a rollback is needed, select a previously published image
+with `APP_IMAGE` and run the script again.
 
 ## Documentation
 
