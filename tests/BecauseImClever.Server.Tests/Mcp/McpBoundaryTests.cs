@@ -14,9 +14,10 @@ public class McpBoundaryTests
     public async Task Program_DisabledEndpoint_DoesNotFallBackToSpa()
     {
         await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            builder.UseSetting("ConnectionStrings:BlogDb", string.Empty)
+            .ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:BlogDb"] = null,
+                ["ConnectionStrings:BlogDb"] = string.Empty,
                 ["McpDraft:Enabled"] = "false",
             })));
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
