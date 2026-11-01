@@ -2,6 +2,7 @@
 
 namespace BecauseImClever.Client.Layout;
 
+using System.Reflection;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using Microsoft.AspNetCore.Components;
@@ -11,6 +12,14 @@ using Microsoft.AspNetCore.Components;
 /// </summary>
 public class MainLayoutBase : LayoutComponentBase
 {
+    /// <summary>
+    /// Gets the loaded client build's version without build metadata.
+    /// </summary>
+    protected static string AppVersion { get; } = (typeof(MainLayout).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? throw new InvalidOperationException("The client build is missing its informational version."))
+        .Split('+')[0];
+
     /// <summary>
     /// Gets or sets the currently selected theme.
     /// </summary>

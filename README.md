@@ -185,6 +185,24 @@ and a separate migrated test database.
 
 Production runs one published application container with Docker Compose.
 
+### Next Release: v1.2.0
+
+The next release is a minor bump from v1.1.1, covering:
+
+- Optional owner-controlled MCP draft tools, disabled by default; human admin
+  publishing and scheduling remain unchanged.
+- Proportionate tooling/documentation cleanup and summary-only feature archives.
+- The deployed build version beside the public footer copyright notice.
+
+After the release-preparation PR is merged and CI passes, create `v1.2.0` on
+the intended `main` commit. That tag triggers the existing image-publication
+and GitHub-release workflows; it has not been published as part of preparation.
+Verify both workflows and the multi-architecture image before deployment.
+Review the generated release notes to include the MCP/tooling work from PR #30,
+whose non-conventional squash title may be omitted by the changelog filter.
+No manually maintained project version is required: the tag supplies MinVer's
+version, which is stamped into the compiled application during the release build.
+
 ### Prerequisites
 
 - Docker and Docker Compose installed
@@ -208,10 +226,16 @@ with `APP_IMAGE` and run the script again.
 
 ## Documentation
 
+The public footer displays the loaded application's build version beside the
+copyright notice. Release builds use the version calculated by the image
+publishing workflow, including prerelease labels but excluding commit metadata.
+Local builds use the SDK default unless built with `/p:Version=<version>`.
+An already-open older client shows its own build version until refreshed.
+
 Feature specifications and architectural decisions are documented in the `docs/` folder.
 
-- [Active feature documents](docs/)
+- [Feature documents and next number](docs/README.md)
 - [Features on hold for later](docs/on-hold/)
-- [Historical features and decisions](docs/archive/)
-- [Current simple deployment](docs/archive/044-container-startup-recovery.md)
-- [Completed infrastructure and documentation simplification](docs/archive/045-infrastructure-and-documentation-simplification.md)
+- [Historical features and archive instructions](docs/archive/README.md)
+- [Simple deployment summary](docs/archive/041-050.md#044---container-startup-recovery)
+- [Completed infrastructure and documentation simplification](docs/archive/041-050.md#045---infrastructure-and-documentation-simplification)

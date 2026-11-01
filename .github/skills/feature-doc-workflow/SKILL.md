@@ -19,7 +19,7 @@ Reuse an existing document for related work; do not create a document for each s
 ## Procedure
 
 1. Confirm that the requested change is a feature, bug fix, or enhancement that needs traceability.
-2. Check active and archived documents for related work and the next unused numeric prefix.
+2. Check the [docs index](../../../docs/README.md), active/on-hold documents, and archived summaries for related work and the next unused numeric prefix.
 3. Create or update `docs/NNN-feature-name.md`, using [feature-doc-template.md](./assets/feature-doc-template.md) for new documents.
 4. Fill in the feature description, goals, technical approach, affected components or layers, and design decisions.
 5. Keep the document updated if the implementation approach changes.
@@ -29,3 +29,4 @@ Reuse an existing document for related work; do not create a document for each s
 - Keep the document concise and implementation-focused.
 - Match the naming pattern already used in `docs/`.
 - Reference the feature document in related implementation work when practical.
+- Follow the [archive instructions](../../../docs/archive/README.md) when closing work: consolidate ten-number summaries and move originals to the Git-ignored `docs/archive-originals/` folder, not the tracked archive.
