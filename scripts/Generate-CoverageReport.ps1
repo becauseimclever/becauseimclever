@@ -5,6 +5,9 @@
 .DESCRIPTION
     This script runs all unit tests with code coverage collection enabled,
     then generates an HTML report using ReportGenerator.
+    It deletes existing TestResults and the selected output directory first.
+    Use a dedicated generated-report directory, never a source or data directory.
+    It installs the global ReportGenerator tool if that tool is missing.
 
 .PARAMETER OutputDirectory
     The directory where the coverage report will be generated.

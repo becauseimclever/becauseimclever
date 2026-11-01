@@ -1,5 +1,16 @@
 # 035 - Japanese Character Support
 
+**Status:** Cancelled
+**Cancelled:** 2026-10-31
+
+The owner considers this feature premature and does not plan to write Japanese
+posts in the foreseeable future. Dedicated Japanese fonts, typography changes,
+and related enhancements are cancelled. No feature-specific implementation was
+found in the current application; existing Unicode handling and browser font
+fallbacks remain unchanged.
+
+The original proposal below is preserved for historical reference only.
+
 ## Feature Description
 
 Add support for Japanese characters (Hiragana, Katakana, and Kanji) throughout the site to enable blog posts and content with Japanese text. This enhancement supports the author's journey learning Japanese and allows for bilingual or Japanese-focused content.

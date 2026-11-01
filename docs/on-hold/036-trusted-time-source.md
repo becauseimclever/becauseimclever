@@ -1,5 +1,12 @@
 # 036 - Trusted Time Source & Client Offset Display
 
+**Status:** On Hold
+**On hold since:** 2026-10-31
+
+Deferred at the owner's direction for possible future work. This feature is not
+cancelled or completed. Its proposal is preserved below; resume only when the
+owner chooses to revisit it.
+
 ## Feature Description
 
 Set up the host Raspberry Pi as a trusted time source using chrony, expose the server's authoritative time via an API endpoint, and display the offset between the client's local clock and the server's clock on the Clock page. This gives users visibility into how accurate their device's clock is relative to a reliable NTP-synced source.

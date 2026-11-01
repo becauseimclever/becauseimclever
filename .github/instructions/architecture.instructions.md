@@ -1,6 +1,7 @@
 ---
 description: "Use when adding or refactoring C# application code across the Domain, Application, Infrastructure, Server, or Client layers. Covers becauseimclever's DDD boundaries and dependency direction."
 name: "Architecture Guidance"
+applyTo: "src/**/*.cs"
 ---
 
 # Architecture Guidance

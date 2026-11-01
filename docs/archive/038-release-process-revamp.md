@@ -1,12 +1,27 @@
 # Feature 038: Release Process Revamp
 
-**Status:** In Progress  
+**Status:** Completed
+**Completion confirmed:** 2026-10-31
 **Created:** 2026-03-24  
 **Owner:** Tony
 
+## Completion Evidence
+
+The three workflows, prebuilt image strategy, native multi-architecture builds,
+MinVer calculation, and automated release notes are implemented.
+[v1.1.1](https://github.com/becauseimclever/becauseimclever/releases/tag/v1.1.1)
+was published and deployed successfully on 2026-10-26.
+The [image publication run](https://github.com/becauseimclever/becauseimclever/actions/runs/40275698765)
+completed successfully for commit `2d2e76e0ed528fbccfaf1cc8a5f48aca2b89c965`;
+production returned HTTP 200 with that release.
+
+The owner confirmed closure on 2026-10-31. No workflow changes or additional
+release infrastructure are needed. The [CI workflow](../../.github/workflows/ci.yml)
+is authoritative for coverage policy; thresholds are not duplicated here.
+
 ## Overview
 
-Revamp the release process for becauseimclever to follow the same patterns used in BudgetExperiment. This includes adopting modern GitHub Actions workflows, multi-architecture Docker builds, automated changelog generation, and semantic versioning with MinVer.
+Modernize the blog's release process with GitHub Actions workflows, multi-architecture Docker builds, automated changelog generation, and semantic versioning with MinVer.
 
 ## Goals
 
@@ -24,7 +39,7 @@ Revamp the release process for becauseimclever to follow the same patterns used 
    - Single combined build-and-test job
    - NuGet package caching
    - Concurrency control to cancel outdated runs
-   - Coverage enforcement with 80/90 thresholds
+   - Coverage enforcement using the configured CI gate
    - Test reporting with dorny/test-reporter
    - Updated to latest action versions (checkout@v6, setup-dotnet@v5, etc.)
 
@@ -49,7 +64,7 @@ Revamp the release process for becauseimclever to follow the same patterns used 
 ### Key Changes
 
 - **No more workflow_run triggers**: Docker builds happen on tags or manual dispatch only
-- **Coverage threshold raised**: From 60/80 to 80/90 to match BudgetExperiment standards
+- **Coverage policy**: Defined by the CI workflow, without a separate feature-document threshold
 - **Test filtering**: Exclude E2E, ExternalDependency, and Performance tests
 - **Artifact retention**: 7 days for test results, 30 days for coverage reports
 - **.NET 10 released**: Remove `dotnet-quality: 'preview'` qualifier
@@ -73,5 +88,5 @@ Revamp the release process for becauseimclever to follow the same patterns used 
 
 - Existing Dockerfile remains for local development/testing
 - Old workflows will be deleted, not archived
-- First release after this change should be v1.0.0 or similar to establish baseline
+- Released versions include v1.0.0, v1.1.0, and the verified v1.1.1 release
 - No code changes required, only CI/CD infrastructure

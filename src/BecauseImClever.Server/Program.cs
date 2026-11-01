@@ -1,6 +1,8 @@
+using BecauseImClever.Application.Drafts;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Infrastructure.Data;
 using BecauseImClever.Infrastructure.Services;
+using BecauseImClever.Server.Mcp;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -17,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddOpenApi();
+builder.Services.AddMcpDraftTools(builder.Configuration);
 
 // Configure blog storage - use database if connection string exists, otherwise use file-based
 var blogConnectionString = builder.Configuration.GetConnectionString("BlogDb");
@@ -31,6 +34,7 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddScoped<IExtensionTrackingService, ExtensionTrackingService>();
     builder.Services.AddScoped<IPostImageService, PostImageService>();
     builder.Services.AddScoped<IPostAuthorizationService, PostAuthorizationService>();
+    builder.Services.AddScoped<IDraftPostService, DraftPostService>();
 
     // Register scheduled post publisher background service
     builder.Services.AddHostedService<ScheduledPostPublisherService>();
@@ -141,6 +145,7 @@ if (!string.IsNullOrEmpty(blogConnectionString))
 // Apply forwarded headers first (before any other middleware)
 // This ensures the app knows the original scheme (HTTPS) when behind a reverse proxy
 app.UseForwardedHeaders();
+app.UseMcpDraftBoundary(!string.IsNullOrEmpty(blogConnectionString));
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -196,6 +201,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
+app.MapMcpDraftTools();
 
 // Fallback to index.html with no-cache headers for SPA routing
 app.MapFallbackToFile("index.html", new StaticFileOptions
