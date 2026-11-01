@@ -1,6 +1,18 @@
 # 034 - Post Editor Spell Checker
 
-## Status: 📋 Planned
+## Status: Cancelled
+
+**Cancelled:** 2026-10-31
+
+The owner will write and edit posts in a separate application. Browser-native
+spell checking is sufficient for this blog; the custom checker, overlays,
+dictionary API, preferences, and related enhancements are cancelled.
+
+Implementation work in PR #26 was never merged into the application. The editor
+retains `spellcheck="true"` and its existing regression test. PR #26 is closed
+without merging; its branch remains historical work, not a supported feature.
+The related [add-to-dictionary story](044-post-editor-add-to-dictionary.md) is
+also cancelled. The proposal below is preserved for historical reference only.
 
 ## Feature Description
 
