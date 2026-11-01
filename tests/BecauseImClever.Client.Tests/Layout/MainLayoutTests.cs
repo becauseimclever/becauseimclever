@@ -1,5 +1,6 @@
 namespace BecauseImClever.Client.Tests.Layout;
 
+using System.Reflection;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Client.Layout;
 using BecauseImClever.Domain.Entities;
@@ -102,6 +103,31 @@ public class MainLayoutTests : BunitContext
         // Assert
         Assert.Contains("<footer>", cut.Markup);
         Assert.Contains("2025 BecauseImClever", cut.Markup);
+    }
+
+    [Fact]
+    public void MainLayout_BuildVersion_RendersBesideCopyrightWithoutMetadata()
+    {
+        var mockThemeService = new Mock<IThemeService>();
+        mockThemeService.Setup(s => s.GetAvailableThemes()).Returns(Theme.All);
+        mockThemeService.Setup(s => s.GetCurrentThemeAsync()).ReturnsAsync(Theme.VsCode);
+        mockThemeService.Setup(s => s.SetThemeAsync(It.IsAny<Theme>())).Returns(Task.CompletedTask);
+        this.Services.AddSingleton(mockThemeService.Object);
+
+        var informationalVersion = typeof(MainLayout).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+        Assert.NotNull(informationalVersion);
+        var expectedVersion = informationalVersion.InformationalVersion.Split('+')[0];
+
+        var cut = this.Render<MainLayout>();
+
+        var footer = cut.Find("footer p");
+        Assert.Equal($"Version {expectedVersion}", footer.QuerySelector(".app-version")?.TextContent);
+        Assert.Contains("2025 BecauseImClever.", footer.TextContent);
+        Assert.Contains("Built with .NET 10 & Blazor.", footer.TextContent);
+        Assert.DoesNotContain("+", footer.QuerySelector(".app-version")!.TextContent);
+        Assert.Equal("/privacy", footer.QuerySelector("a")?.GetAttribute("href"));
+        Assert.Equal("Privacy Policy", footer.QuerySelector("a")?.TextContent);
     }
 
     [Fact]

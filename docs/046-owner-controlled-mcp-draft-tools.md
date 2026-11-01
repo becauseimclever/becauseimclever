@@ -127,7 +127,7 @@ enterprise infrastructure is introduced.
 
 ## Design Decisions
 
-- Reuse [045's simplicity goals](archive/045-infrastructure-and-documentation-simplification.md);
+- Reuse [045's simplicity goals](archive/041-050.md#045---infrastructure-and-documentation-simplification);
   no unrelated cleanup or new orchestration is a prerequisite.
 - Dedicated privately configured token replaces the original OAuth open question.
   A local client must support custom Authorization headers and forced approval.

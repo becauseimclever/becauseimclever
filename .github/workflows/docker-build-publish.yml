@@ -50,7 +50,7 @@ jobs:
 
       - run: dotnet restore BecauseImClever.sln
 
-      - run: dotnet build BecauseImClever.sln --configuration Release --no-restore
+      - run: dotnet build BecauseImClever.sln --configuration Release --no-restore /p:Version=${{ steps.version.outputs.version }}
 
       - run: |
           dotnet test BecauseImClever.sln \
@@ -92,8 +92,7 @@ jobs:
             --configuration Release \
             --no-build \
             --output ./publish \
-            /p:UseAppHost=false \
-            /p:MinVerVersionOverride=${{ steps.version.outputs.version }}
+            /p:UseAppHost=false
 
       - uses: actions/upload-artifact@v7
         with:

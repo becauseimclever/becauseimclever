@@ -611,4 +611,4 @@ CoverageReport-baseline/
 build-errors.txt
 
 # Keep local archived feature copies out of source control
-docs/archive/local/
+/docs/archive-originals/
