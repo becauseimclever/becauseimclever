@@ -38,6 +38,7 @@ public class McpPostgresTests
             var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
             {
+                builder.UseSetting("ConnectionStrings:BlogDb", connection.ConnectionString);
                 builder.ConfigureLogging(logging => logging.ClearProviders());
                 builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
