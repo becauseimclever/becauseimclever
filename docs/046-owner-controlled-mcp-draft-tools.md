@@ -173,6 +173,7 @@ Real concurrency tests require a **dedicated local** PostgreSQL connection via
 `BIC_MCP_TEST_DB` (localhost/127.0.0.1 and database `feature046_*`); otherwise they
 skip. They are categorized ExternalDependency and excluded from the ordinary unit-test
 filter. CI runs them separately against a disposable loopback PostgreSQL service,
-merging their coverage into the unchanged gate. The service uses trust authentication
+including their coverage in the informational report. Coverage percentages do
+not block builds or merges; build/test failures still do. The service uses trust authentication
 only within that isolated runner and is not a production deployment component.
 EF InMemory is not used to claim transaction/concurrency correctness.

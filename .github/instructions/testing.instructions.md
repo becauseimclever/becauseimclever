@@ -11,5 +11,5 @@ applyTo: "tests/**/*.cs"
 - Follow the [FluentAssertions replacement rules](remove-fluentassertions.instructions.md) for existing test files.
 - Name tests `MethodName_StateUnderTest_ExpectedBehavior`.
 - Keep tests independent, fast, and structured with Arrange / Act / Assert.
-- Preserve or improve coverage for changed behavior. The [CI workflow](../workflows/ci.yml) defines the enforced coverage gate; do not duplicate thresholds here.
+- Add useful tests for changed behavior. Coverage reports are informational, not a build or merge gate; do not impose percentage targets.
 - Start with focused tests. For solution-wide validation, use the existing CI filter to exclude E2E, external dependencies, and performance tests; do not require a full suite for documentation-only work.

@@ -62,6 +62,10 @@ dotnet test --filter "FullyQualifiedName!~E2E&Category!=ExternalDependency&Categ
 E2E tests additionally require Playwright browsers and their configured application
 and authentication environment. They are not part of this default check.
 
+Coverage is a useful bragging point, not a build or merge gate for this blog.
+CI publishes coverage reports and a PR summary without enforcing percentage targets.
+Build errors and failing tests still fail CI.
+
 For an optional local HTML coverage report:
 
 ```powershell
@@ -174,7 +178,7 @@ dotnet test tests\BecauseImClever.Server.Tests --filter "FullyQualifiedName~McpP
 
 These tests skip locally without that setting and are excluded from the normal
 unit-test filter. CI runs them separately against a disposable loopback PostgreSQL
-service and includes their coverage in the existing gate. They create test posts
+service and includes their coverage in the report. They create test posts
 and a separate migrated test database.
 
 ## Deployment
