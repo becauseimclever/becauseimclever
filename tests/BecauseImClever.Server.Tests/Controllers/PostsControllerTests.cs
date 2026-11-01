@@ -3,6 +3,7 @@ namespace BecauseImClever.Server.Tests.Controllers;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Domain.Entities;
 using BecauseImClever.Server.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -13,20 +14,22 @@ public class PostsControllerTests
 {
     private readonly Mock<IBlogService> mockBlogService;
     private readonly Mock<IPostImageService> mockPostImageService;
+    private readonly Mock<IAuthorizationService> mockAuthorizationService;
     private readonly PostsController controller;
 
     public PostsControllerTests()
     {
         this.mockBlogService = new Mock<IBlogService>();
         this.mockPostImageService = new Mock<IPostImageService>();
-        this.controller = new PostsController(this.mockBlogService.Object, this.mockPostImageService.Object);
+        this.mockAuthorizationService = new Mock<IAuthorizationService>();
+        this.controller = new PostsController(this.mockBlogService.Object, this.mockPostImageService.Object, this.mockAuthorizationService.Object);
     }
 
     [Fact]
     public void Constructor_WithNullBlogService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(null!, this.mockPostImageService.Object));
+        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(null!, this.mockPostImageService.Object, this.mockAuthorizationService.Object));
         Assert.Equal("blogService", exception.ParamName);
     }
 
@@ -34,8 +37,15 @@ public class PostsControllerTests
     public void Constructor_WithNullPostImageService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(this.mockBlogService.Object, null!));
+        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(this.mockBlogService.Object, null!, this.mockAuthorizationService.Object));
         Assert.Equal("postImageService", exception.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WithNullAuthorizationService_ThrowsArgumentNullException()
+    {
+        var exception = Assert.Throws<ArgumentNullException>(() => new PostsController(this.mockBlogService.Object, this.mockPostImageService.Object, null!));
+        Assert.Equal("authorizationService", exception.ParamName);
     }
 
     [Fact]
@@ -151,6 +161,7 @@ public class PostsControllerTests
             Data = imageData,
         };
         this.mockPostImageService.Setup(s => s.GetImageAsync("test-post", "test.png")).ReturnsAsync(image);
+        this.mockBlogService.Setup(s => s.GetPostBySlugAsync("test-post")).ReturnsAsync(new BlogPost { Slug = "test-post" });
 
         // Act
         var result = await this.controller.GetImage("test-post", "test.png");
@@ -166,6 +177,7 @@ public class PostsControllerTests
     {
         // Arrange
         this.mockPostImageService.Setup(s => s.GetImageAsync("test-post", "non-existent.png")).ReturnsAsync((PostImage?)null);
+        this.mockBlogService.Setup(s => s.GetPostBySlugAsync("test-post")).ReturnsAsync(new BlogPost { Slug = "test-post" });
 
         // Act
         var result = await this.controller.GetImage("test-post", "non-existent.png");
