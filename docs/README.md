@@ -2,9 +2,9 @@
 
 ## Next Feature Number
 
-**Next unused feature number: `048`.**
+**Next unused feature number: `049`.**
 
-The highest assigned number is `047`. This includes documents in this folder,
+The highest assigned number is `048`. This includes documents in this folder,
 the [archive](archive/README.md), and [on-hold features](on-hold/README.md).
 Archived, cancelled, and on-hold numbers remain reserved.
 
@@ -26,8 +26,6 @@ When creating a feature document:
 | Number | Feature | Status | Location |
 | --- | --- | --- | --- |
 | 036 | Trusted Time Source & Client Offset Display | On Hold | [Deferred document](on-hold/036-trusted-time-source.md) |
-| 046 | Owner-Controlled MCP Draft Tools | Completed; not yet archived | [Feature document](046-owner-controlled-mcp-draft-tools.md) |
-| 047 | Deployed Version Footer | Completed; not yet archived | [Feature document](047-deployed-version-footer.md) |
 
 Keep this table aligned with the documents outside the archive. Remove an entry
 when it is archived, but do not decrease the next feature number. Local-only

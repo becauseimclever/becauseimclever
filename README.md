@@ -83,6 +83,12 @@ files. Sign in through the admin area and use `/admin/posts/new` to create a pos
 or the post list to edit an existing one. Set its status through the human admin
 workflow when it is ready to publish.
 
+Public post listings contain only Published posts. Direct post and uploaded-image
+URLs return 404 for Draft, Scheduled, and Debug posts unless the visitor is
+signed in and satisfies the configured Admin policy. Admins can preview these
+posts at their normal URLs. Post API responses are not cached, so admin previews
+cannot be reused publicly and visibility is rechecked after status changes.
+
 Upload images through the editor. Uploaded image data is also stored in PostgreSQL;
 use the image URL returned by the upload UI and provide descriptive alt text.
 Do not add post content or uploaded images to the repository as the normal
@@ -162,7 +168,7 @@ HTTPS reverse proxy: the existing forwarded-header configuration trusts proxies.
 Never send the token over plaintext HTTP or enable protocol payload logging.
 Feature audit logs contain only operation, post ID, and outcome.
 
-[Feature 046](docs/046-owner-controlled-mcp-draft-tools.md) documents the atomic
+[Feature 046](docs/archive/041-050.md#046---owner-controlled-mcp-draft-tools) documents the atomic
 PostgreSQL guards and verification. [McpDraft.http](McpDraft.http) demonstrates
 initialization and the five tools, reading the token from a private process
 environment rather than committing it.
@@ -185,21 +191,19 @@ and a separate migrated test database.
 
 Production runs one published application container with Docker Compose.
 
-### Next Release: v1.2.0
+### Security Patch Release: v1.2.1
 
-The next release is a minor bump from v1.1.1, covering:
+This patch follows v1.2.0 and closes public direct-URL access to unpublished posts
+and uploaded images. Authenticated admins retain previews; public visitors receive
+404 for Draft, Scheduled, and Debug content. Post API responses are not cached.
+Completed feature stories 046-048 are summarized in the feature archive.
 
-- Optional owner-controlled MCP draft tools, disabled by default; human admin
-  publishing and scheduling remain unchanged.
-- Proportionate tooling/documentation cleanup and summary-only feature archives.
-- The deployed build version beside the public footer copyright notice.
-
-After the release-preparation PR is merged and CI passes, create `v1.2.0` on
+After the security-fix PR is merged and CI passes, create `v1.2.1` on
 the intended `main` commit. That tag triggers the existing image-publication
 and GitHub-release workflows; it has not been published as part of preparation.
 Verify both workflows and the multi-architecture image before deployment.
-Review the generated release notes to include the MCP/tooling work from PR #30,
-whose non-conventional squash title may be omitted by the changelog filter.
+Purge any existing proxy/CDN image caches when deploying; new response headers
+cannot revoke copies already cached or downloaded.
 No manually maintained project version is required: the tag supplies MinVer's
 version, which is stamped into the compiled application during the release build.
 
