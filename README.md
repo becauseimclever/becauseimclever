@@ -172,8 +172,10 @@ Never point it at production:
 dotnet test tests\BecauseImClever.Server.Tests --filter "FullyQualifiedName~McpPostgresTests"
 ```
 
-These external-dependency tests skip without that setting and are excluded from
-the normal CI filter. They create test posts and a separate migrated test database.
+These tests skip locally without that setting and are excluded from the normal
+unit-test filter. CI runs them separately against a disposable loopback PostgreSQL
+service and includes their coverage in the existing gate. They create test posts
+and a separate migrated test database.
 
 ## Deployment
 

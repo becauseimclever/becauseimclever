@@ -20,6 +20,19 @@ jobs:
       pull-requests: write
     env:
       COVERAGE_THRESHOLD: '95 85'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: feature046_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v6
         with:
@@ -45,6 +58,19 @@ jobs:
             --configuration Release \
             --no-build \
             --filter "FullyQualifiedName!~E2E&Category!=ExternalDependency&Category!=Performance" \
+            --collect:"XPlat Code Coverage" \
+            --settings coverage.runsettings \
+            --logger "trx" \
+            --results-directory ./TestResults
+
+      - name: Test MCP PostgreSQL operations
+        env:
+          BIC_MCP_TEST_DB: Host=127.0.0.1;Port=5432;Database=feature046_ci;Username=postgres
+        run: |
+          dotnet test tests/BecauseImClever.Server.Tests/BecauseImClever.Server.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "FullyQualifiedName~McpPostgresTests" \
             --collect:"XPlat Code Coverage" \
             --settings coverage.runsettings \
             --logger "trx" \
