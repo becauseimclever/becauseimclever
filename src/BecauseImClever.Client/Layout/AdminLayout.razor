@@ -7,6 +7,7 @@
         <nav>
             <ul>
                 <li><a href="">Home</a></li>
+                <li><a href="commissions">Commissions</a></li>
                 <li><a href="posts">Blog</a></li>
                 <li><a href="projects">Projects</a></li>
                 <li><a href="clock">Clock</a></li>
@@ -46,6 +47,9 @@
                     </li>
                     @if (IsAdmin)
                     {
+                        <li class="@GetActiveClass("/admin/commissions")">
+                            <a href="admin/commissions">Commissions</a>
+                        </li>
                         <li class="@GetActiveClass("/admin/settings")">
                             <a href="admin/settings">
                                 <span class="nav-icon">⚙️</span>

@@ -27,6 +27,12 @@ public class BlogDbContext : DbContext
     /// </summary>
     public DbSet<PostImage> PostImages => this.Set<PostImage>();
 
+    /// <summary>Gets the commissions table.</summary>
+    public DbSet<Commission> Commissions => this.Set<Commission>();
+
+    /// <summary>Gets the commission images table.</summary>
+    public DbSet<CommissionImage> CommissionImages => this.Set<CommissionImage>();
+
     /// <summary>
     /// Gets the feature settings table.
     /// </summary>

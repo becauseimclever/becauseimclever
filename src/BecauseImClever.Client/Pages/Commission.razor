@@ -1,0 +1,55 @@
+@page "/commissions/{Slug}"
+@using BecauseImClever.Client.Services
+
+<PageTitle>@(Product?.Title ?? "Commission")</PageTitle>
+
+<main class="main-content commissions">
+    <div class="content-area">
+        <p><a href="commissions">Back to Commissions</a></p>
+        @if (ErrorMessage is not null)
+        {
+            <p role="alert">@ErrorMessage</p>
+            <button type="button" class="btn btn-secondary" @onclick="LoadAsync">Retry</button>
+        }
+        else if (IsLoading)
+        {
+            <p role="status">Loading commission...</p>
+        }
+        else if (Product is null)
+        {
+            <h1>Commission not found</h1>
+            <p>This commission is not available.</p>
+        }
+        else
+        {
+            <article class="card">
+                <h1>@Product.Title</h1>
+                @if (!Product.IsPublished)
+                {
+                    <p role="status">Unpublished preview</p>
+                }
+                <CommissionSlideshow ProductId="Product.Id" Images="Product.Images" />
+                <h2>About this project</h2>
+                <p class="commission-description">@Product.Description</p>
+                <h2>Base asking price</h2>
+                <p>From @CommissionDisplay.Money(Product.BasePrice) USD</p>
+                <h2>Customization options</h2>
+                @if (Product.Options.Count == 0)
+                {
+                    <p>Contact me to discuss customization possibilities.</p>
+                }
+                else
+                {
+                    <ul>
+                        @foreach (var option in Product.Options)
+                        {
+                            <li>@option.Name - @(option.Price is decimal price ? $"{CommissionDisplay.Money(price)} USD" : "Contact for pricing")</li>
+                        }
+                    </ul>
+                }
+                <p>Prices are starting asking prices, not a final quote. Email me to discuss your project and customizations.</p>
+                <a class="btn commission-contact" href="@CommissionDisplay.ContactUrl(Product.Title)">Contact me for more information</a>
+            </article>
+        }
+    </div>
+</main>

@@ -20,7 +20,7 @@ namespace BecauseImClever.Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -125,6 +125,103 @@ namespace BecauseImClever.Infrastructure.Data.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("posts", (string)null);
+                });
+
+            modelBuilder.Entity("BecauseImClever.Domain.Entities.Commission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("base_price");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_published");
+
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("options");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("slug");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("commissions", (string)null);
+                });
+
+            modelBuilder.Entity("BecauseImClever.Domain.Entities.CommissionImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AltText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("alt_text");
+
+                    b.Property<Guid>("CommissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("commission_id");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("content_type");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("data");
+
+                    b.Property<string>("Filename")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("filename");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommissionId", "SortOrder");
+
+                    b.ToTable("commission_images", (string)null);
                 });
 
             modelBuilder.Entity("BecauseImClever.Domain.Entities.ExtensionDetectionEvent", b =>
@@ -271,6 +368,15 @@ namespace BecauseImClever.Infrastructure.Data.Migrations
                     b.ToTable("post_images", (string)null);
                 });
 
+            modelBuilder.Entity("BecauseImClever.Domain.Entities.CommissionImage", b =>
+                {
+                    b.HasOne("BecauseImClever.Domain.Entities.Commission", null)
+                        .WithMany("Images")
+                        .HasForeignKey("CommissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BecauseImClever.Domain.Entities.PostImage", b =>
                 {
                     b.HasOne("BecauseImClever.Domain.Entities.BlogPost", "Post")
@@ -283,6 +389,11 @@ namespace BecauseImClever.Infrastructure.Data.Migrations
                 });
 
             modelBuilder.Entity("BecauseImClever.Domain.Entities.BlogPost", b =>
+                {
+                    b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("BecauseImClever.Domain.Entities.Commission", b =>
                 {
                     b.Navigation("Images");
                 });

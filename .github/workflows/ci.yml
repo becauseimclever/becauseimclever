@@ -74,6 +74,20 @@ jobs:
             --logger "trx" \
             --results-directory ./TestResults
 
+      - name: Test commission PostgreSQL operations
+        env:
+          COMMISSION_DISPOSABLE_POSTGRES: Host=127.0.0.1;Port=5432;Database=commissions_disposable_ci;Username=postgres
+        run: |
+          docker exec ${{ job.services.postgres.id }} createdb -U postgres commissions_disposable_ci
+          dotnet test tests/BecauseImClever.Infrastructure.Tests/BecauseImClever.Infrastructure.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "FullyQualifiedName~CommissionPostgresTests" \
+            --collect:"XPlat Code Coverage" \
+            --settings coverage.runsettings \
+            --logger "trx" \
+            --results-directory ./TestResults
+
       - uses: danielpalme/ReportGenerator-GitHub-Action@5
         with:
           reports: ./TestResults/**/coverage.cobertura.xml

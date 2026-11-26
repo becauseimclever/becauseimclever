@@ -1,3 +1,4 @@
+using BecauseImClever.Application.Commissions;
 using BecauseImClever.Application.Drafts;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Infrastructure.Data;
@@ -35,6 +36,8 @@ if (!string.IsNullOrEmpty(blogConnectionString))
     builder.Services.AddScoped<IPostImageService, PostImageService>();
     builder.Services.AddScoped<IPostAuthorizationService, PostAuthorizationService>();
     builder.Services.AddScoped<IDraftPostService, DraftPostService>();
+    builder.Services.AddScoped<ICommissionService, CommissionService>();
+    builder.Services.AddScoped<IDraftCommissionService, DraftCommissionService>();
 
     // Register scheduled post publisher background service
     builder.Services.AddHostedService<ScheduledPostPublisherService>();
@@ -145,6 +148,7 @@ if (!string.IsNullOrEmpty(blogConnectionString))
 // Apply forwarded headers first (before any other middleware)
 // This ensures the app knows the original scheme (HTTPS) when behind a reverse proxy
 app.UseForwardedHeaders();
+app.UseCommissionNoStore();
 app.UseMcpDraftBoundary(!string.IsNullOrEmpty(blogConnectionString));
 
 // Configure the HTTP request pipeline.

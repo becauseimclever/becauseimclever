@@ -1,0 +1,21 @@
+@using BecauseImClever.Client.Services
+
+@if (Images.Count == 0)
+{
+    <p class="commission-no-images">No images available yet.</p>
+}
+else
+{
+    <section class="commission-slideshow" role="region" aria-label="Project images" tabindex="0"
+             @onkeydown="HandleKey" @ontouchstart="StartTouch" @ontouchend="EndTouch">
+        <img src="@CommissionDisplay.ImageUrl(ProductId, Images[ActiveIndex].Id)" alt="@Images[ActiveIndex].AltText" />
+        @if (Images.Count > 1)
+        {
+            <div class="commission-actions">
+                <button type="button" class="btn btn-secondary" aria-label="Previous image" @onclick="Previous">Previous</button>
+                <span aria-live="polite" aria-atomic="true">@(ActiveIndex + 1) of @Images.Count</span>
+                <button type="button" class="btn btn-secondary" aria-label="Next image" @onclick="Next">Next</button>
+            </div>
+        }
+    </section>
+}

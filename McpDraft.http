@@ -4,6 +4,9 @@
 @mcpToken = {{$processEnv McpDraft__Token}}
 @postId = <id-from-create_draft>
 @expectedVersion = <version-from-fresh-get_post>
+@commissionId = <id-from-create_commission_draft>
+@commissionVersion = <version-from-fresh-get_commission>
+@commissionImageId = <image-id-from-upload>
 
 ### Initialize (stateless: no session identifier to retain)
 POST {{baseUrl}}/mcp
@@ -13,7 +16,7 @@ Accept: application/json, text/event-stream
 
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"local-http-client","version":"1.0.0"}}}
 
-### Discover exactly five tools
+### Discover blog and commission tools
 POST {{baseUrl}}/mcp
 Authorization: Bearer {{mcpToken}}
 Content-Type: application/json
@@ -76,3 +79,84 @@ Accept: application/json, text/event-stream
 MCP-Protocol-Version: 2025-11-25
 
 {"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"create_draft","arguments":{"draft":{"title":"Title","slug":"rejected-draft","summary":"Summary","content":"Markdown","tags":[],"status":"Published"}}}}
+
+### List published and unpublished commissions
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"list_commissions","arguments":{"offset":0,"limit":20}}}
+
+### Create an unpublished commission at the user's direction
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"create_commission_draft","arguments":{"draft":{"title":"Custom controller","slug":"custom-controller","description":"A made-to-order controller.","basePrice":125.50,"options":[{"name":"Color choice","price":null},{"name":"Engraving","price":15.00}]}}}}
+
+### Read commission details, ordered image metadata, and current version
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"get_commission","arguments":{"id":"{{commissionId}}"}}}
+
+### Obtain explicit user approval before destructive tools; reread the version after EVERY write.
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"update_commission_draft","arguments":{"id":"{{commissionId}}","expectedVersion":"{{commissionVersion}}","draft":{"title":"Custom controller","slug":"custom-controller","description":"Updated project details.","basePrice":150.00,"options":[]}}}}
+
+### Upload a supported image with alt text; replace the base64 placeholder (up to 5 MiB decoded).
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"upload_commission_image","arguments":{"id":"{{commissionId}}","expectedVersion":"{{commissionVersion}}","image":{"filename":"front.png","contentType":"image/png","data":"<base64-image>","altText":"Front view of the controller"}}}}
+
+### DESTRUCTIVE: update image description after explicit client-side approval.
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"update_commission_image","arguments":{"id":"{{commissionId}}","expectedVersion":"{{commissionVersion}}","imageId":"{{commissionImageId}}","altText":"Front view showing custom controls"}}}
+
+### DESTRUCTIVE: provide every current image ID exactly once, in the desired order.
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"reorder_commission_images","arguments":{"id":"{{commissionId}}","expectedVersion":"{{commissionVersion}}","imageIds":["{{commissionImageId}}"]}}}
+
+### DESTRUCTIVE: delete an image after explicit client-side approval.
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"delete_commission_image","arguments":{"id":"{{commissionId}}","expectedVersion":"{{commissionVersion}}","imageId":"{{commissionImageId}}"}}}
+
+### DESTRUCTIVE: delete an unpublished commission after explicit client-side approval.
+POST {{baseUrl}}/mcp
+Authorization: Bearer {{mcpToken}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+
+{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"delete_commission_draft","arguments":{"id":"{{commissionId}}","expectedVersion":"{{commissionVersion}}"}}}

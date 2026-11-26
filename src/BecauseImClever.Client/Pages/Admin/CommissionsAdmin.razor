@@ -1,0 +1,38 @@
+@page "/admin/commissions"
+@layout AdminLayout
+@attribute [Authorize(Policy = "Admin")]
+@using BecauseImClever.Client.Services
+
+<PageTitle>Admin - Commissions</PageTitle>
+
+<section class="commissions">
+    <h1>Commission management</h1>
+    <p><a class="btn" href="admin/commissions/new">New commission</a></p>
+    @if (ErrorMessage is not null)
+    {
+        <p role="alert">@ErrorMessage</p>
+        <button type="button" class="btn btn-secondary" @onclick="LoadAsync" disabled="@IsLoading">Retry</button>
+    }
+    @if (IsLoading)
+    {
+        <p role="status">Loading commissions...</p>
+    }
+    else if (Products.Count == 0 && ErrorMessage is null)
+    {
+        <p>No commissions yet.</p>
+    }
+    <ul>
+        @foreach (var product in Products)
+        {
+            <li @key="product.Id">
+                <a href="@($"admin/commissions/edit/{product.Id}")">@product.Title</a>
+                - @(product.IsPublished ? "Published" : "Unpublished")
+                - @CommissionDisplay.Money(product.BasePrice) USD
+            </li>
+        }
+    </ul>
+    @if (HasMore && Products.Count > 0)
+    {
+        <button type="button" class="btn btn-secondary" @onclick="LoadAsync" disabled="@IsLoading">Load more</button>
+    }
+</section>
