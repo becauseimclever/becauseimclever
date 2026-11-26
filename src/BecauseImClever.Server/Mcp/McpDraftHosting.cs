@@ -1,6 +1,7 @@
 namespace BecauseImClever.Server.Mcp;
 
 using System.Text.Json;
+using BecauseImClever.Application.Commissions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
@@ -17,9 +18,18 @@ public static class McpDraftHosting
         ["create_draft"] = ["draft"],
         ["update_draft"] = ["id", "expectedVersion", "draft"],
         ["delete_draft"] = ["id", "expectedVersion"],
+        ["list_commissions"] = ["offset", "limit"],
+        ["get_commission"] = ["id"],
+        ["create_commission_draft"] = ["draft"],
+        ["update_commission_draft"] = ["id", "expectedVersion", "draft"],
+        ["delete_commission_draft"] = ["id", "expectedVersion"],
+        ["upload_commission_image"] = ["id", "expectedVersion", "image"],
+        ["update_commission_image"] = ["id", "expectedVersion", "imageId", "altText"],
+        ["reorder_commission_images"] = ["id", "expectedVersion", "imageIds"],
+        ["delete_commission_image"] = ["id", "expectedVersion", "imageId"],
     };
 
-    /// <summary>Registers only the five draft tools and dedicated bearer policy.</summary>
+    /// <summary>Registers draft tools and the dedicated bearer policy.</summary>
     /// <param name="services">Host services.</param>
     /// <param name="configuration">Private configuration.</param>
     public static void AddMcpDraftTools(this IServiceCollection services, IConfiguration configuration)
@@ -34,12 +44,13 @@ public static class McpDraftHosting
         services.AddMcpServer()
             .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
             .WithTools<DraftTools>()
+            .WithTools<CommissionTools>()
             .WithRequestFilters(filters => filters.AddCallToolFilter(next => async (request, cancellationToken) =>
             {
                 var call = request.Params;
                 if (call is null || !Arguments.TryGetValue(call.Name, out var allowed) ||
                     call.Arguments?.Keys.Any(k => !allowed.Contains(k, StringComparer.Ordinal)) == true ||
-                    !ValidDraftArgument(call))
+                    !ValidDraftArgument(call) || !ValidCommissionArguments(call))
                 {
                     return Error("validation");
                 }
@@ -53,6 +64,20 @@ public static class McpDraftHosting
                 return result;
             }));
     }
+
+    /// <summary>Disables caching for every commission response, including authorization failures.</summary>
+    /// <param name="app">Host application.</param>
+    public static void UseCommissionNoStore(this WebApplication app) =>
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api/v1/commissions", StringComparison.OrdinalIgnoreCase) ||
+                context.Request.Path.StartsWithSegments("/api/v1/admin/commissions", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.Headers.CacheControl = "no-store";
+            }
+
+            await next(context);
+        });
 
     /// <summary>Rejects machine bearer traffic outside MCP before cookie authentication and SPA/static handling.</summary>
     /// <param name="app">Host application.</param>
@@ -119,7 +144,7 @@ public static class McpDraftHosting
                 return;
             }
 
-            const long maxBytes = 1_048_576;
+            const long maxBytes = 8 * 1024 * 1024;
             if (context.Request.ContentLength > maxBytes)
             {
                 context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -161,6 +186,108 @@ public static class McpDraftHosting
             draft.GetProperty("tags").ValueKind == JsonValueKind.Array &&
             draft.GetProperty("tags").EnumerateArray().All(t => t.ValueKind == JsonValueKind.String);
     }
+
+    private static bool ValidCommissionArguments(CallToolRequestParams call)
+    {
+        if (!call.Name.Contains("commission", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var args = call.Arguments;
+        if (args is null)
+        {
+            return call.Name == "list_commissions";
+        }
+
+        foreach (var name in new[] { "id", "expectedVersion", "imageId" })
+        {
+            if (args.TryGetValue(name, out var value) && (value.ValueKind != JsonValueKind.String || !Guid.TryParse(value.GetString(), out var id) || id == Guid.Empty))
+            {
+                return false;
+            }
+        }
+
+        if ((args.TryGetValue("offset", out var offset) && (offset.ValueKind != JsonValueKind.Number || !offset.TryGetInt32(out var o) || o < 0 || o > 100000)) ||
+            (args.TryGetValue("limit", out var limit) && (limit.ValueKind != JsonValueKind.Number || !limit.TryGetInt32(out var l) || l < 1 || l > 50)))
+        {
+            return false;
+        }
+
+        if (args.TryGetValue("altText", out var altText) && !BoundedString(altText, 500))
+        {
+            return false;
+        }
+
+        if (args.TryGetValue("imageIds", out var ids) &&
+            (ids.ValueKind != JsonValueKind.Array || ids.GetArrayLength() > CommissionDefaults.MaxImages ||
+             ids.EnumerateArray().Any(v => v.ValueKind != JsonValueKind.String || !Guid.TryParse(v.GetString(), out var id) || id == Guid.Empty)))
+        {
+            return false;
+        }
+
+        if (call.Name is "create_commission_draft" or "update_commission_draft")
+        {
+            if (!args.TryGetValue("draft", out var draft) || !Fields(draft, ["title", "slug", "description", "basePrice", "options"]) ||
+                !BoundedString(draft.GetProperty("title"), 200) || !BoundedString(draft.GetProperty("slug"), 200) ||
+                !BoundedString(draft.GetProperty("description"), 20000) || !Price(draft.GetProperty("basePrice")) ||
+                draft.GetProperty("options").ValueKind != JsonValueKind.Array || draft.GetProperty("options").GetArrayLength() > 50)
+            {
+                return false;
+            }
+
+            return draft.GetProperty("options").EnumerateArray().All(option =>
+                Fields(option, ["name"], ["price"]) && BoundedString(option.GetProperty("name"), 200) &&
+                (!option.TryGetProperty("price", out var price) || price.ValueKind == JsonValueKind.Null || Price(price)));
+        }
+
+        if (call.Name == "upload_commission_image")
+        {
+            if (!args.TryGetValue("image", out var image) || !Fields(image, ["filename", "contentType", "data", "altText"]) ||
+                !BoundedString(image.GetProperty("filename"), 255) || !BoundedString(image.GetProperty("contentType"), 100) ||
+                !BoundedString(image.GetProperty("altText"), 500) || image.GetProperty("data").ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            var encoded = image.GetProperty("data").GetString()!;
+            if (encoded.Length > ((CommissionDefaults.MaxImageBytes + 2) / 3 * 4))
+            {
+                return false;
+            }
+
+            try
+            {
+                return Convert.FromBase64String(encoded).Length <= CommissionDefaults.MaxImageBytes;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool Fields(JsonElement value, string[] required, string[]? optional = null)
+    {
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+
+        var names = value.EnumerateObject().Select(p => p.Name).ToArray();
+        return names.Distinct(StringComparer.Ordinal).Count() == names.Length &&
+            required.All(n => names.Contains(n, StringComparer.Ordinal)) &&
+            names.All(n => required.Contains(n, StringComparer.Ordinal) || (optional?.Contains(n, StringComparer.Ordinal) ?? false));
+    }
+
+    private static bool BoundedString(JsonElement value, int maxLength) =>
+            value.ValueKind == JsonValueKind.String && value.GetString()!.Length <= maxLength;
+
+    private static bool Price(JsonElement value) =>
+            value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var price) &&
+            price >= 0 && price <= 999999.99m && decimal.Round(price, 2) == price;
 
     private static CallToolResult Error(string code) => new()
     {

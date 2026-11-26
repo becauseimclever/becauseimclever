@@ -53,7 +53,7 @@ public class McpPostgresTests
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             await using var transport = new HttpClientTransport(new() { Endpoint = new Uri("https://localhost/mcp") }, http);
             await using var client = await McpClient.CreateAsync(transport);
-            Assert.Equal(5, (await client.ListToolsAsync()).Count);
+            Assert.Equal(14, (await client.ListToolsAsync()).Count);
             var draft = Read<DraftPostResponse>(await client.CallToolAsync("create_draft", new Dictionary<string, object?>
             {
                 ["draft"] = new { title = "Title", slug = "program-draft", summary = "Summary", content = "Markdown", tags = Array.Empty<string>() },

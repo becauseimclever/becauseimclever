@@ -1,0 +1,48 @@
+@page "/commissions"
+@using BecauseImClever.Client.Services
+
+<PageTitle>Commissions</PageTitle>
+
+<main class="main-content commissions">
+    <div class="content-area">
+        <h1>Commissions</h1>
+        <p>Explore my projects, customization options, and starting prices. Contact me to discuss a commission.</p>
+        @if (ErrorMessage is not null)
+        {
+            <p role="alert">@ErrorMessage</p>
+            <button type="button" class="btn btn-secondary" @onclick="LoadAsync" disabled="@IsLoading">Retry</button>
+        }
+        @if (Products.Count == 0 && IsLoading)
+        {
+            <p role="status">Loading commissions...</p>
+        }
+        else if (Products.Count == 0 && ErrorMessage is null)
+        {
+            <p>No commissions are available yet. Please check back soon.</p>
+        }
+        else
+        {
+            <div class="blog-grid">
+                @foreach (var product in Products)
+                {
+                    <article class="card" @key="product.Id">
+                        @if (product.CoverImageId is Guid imageId)
+                        {
+                            <a href="@($"commissions/{product.Slug}")" tabindex="-1" aria-hidden="true">
+                                <img class="commission-cover" src="@CommissionDisplay.ImageUrl(product.Id, imageId)" alt="" loading="lazy" />
+                            </a>
+                        }
+                        <h2><a href="@($"commissions/{product.Slug}")">@product.Title</a></h2>
+                        <p>From @CommissionDisplay.Money(product.BasePrice) USD</p>
+                    </article>
+                }
+            </div>
+            @if (HasMore)
+            {
+                <button type="button" class="btn btn-secondary" @onclick="LoadAsync" disabled="@IsLoading">
+                    @(IsLoading ? "Loading..." : "Load more")
+                </button>
+            }
+        }
+    </div>
+</main>

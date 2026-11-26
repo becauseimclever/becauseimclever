@@ -80,7 +80,7 @@ public class McpBoundaryTests
         host.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", host.Token);
         await using var transport = new HttpClientTransport(new() { Endpoint = new Uri("https://localhost/mcp") }, host.Client);
         await using var client = await McpClient.CreateAsync(transport);
-        Assert.Equal(5, (await client.ListToolsAsync()).Count);
+        Assert.Equal(14, (await client.ListToolsAsync()).Count);
         host.Configuration["McpDraft:Token"] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         host.Configuration.Reload();
         await Assert.ThrowsAnyAsync<Exception>(() => client.ListToolsAsync().AsTask());
@@ -135,7 +135,7 @@ public class McpBoundaryTests
     {
         await using var host = await McpTestHost.CreateAsync();
         host.Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", host.Token);
-        var response = await host.Client.PostAsync("/mcp", new StringContent(new string('x', 1_048_577)));
+        var response = await host.Client.PostAsync("/mcp", new StringContent(new string('x', 8_388_609)));
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
     }
 }

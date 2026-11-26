@@ -84,6 +84,7 @@ public class MainLayoutTests : BunitContext
         Assert.Contains("Blog", cut.Markup);
         Assert.Contains("Projects", cut.Markup);
         Assert.Contains("About", cut.Markup);
+        Assert.Equal(new[] { "Home", "Commissions", "Blog" }, cut.FindAll("header nav a").Take(3).Select(a => a.TextContent));
     }
 
     [Fact]

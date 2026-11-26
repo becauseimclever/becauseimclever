@@ -2,6 +2,7 @@ namespace BecauseImClever.Server.Tests.Mcp;
 
 using System.Security.Claims;
 using System.Security.Cryptography;
+using BecauseImClever.Application.Commissions;
 using BecauseImClever.Application.Drafts;
 using BecauseImClever.Application.Interfaces;
 using BecauseImClever.Server.Controllers;
@@ -36,7 +37,7 @@ internal sealed class McpTestHost : IAsyncDisposable
 
     public string Token { get; }
 
-    public static async Task<McpTestHost> CreateAsync(IDraftPostService? service = null, bool enabled = true, bool databaseConfigured = true)
+    public static async Task<McpTestHost> CreateAsync(IDraftPostService? service = null, bool enabled = true, bool databaseConfigured = true, IDraftCommissionService? commissions = null, ICommissionService? commissionService = null)
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -50,7 +51,11 @@ internal sealed class McpTestHost : IAsyncDisposable
         builder.WebHost.UseTestServer();
         builder.Logging.ClearProviders();
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
-        builder.Services.AddAuthorization(options => options.AddPolicy("PostManagement", policy => policy.RequireClaim("groups", "becauseimclever-admins")));
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("PostManagement", policy => policy.RequireClaim("groups", "becauseimclever-admins"));
+            options.AddPolicy("Admin", policy => policy.RequireClaim("groups", "becauseimclever-admins"));
+        });
         builder.Services.AddControllers().AddApplicationPart(typeof(AdminPostsController).Assembly);
         var admin = new Mock<IAdminPostService>();
         admin.Setup(s => s.GetAllPostsAsync()).ReturnsAsync(Array.Empty<AdminPostSummary>());
@@ -59,7 +64,14 @@ internal sealed class McpTestHost : IAsyncDisposable
         builder.Services.AddSingleton(Mock.Of<IPostAuthorizationService>());
         builder.Services.AddMcpDraftTools(configuration);
         builder.Services.AddSingleton(service ?? Mock.Of<IDraftPostService>());
+        builder.Services.AddSingleton(commissions ?? Mock.Of<IDraftCommissionService>());
+        if (commissionService is not null)
+        {
+            builder.Services.AddSingleton(commissionService);
+        }
+
         var app = builder.Build();
+        app.UseCommissionNoStore();
         app.UseMcpDraftBoundary(databaseConfigured);
         app.UseAuthentication();
         app.UseAuthorization();

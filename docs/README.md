@@ -2,9 +2,9 @@
 
 ## Next Feature Number
 
-**Next unused feature number: `049`.**
+**Next unused feature number: `050`.**
 
-The highest assigned number is `048`. This includes documents in this folder,
+The highest assigned number is `049`. This includes documents in this folder,
 the [archive](archive/README.md), and [on-hold features](on-hold/README.md).
 Archived, cancelled, and on-hold numbers remain reserved.
 
@@ -26,6 +26,7 @@ When creating a feature document:
 | Number | Feature | Status | Location |
 | --- | --- | --- | --- |
 | 036 | Trusted Time Source & Client Offset Display | On Hold | [Deferred document](on-hold/036-trusted-time-source.md) |
+| 049 | Commissions | Verified locally; deployment pending | [Feature document](049-project-product-gallery.md) |
 
 Keep this table aligned with the documents outside the archive. Remove an entry
 when it is archived, but do not decrease the next feature number. Local-only

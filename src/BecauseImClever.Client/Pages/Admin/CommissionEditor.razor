@@ -1,0 +1,132 @@
+@page "/admin/commissions/new"
+@page "/admin/commissions/edit/{Id:guid}"
+@layout AdminLayout
+@attribute [Authorize(Policy = "Admin")]
+@using BecauseImClever.Application.Commissions
+@using BecauseImClever.Client.Services
+
+<PageTitle>Admin - @(Id.HasValue ? "Edit commission" : "New commission")</PageTitle>
+<NavigationLock ConfirmExternalNavigation="@HasUnsavedChanges" OnBeforeInternalNavigation="BeforeNavigationAsync" />
+
+<section class="commission-editor">
+    <h1>@(Id.HasValue ? "Edit commission" : "New commission")</h1>
+    <p><a href="admin/commissions">Back to commission management</a></p>
+    @if (ErrorMessage is not null)
+    {
+        <p role="alert">@ErrorMessage</p>
+        @if (Id.HasValue && Product is null && !IsLoading)
+        {
+            <button type="button" class="btn btn-secondary" @onclick="RetryLoadAsync">Retry</button>
+        }
+    }
+    @if (SuccessMessage is not null)
+    {
+        <p role="status">@SuccessMessage</p>
+    }
+    @if (IsLoading)
+    {
+        <p role="status">Loading commission...</p>
+    }
+    else if (!Id.HasValue || Product is not null)
+    {
+        <form @onsubmit="SaveAsync" @onsubmit:preventDefault>
+            <fieldset disabled="@IsBusy">
+                <legend>Product details</legend>
+                <label for="commission-title">Title</label>
+                <input id="commission-title" required maxlength="200" @bind="Title" @bind:after="MarkDirty" />
+                <label for="commission-slug">URL slug</label>
+                <input id="commission-slug" required maxlength="200" pattern="[a-z0-9]+(-[a-z0-9]+)*" @bind="Slug" @bind:after="MarkDirty" />
+                <p>Use lowercase letters, numbers, and hyphens.</p>
+                <label for="commission-description">Project description</label>
+                <textarea id="commission-description" required maxlength="20000" rows="8" @bind="Description" @bind:after="MarkDirty"></textarea>
+                <label for="commission-price">Base asking price (USD)</label>
+                <input id="commission-price" type="number" required min="0" max="999999.99" step="0.01" @bind="BasePrice" @bind:after="MarkDirty" />
+                <h2>Customization options</h2>
+                <p>Leave an option's price blank when pricing needs to be discussed.</p>
+                @foreach (var option in Options)
+                {
+                    <div class="commission-option" @key="option">
+                        <label>
+                            Option
+                            <input required maxlength="200" aria-label="Customization name" @bind="option.Name" @bind:after="MarkDirty" />
+                        </label>
+                        <label>
+                            Optional price (USD)
+                            <input type="number" min="0" max="999999.99" step="0.01" aria-label="Customization price in USD" @bind="option.Price" @bind:after="MarkDirty" />
+                        </label>
+                        <button type="button" class="btn btn-secondary" @onclick="() => RemoveOption(option)">Remove option</button>
+                    </div>
+                }
+                <div class="commission-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="AddOption" disabled="@(Options.Count >= 50)">Add customization</button>
+                    <button type="submit" class="btn">@(IsBusy ? "Saving..." : "Save product")</button>
+                </div>
+            </fieldset>
+        </form>
+
+        @if (Product is not null)
+        {
+            <p>Status: <strong>@(Product.IsPublished ? "Published" : "Unpublished")</strong></p>
+            <p><a href="@($"commissions/{Product.Slug}")" target="_blank" rel="noopener">View saved product</a></p>
+            <p>Save product changes before managing publication or images.</p>
+            <div class="commission-actions">
+                <button type="button" class="btn btn-secondary" disabled="@(IsBusy || HasUnsavedChanges)" @onclick="TogglePublicationAsync">
+                    @(Product.IsPublished ? "Unpublish" : "Publish")
+                </button>
+                <button type="button" class="btn btn-secondary" disabled="@IsBusy" @onclick="() => ConfirmDeleteProduct = true">Delete product</button>
+            </div>
+            @if (ConfirmDeleteProduct)
+            {
+                <div role="alert">
+                    <p>Permanently delete this product and all its images?</p>
+                    <button type="button" class="btn btn-secondary" disabled="@IsBusy" @onclick="DeleteProductAsync">Confirm delete product</button>
+                    <button type="button" class="btn btn-secondary" disabled="@IsBusy" @onclick="() => ConfirmDeleteProduct = false">Cancel</button>
+                </div>
+            }
+            <fieldset disabled="@(IsBusy || DetailsDirty)">
+                <legend>Project images</legend>
+                <p>PNG, JPEG, GIF, or WebP. Maximum 5 MiB per image and @CommissionDefaults.MaxImages images. The first image is the gallery cover.</p>
+                @for (var index = 0; index < Product.Images.Count; index++)
+                {
+                    var image = Product.Images[index];
+                    var imageIndex = index;
+                    <div class="commission-image" @key="image.Id">
+                        <img src="@CommissionDisplay.ImageUrl(Product.Id, image.Id)" alt="@image.AltText" />
+                        <label>
+                            Image description
+                            <input maxlength="500" required @bind="ImageAltTexts[image.Id]" />
+                        </label>
+                        <div class="commission-actions">
+                            <button type="button" class="btn btn-secondary" @onclick="() => SaveImageAltAsync(image.Id)">Save image description</button>
+                            <button type="button" class="btn btn-secondary" disabled="@(index == 0)" @onclick="() => MoveImageAsync(imageIndex, -1)">Move up</button>
+                            <button type="button" class="btn btn-secondary" disabled="@(index == Product.Images.Count - 1)" @onclick="() => MoveImageAsync(imageIndex, 1)">Move down</button>
+                            <button type="button" class="btn btn-secondary" @onclick="() => ConfirmDeleteImage = image.Id">Delete image</button>
+                        </div>
+                        @if (ConfirmDeleteImage == image.Id)
+                        {
+                            <div role="alert">
+                                <p>Permanently delete this image?</p>
+                                <button type="button" class="btn btn-secondary" @onclick="() => DeleteImageAsync(image.Id)">Confirm delete image</button>
+                                <button type="button" class="btn btn-secondary" @onclick="() => ConfirmDeleteImage = null">Cancel</button>
+                            </div>
+                        }
+                    </div>
+                }
+                @if (Product.Images.Count < CommissionDefaults.MaxImages)
+                {
+                    <label for="commission-file">Add a project image</label>
+                    <InputFile id="commission-file" @key="FileInputKey" OnChange="SelectImage" accept="image/png,image/jpeg,image/gif,image/webp" />
+                    <label for="commission-image-alt">Description for the new image</label>
+                    <input id="commission-image-alt" maxlength="500" @bind="UploadAltText" />
+                    <div class="commission-actions">
+                        <button type="button" class="btn btn-secondary" disabled="@(SelectedFile is null || string.IsNullOrWhiteSpace(UploadAltText))" @onclick="UploadImageAsync">Upload image</button>
+                    </div>
+                }
+            </fieldset>
+        }
+        else
+        {
+            <p>Save the product first, then add images and publish it.</p>
+        }
+    }
+</section>

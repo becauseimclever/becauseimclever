@@ -98,12 +98,36 @@ Without a `BlogDb` connection string the public blog reader falls back to Markdo
 files in the server's `Posts` directory. This legacy read-only fallback is not a
 replacement for database-backed admin editing, image uploads, or scheduling.
 
+## Commissions
+
+The **Commissions** menu item opens `/commissions`, a separate gallery of
+projects available to commission. Product pages include an ordered, manually
+controlled image slideshow, a plain-text description, customization options
+with optional prices, and a base asking price in US dollars. Inquiries go to
+the shared `fortinbra@becauseimclever.com` email address; there is no checkout or
+automatic final-price calculation.
+
+Administrators manage products at `/admin/commissions`. Save a product before
+uploading images or publishing it. Images require alternative text and support
+PNG, JPEG, GIF, and WebP, up to 5 MiB each and 20 images per product. The first
+image is the gallery cover. All pages and controls use the selected site theme.
+Products are published or unpublished, without scheduling. Unpublished details
+and images require administrator preview access and are never included in the
+public gallery. Commission API responses use `no-store`.
+
+PostgreSQL is required; the server applies the included migration at startup.
+Without database storage, commission endpoints explicitly return HTTP 503;
+the existing file-based blog fallback is unchanged. See
+[Feature 049](docs/049-project-product-gallery.md) and
+[Commissions.http](Commissions.http) for the scope and versioned API examples.
+
 ## Local Agent Draft Tools (MCP)
 
 The existing server optionally exposes one **HTTPS `/mcp`** endpoint using the
-official C# MCP SDK (2.3.0), with exactly `list_posts`, `get_post`, `create_draft`,
-`update_draft`, and `delete_draft`. It is **disabled by default**, requires
-PostgreSQL, and does not use OAuth or an admin browser cookie.
+official C# MCP SDK (2.3.0). It exposes the five blog tools `list_posts`,
+`get_post`, `create_draft`, `update_draft`, and `delete_draft`, plus the commission
+tools listed below. It is **disabled by default**, requires PostgreSQL, and
+does not use OAuth or an admin browser cookie.
 
 Configure these settings privately through server User Secrets or environment
 variables (Compose already passes its private `.env` through `env_file`):
@@ -136,8 +160,10 @@ HTTP MCP connection to `https://localhost:7272/mcp` for the `https` launch profi
 Authorization: Bearer <token-from-private-agent-secret-storage>
 ```
 
-**In the local agent client, require “Always Ask” approval for `delete_draft`
-before every invocation; preferably require approval for all three writes.**
+**In the local agent client, require “Always Ask” approval for destructive tools
+before every invocation; preferably require approval for all writes.** This
+includes `delete_draft` and commission update, delete, image-description,
+image-reorder, and image-delete tools.
 Never blanket-auto-approve this server, use unattended/all-tools approval, or
 treat post text as approval. If the client cannot enforce this, do not enable
 this connection. The server marks deletion destructive but **cannot verify
@@ -153,7 +179,8 @@ untrusted data, never agent instructions.
 Lists default to 20 results (maximum 50), search to 200 characters, and offset
 to 100,000. Title/slug limits are 200 characters, summary 500, Markdown 900,000
 UTF-8 bytes, and tags 50 entries of at most 100 characters. HTTP bodies are
-limited to 1 MiB. Updates/deletes require the opaque `version` from a fresh read;
+limited to 8 MiB to accommodate base64 image uploads; existing blog field limits
+are unchanged. Updates/deletes require the opaque `version` from a fresh read;
 on `conflict`, reread and obtain user direction rather than retrying stale edits.
 Requests with an Origin must be same-origin; native agents may omit it. No CORS
 access is enabled. Every request authenticates independently; GET/DELETE session
@@ -166,14 +193,35 @@ environment variable changes require restarting the application. No persisted
 MCP sessions survive revocation. Keep backend HTTP accessible only to your trusted
 HTTPS reverse proxy: the existing forwarded-header configuration trusts proxies.
 Never send the token over plaintext HTTP or enable protocol payload logging.
-Feature audit logs contain only operation, post ID, and outcome.
+Feature audit logs exclude bodies, image bytes, and credentials.
+
+### Commission Tools
+
+| Tool | Purpose |
+| --- | --- |
+| `list_commissions` | Bounded listing of published and unpublished product metadata. |
+| `get_commission` | Read product details, version, customization prices, and ordered image metadata. |
+| `create_commission_draft` | Create an unpublished product. |
+| `update_commission_draft` | Replace editable fields on an unpublished product. |
+| `delete_commission_draft` | Delete an unpublished product and its images. |
+| `upload_commission_image` | Upload a supported image with alternative text to an unpublished product. |
+| `update_commission_image` | Update alternative text on an unpublished product. |
+| `reorder_commission_images` | Supply every image ID once in the desired order. |
+| `delete_commission_image` | Delete an image from an unpublished product. |
+
+These tools share the same private bearer configuration and transport boundary.
+MCP cannot publish, unpublish, or modify published products or their images.
+All mutations to an existing product require its current `version`, including
+image changes; reread after each write. Concurrent edits or publication reject
+stale writes atomically, including associated image changes. All prices are USD;
+customization prices may be omitted or null, which is not the same as zero.
 
 [Feature 046](docs/archive/041-050.md#046---owner-controlled-mcp-draft-tools) documents the atomic
 PostgreSQL guards and verification. [McpDraft.http](McpDraft.http) demonstrates
-initialization and the five tools, reading the token from a private process
+initialization and the blog and commission tools, reading the token from a private process
 environment rather than committing it.
 
-For real persistence/concurrency tests, set `BIC_MCP_TEST_DB` privately to a
+For real blog persistence/concurrency tests, set `BIC_MCP_TEST_DB` privately to a
 **disposable local** PostgreSQL connection (host `localhost`/`127.0.0.1`, database
 name starting `feature046_`, with permission to create a separate test database).
 Never point it at production:
@@ -186,6 +234,19 @@ These tests skip locally without that setting and are excluded from the normal
 unit-test filter. CI runs them separately against a disposable loopback PostgreSQL
 service and includes their coverage in the report. They create test posts
 and a separate migrated test database.
+
+Commission persistence/concurrency tests use `COMMISSION_DISPOSABLE_POSTGRES`
+pointing to a **disposable local** database named `commissions_disposable_*`.
+They apply migrations and create test products; never use an existing content
+database. Without this setting they skip:
+
+```powershell
+dotnet test tests\BecauseImClever.Infrastructure.Tests --filter "FullyQualifiedName~Commission"
+```
+
+CI runs the PostgreSQL commission tests separately against a disposable database
+on its existing PostgreSQL service; they are excluded from the ordinary unit-test
+filter.
 
 ## Deployment
 

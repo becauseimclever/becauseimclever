@@ -1,0 +1,62 @@
+@baseUrl = https://localhost:7272
+@id = 00000000-0000-0000-0000-000000000001
+@imageId = 00000000-0000-0000-0000-000000000002
+@version = 00000000-0000-0000-0000-000000000003
+@slug = example-product
+
+### Public listing (published only)
+GET {{baseUrl}}/api/v1/commissions?offset=0&limit=20
+
+### Public detail and image (administrator cookie permits draft preview)
+GET {{baseUrl}}/api/v1/commissions/{{slug}}
+
+###
+GET {{baseUrl}}/api/v1/commissions/{{id}}/images/{{imageId}}
+
+### The remaining requests require an authenticated administrator cookie.
+GET {{baseUrl}}/api/v1/admin/commissions?offset=0&limit=20
+
+###
+GET {{baseUrl}}/api/v1/admin/commissions/{{id}}
+
+### Create a draft; use returned id and version for subsequent requests.
+POST {{baseUrl}}/api/v1/admin/commissions
+Content-Type: application/json
+
+{"title":"Example","slug":"example-product","description":"Example description","basePrice":100.00,"options":[{"name":"Custom finish","price":20.00},{"name":"Color choice","price":null}]}
+
+### Every mutation requires the latest returned version.
+PUT {{baseUrl}}/api/v1/admin/commissions/{{id}}?expectedVersion={{version}}
+Content-Type: application/json
+
+{"title":"Revised example","slug":"example-product","description":"Revised description","basePrice":120.00,"options":[]}
+
+###
+PUT {{baseUrl}}/api/v1/admin/commissions/{{id}}/publication?expectedVersion={{version}}
+Content-Type: application/json
+
+true
+
+### Replace the placeholder with a valid PNG, JPEG, GIF, or WEBP encoded as base64 (maximum decoded size 5 MiB).
+POST {{baseUrl}}/api/v1/admin/commissions/{{id}}/images?expectedVersion={{version}}
+Content-Type: application/json
+
+{"filename":"example.png","contentType":"image/png","data":"<base64-image>","altText":"Example product"}
+
+###
+PUT {{baseUrl}}/api/v1/admin/commissions/{{id}}/images/{{imageId}}?expectedVersion={{version}}
+Content-Type: application/json
+
+"Updated image description"
+
+###
+PUT {{baseUrl}}/api/v1/admin/commissions/{{id}}/images/order?expectedVersion={{version}}
+Content-Type: application/json
+
+["{{imageId}}"]
+
+###
+DELETE {{baseUrl}}/api/v1/admin/commissions/{{id}}/images/{{imageId}}?expectedVersion={{version}}
+
+###
+DELETE {{baseUrl}}/api/v1/admin/commissions/{{id}}?expectedVersion={{version}}
