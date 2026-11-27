@@ -37,8 +37,9 @@
                 <label for="commission-slug">URL slug</label>
                 <input id="commission-slug" required maxlength="200" pattern="[a-z0-9]+(-[a-z0-9]+)*" @bind="Slug" @bind:after="MarkDirty" />
                 <p>Use lowercase letters, numbers, and hyphens.</p>
-                <label for="commission-description">Project description</label>
+                <label for="commission-description">Project description (Markdown supported)</label>
                 <textarea id="commission-description" required maxlength="20000" rows="8" @bind="Description" @bind:after="MarkDirty"></textarea>
+                <p>Use [link text](https://example.com) to add a link. HTML is shown as text.</p>
                 <label for="commission-price">Base asking price (USD)</label>
                 <input id="commission-price" type="number" required min="0" max="999999.99" step="0.01" @bind="BasePrice" @bind:after="MarkDirty" />
                 <h2>Customization options</h2>

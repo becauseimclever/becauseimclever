@@ -102,8 +102,10 @@ replacement for database-backed admin editing, image uploads, or scheduling.
 
 The **Commissions** menu item opens `/commissions`, a separate gallery of
 projects available to commission. Product pages include an ordered, manually
-controlled image slideshow, a plain-text description, customization options
-with optional prices, and a base asking price in US dollars. Inquiries go to
+controlled image slideshow, a Markdown description (including links), optional
+customization options with optional prices, and a base asking price in US dollars.
+Raw HTML in descriptions is displayed as text; links support HTTP, HTTPS,
+mailto, and relative URLs. Inquiries go to
 the shared `fortinbra@becauseimclever.com` email address; there is no checkout or
 automatic final-price calculation.
 
