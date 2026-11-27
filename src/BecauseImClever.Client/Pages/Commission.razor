@@ -30,16 +30,12 @@
                 }
                 <CommissionSlideshow ProductId="Product.Id" Images="Product.Images" />
                 <h2>About this project</h2>
-                <p class="commission-description">@Product.Description</p>
+                <div class="commission-description">@((MarkupString)RenderDescription(Product.Description))</div>
                 <h2>Base asking price</h2>
                 <p>From @CommissionDisplay.Money(Product.BasePrice) USD</p>
-                <h2>Customization options</h2>
-                @if (Product.Options.Count == 0)
+                @if (Product.Options.Count > 0)
                 {
-                    <p>Contact me to discuss customization possibilities.</p>
-                }
-                else
-                {
+                    <h2>Customization options</h2>
                     <ul>
                         @foreach (var option in Product.Options)
                         {

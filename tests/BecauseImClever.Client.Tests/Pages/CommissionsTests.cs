@@ -35,6 +35,60 @@ public class CommissionsTests : BunitContext
     }
 
     [Fact]
+    public void Commission_MarkdownDescription_RendersLinksAndFormatting()
+    {
+        var product = Product() with { Description = "See [details](https://example.com/details) and **features**.\nSecond line. [Local](/posts)" };
+        this.Register(_ => Json(product));
+
+        var cut = this.Render<Commission>(p => p.Add(c => c.Slug, product.Slug));
+
+        Assert.Equal("https://example.com/details", cut.Find(".commission-description a").GetAttribute("href"));
+        Assert.Equal("/posts", cut.FindAll(".commission-description a")[1].GetAttribute("href"));
+        Assert.Equal("features", cut.Find(".commission-description strong").TextContent);
+        Assert.Single(cut.FindAll(".commission-description br"));
+    }
+
+    [Fact]
+    public void Commission_UnsafeMarkdown_DoesNotRenderExecutableLinksOrHtml()
+    {
+        var product = Product() with
+        {
+            Description = "[unsafe](javascript:alert%281%29) [encoded][bad] <javascript:alert> ![image](data:text/html,test) <script>alert(1)</script>\n\n[bad]: java&#x73;cript:alert%281%29",
+        };
+        this.Register(_ => Json(product));
+
+        var cut = this.Render<Commission>(p => p.Add(c => c.Slug, product.Slug));
+
+        Assert.Empty(cut.FindAll(".commission-description a"));
+        Assert.Empty(cut.FindAll(".commission-description img"));
+        Assert.Empty(cut.FindAll(".commission-description script"));
+        Assert.Contains("unsafe", cut.Find(".commission-description").TextContent);
+    }
+
+    [Fact]
+    public void Commission_NoCustomizationOptions_HidesCustomizationSection()
+    {
+        this.Register(_ => Json(Product()));
+
+        var cut = this.Render<Commission>(p => p.Add(c => c.Slug, "controller"));
+
+        Assert.DoesNotContain("Customization options", cut.Markup);
+        Assert.DoesNotContain("Contact me to discuss customization possibilities.", cut.Markup);
+    }
+
+    [Fact]
+    public void Commission_CustomizationOptions_ShowsCustomizationSection()
+    {
+        var product = Product() with { Options = [new("Color", null)] };
+        this.Register(_ => Json(product));
+
+        var cut = this.Render<Commission>(p => p.Add(c => c.Slug, product.Slug));
+
+        Assert.Contains("Customization options", cut.Markup);
+        Assert.Contains("Color", cut.Markup);
+    }
+
+    [Fact]
     public void Commission_NotFound_ShowsMissingProductRatherThanEmptySuccess()
     {
         this.Register(_ => new(HttpStatusCode.NotFound));
